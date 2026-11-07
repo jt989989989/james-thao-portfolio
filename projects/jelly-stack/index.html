@@ -1,0 +1,469 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<meta name="color-scheme" content="light dark"/>
+<link rel="icon" href="data:,"/>
+<title>Jelly Stack</title>
+<script src="assets/matter.min.js"></script>
+<style>
+:root{
+  --bg:#fff7e8; --panel:#ffffff; --ink:#1e293b; --muted:#64748b; --line:#eadfc8;
+  --accent:#ff6b6b; --accent2:#0ea5a4; --gold:#f59e0b; --btn:#1e293b; --btn-ink:#fff;
+  --shadow:0 10px 30px rgba(30,41,59,.12);
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#131a26; --panel:#1e293b; --ink:#f1f5f9; --muted:#94a3b8; --line:#334155; --btn:#f1f5f9; --btn-ink:#131a26; --shadow:0 10px 30px rgba(0,0,0,.35); }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:ui-rounded, system-ui,-apple-system,Segoe UI,Roboto,sans-serif;}
+.wrap{max-width:860px;margin:0 auto;padding:14px 14px 22px;}
+.top{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:10px}
+h1{font-size:28px;line-height:1;margin:0;letter-spacing:-.02em}
+.sub{color:var(--muted);font-size:14px;margin-top:4px}
+.stats{display:flex;gap:8px;flex-wrap:wrap}
+.pill{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:8px 12px;font-weight:800;font-size:14px;box-shadow:var(--shadow)}
+.pill span{color:var(--muted);font-weight:600;margin-right:4px}
+.stage{position:relative;background:linear-gradient(180deg,#aee9ff 0%,#dff8ff 55%,#fff3c4 100%);border:1px solid var(--line);border-radius:20px;overflow:hidden;box-shadow:var(--shadow)}
+@media (prefers-color-scheme: dark){ .stage{background:linear-gradient(180deg,#1e3a5f 0%,#23405e 55%,#3a3350 100%);} }
+canvas{display:block;width:100%;height:min(68vh,620px);min-height:440px;touch-action:none;cursor:pointer}
+.windbar{position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,.92);color:#0f172a;border-radius:999px;padding:7px 14px;font-weight:900;font-size:13px;display:none;box-shadow:0 6px 18px rgba(0,0,0,.15);white-space:nowrap}
+.windbar.show{display:block}
+.slowmo{position:absolute;inset:0;pointer-events:none;display:none;box-shadow:inset 0 0 80px rgba(255,80,80,.45)}
+.slowmo.show{display:block}
+.badge{position:absolute;top:52px;left:50%;transform:translateX(-50%);background:#ef4444;color:#fff;font-weight:900;padding:6px 12px;border-radius:999px;font-size:13px;display:none}
+.badge.show{display:block}
+.controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+button{appearance:none;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:12px 16px;border-radius:999px;font-weight:800;font-size:15px;cursor:pointer}
+button.primary{background:var(--accent);color:#fff;border-color:transparent;font-size:17px;padding:13px 22px;flex:1;min-width:160px}
+button:active{transform:scale(.97)}
+.help{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:12px 14px;margin-top:12px;font-size:14px;line-height:1.55;color:var(--muted)}
+.help b{color:var(--ink)}
+.overlay{position:absolute;inset:0;background:rgba(15,23,42,.62);display:none;align-items:center;justify-content:center;padding:18px}
+.overlay.show{display:flex}
+.card{background:var(--panel);border-radius:20px;padding:24px;max-width:420px;width:100%;text-align:center;box-shadow:var(--shadow)}
+.card h2{margin:0 0 6px;font-size:26px}
+.card p{color:var(--muted);line-height:1.5;margin:8px 0}
+.bigscore{font-size:44px;font-weight:900;line-height:1;margin:10px 0}
+.toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%) translateY(20px);background:#111827;color:#fff;padding:10px 14px;border-radius:999px;font-size:14px;font-weight:700;opacity:0;pointer-events:none;transition:.25s;z-index:20;max-width:92vw;text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.kbd{background:var(--bg);border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;padding:1px 6px;font-family:ui-monospace,monospace;font-size:12px;color:var(--ink)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <h1>🫧 Jelly Stack</h1>
+      <div class="sub">Balance the blobs. Don't fear the wobble — fear the wind.</div>
+    </div>
+    <div class="stats">
+      <div class="pill"><span>Stack</span><span id="score" style="color:var(--ink)">0</span></div>
+      <div class="pill"><span>Best</span><span id="best" style="color:var(--ink)">0</span></div>
+      <div class="pill"><span>Next</span><span id="nextDot">●</span></div>
+    </div>
+  </div>
+
+  <div class="stage" id="stage">
+    <canvas id="game" aria-label="Jelly Stack game canvas"></canvas>
+    <div class="windbar" id="windbar">💨 Wind gust!</div>
+    <div class="badge" id="wobbleBadge">😬 WOBBLY…!</div>
+    <div class="slowmo" id="slowmo"></div>
+    <div class="overlay" id="overlay">
+      <div class="card">
+        <div style="font-size:44px">🫠</div>
+        <h2 id="overTitle">It toppled!</h2>
+        <div class="bigscore"><span id="finalScore">0</span> blobs</div>
+        <p id="overText">The tower went over in glorious slow motion.</p>
+        <div class="controls" style="justify-content:center">
+          <button class="primary" id="againBtn">▶ Stack again</button>
+          <button id="copyBtn2">Copy challenge</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="primary" id="dropBtn">⬇ DROP THE BLOB</button>
+    <button id="pauseBtn">⏸ Pause</button>
+    <button id="soundBtn">🔊 Sound on</button>
+    <button id="restartBtn">↺ Restart</button>
+    <button id="copyBtn">Copy challenge</button>
+  </div>
+
+  <div class="help">
+    <b>How to play:</b> Move your finger / mouse (or <span class="kbd">←</span> <span class="kbd">→</span>) to aim the hovering blob, then tap the canvas, press <span class="kbd">Space</span>, or hit <b>DROP</b>.
+    Blobs are squishy — they deform, lean, and slide where they land, so aim for the <b>center of balance</b>, not just the top.
+    Random <b>wind gusts</b> push harder the higher your tower gets. If the tower starts to go, time slows down… enjoy the fall. 🫠<br>
+    <b>Game over</b> when a blob tumbles off the pedestal. Score = blobs still standing in your tower.
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+"use strict";
+var canvas=document.getElementById('game'), ctx=canvas.getContext('2d');
+var scoreEl=document.getElementById('score'), bestEl=document.getElementById('best'), nextDot=document.getElementById('nextDot');
+var windbar=document.getElementById('windbar'), badge=document.getElementById('wobbleBadge'), slowmoEl=document.getElementById('slowmo');
+var overlay=document.getElementById('overlay');
+var W=800,H=560, DPR=1;
+function resize(){
+  var r=canvas.getBoundingClientRect(); DPR=Math.min(2,window.devicePixelRatio||1);
+  W=Math.max(320,Math.round(r.width)); H=Math.max(440,Math.round(r.height));
+  canvas.width=W*DPR; canvas.height=H*DPR; ctx.setTransform(DPR,0,0,DPR,0,0);
+  if(platform){ repositionStatic(); }
+}
+window.addEventListener('resize',resize);
+
+var COLORS=[
+ {fill:'#ff6b6b',dark:'#d64545',name:'Coral'},
+ {fill:'#2ec4b6',dark:'#1a9e91',name:'Mint'},
+ {fill:'#ffd166',dark:'#e0a92e',name:'Lemon'},
+ {fill:'#4dabf7',dark:'#2f8fdd',name:'Sky'},
+ {fill:'#f783ac',dark:'#d95787',name:'Berry'},
+ {fill:'#ffa94d',dark:'#e07f24',name:'Peach'},
+ {fill:'#69db7c',dark:'#40b857',name:'Lime'}
+];
+
+var Engine, Bodies, Body, Composite, Events;
+var engine, world, platform, groundSensor;
+var blobs=[]; // {body,color,r,squish,squishV,seed}
+var state='aim'; // aim | falling | over | paused
+var aimX=0, current=null, nextColor=0, score=0, best=0, dropped=0;
+var wind={active:false,dir:0,strength:0,until:0,nextAt:0};
+var slowmoUntil=0, slowmoCooldown=0, camY=0, camTarget=0, shake=0;
+var soundOn=true, audioCtx=null, paused=false, lastTime=0, settledTimer=0, fallingBlob=null;
+var platW=118, platTop=0;
+
+function rand(a,b){return a+Math.random()*(b-a);}
+function pickColor(){return Math.floor(Math.random()*COLORS.length);}
+function toast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},2200);}
+function beep(freq,dur,type,vol,slide){
+  if(!soundOn) return;
+  try{
+    if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+    if(audioCtx.state==='suspended') audioCtx.resume();
+    var o=audioCtx.createOscillator(), g=audioCtx.createGain();
+    o.type=type||'sine'; o.frequency.setValueAtTime(freq,audioCtx.currentTime);
+    if(slide) o.frequency.exponentialRampToValueAtTime(Math.max(40,freq+slide),audioCtx.currentTime+dur);
+    g.gain.setValueAtTime(vol||0.12,audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+dur);
+    o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime+dur);
+  }catch(e){}
+}
+function squishSound(){ beep(300,0.18,'sine',0.16,-180); setTimeout(function(){beep(180,0.12,'sine',0.08,-60);},40); }
+
+function repositionStatic(){
+  if(!platform) return;
+  var cx=W/2; platTop=H-120;
+  Body.setPosition(platform,{x:cx,y:platTop+14});
+  if(groundSensor) Body.setPosition(groundSensor,{x:cx,y:H+40});
+}
+
+function makeCurrent(){
+  var c=COLORS[nextColor];
+  current={color:nextColor, r:rand(25,33), x:aimX||W/2};
+  nextColor=pickColor();
+  nextDot.textContent='●'; nextDot.style.color=COLORS[nextColor].fill; nextDot.style.fontSize='20px';
+}
+
+function initPhysics(){
+  Engine=Matter.Engine; Bodies=Matter.Bodies; Body=Matter.Body; Composite=Matter.Composite; Events=Matter.Events;
+  engine=Engine.create({enableSleeping:true});
+  engine.gravity.y=1;
+  world=engine.world;
+  platTop=H-120;
+  platform=Bodies.rectangle(W/2,platTop+14,platW,28,{isStatic:true,friction:0.9,chamfer:{radius:8},label:'platform'});
+  groundSensor=Bodies.rectangle(W/2,H+40,W*3,40,{isStatic:true,isSensor:true,label:'ground'});
+  // invisible side catch is ground sensor only; walls far out so blobs can fall visibly
+  Composite.add(world,[platform,groundSensor]);
+
+  Events.on(engine,'collisionStart',function(ev){
+    for(var i=0;i<ev.pairs.length;i++){
+      var a=ev.pairs[i].bodyA,b=ev.pairs[i].bodyB;
+      [a,b].forEach(function(body){
+        var rec=findBlob(body);
+        if(rec){ rec.squish=Math.min(0.45,Math.abs(body.velocity.y)*0.06+0.18); }
+      });
+      if((a.label==='blob'||b.label==='blob')) squishSound();
+    }
+  });
+}
+function pTop(){ return platform? platform.position.y-14 : platTop; }
+function findBlob(body){ for(var i=0;i<blobs.length;i++) if(blobs[i].body===body) return blobs[i]; return null; }
+
+function drop(){
+  if(state!=='aim'||paused||!current) return;
+  var r=current.r, c=current.color;
+  var body=Bodies.circle(aimX, 70 - camY*0 , r, { // spawn in screen space converted below
+    restitution:0.08, friction:0.85, frictionAir:0.008, density:0.0016, label:'blob', sleepThreshold:55
+  });
+  // Matter world uses screen coords + camY offset applied at render; we keep world == screen for x, and y shifted by camY
+  Body.setPosition(body,{x:aimX, y: 64});
+  Body.setAngularVelocity(body, rand(-0.02,0.02));
+  Composite.add(world,body);
+  blobs.push({body:body,color:c,r:r,squish:0,seed:Math.random()*10,wasOnTower:false});
+  fallingBlob=body; dropped++; state='falling'; settledTimer=0;
+  beep(520,0.1,'triangle',0.1,-120);
+  makeCurrentPreviewOnly();
+}
+function makeCurrentPreviewOnly(){ current=null; }
+function newAimBlob(){
+  nextColor = nextColor; // already chosen
+  // current color is the one that was previewed as nextDot before drop? Simpler: use stored preview
+  current={color:previewColor, r:rand(25,33)};
+  previewColor=pickColor();
+  nextDot.textContent='●'; nextDot.style.color=COLORS[previewColor].fill; nextDot.style.fontSize='20px';
+}
+var previewColor=pickColor();
+
+function startGame(){
+  if(engine){ Engine.clear(engine); }
+  blobs=[]; score=0; dropped=0; camY=0; camTarget=0; shake=0;
+  state='aim'; paused=false; fallingBlob=null;
+  wind={active:false,dir:0,strength:0,until:0,nextAt:performance.now()+rand(5000,8000)};
+  slowmoUntil=0;
+  overlay.classList.remove('show');
+  document.getElementById('pauseBtn').textContent='⏸ Pause';
+  initPhysics();
+  repositionStatic();
+  previewColor=pickColor();
+  current={color:pickColor(), r:rand(25,33)};
+  nextDot.textContent='●'; nextDot.style.color=COLORS[previewColor].fill; nextDot.style.fontSize='20px';
+  aimX=W/2;
+  updateScore();
+}
+function updateScore(){
+  // score = blobs resting roughly above platform and within tower width-ish / not fallen
+  var n=0;
+  for(var i=0;i<blobs.length;i++){
+    var b=blobs[i].body;
+    if(fallingBlob&&b===fallingBlob) continue;
+    if(b.position.y < pTop()+6 && Math.abs(b.position.x-W/2) < 190) n++;
+  }
+  score=n; scoreEl.textContent=score;
+  if(score>best){best=score;bestEl.textContent=best;}
+}
+
+function towerStats(){
+  var comX=0,total=0,topY=Infinity,maxVel=0,maxAng=0,n=0;
+  for(var i=0;i<blobs.length;i++){
+    var b=blobs[i].body; if(b.position.y>pTop()+6) continue; if(fallingBlob&&b===fallingBlob) continue; n++;
+    var wgt=Math.max(1,(pTop()-b.position.y)/40);
+    comX+=b.position.x*wgt; total+=wgt;
+    if(b.position.y<topY) topY=b.position.y;
+    maxVel=Math.max(maxVel,Math.hypot(b.velocity.x,b.velocity.y));
+    maxAng=Math.max(maxAng,Math.abs(b.angularVelocity));
+  }
+  if(total===0) return {lean:0,topY:pTop(),maxVel:0,maxAng:0,count:0};
+  return {lean:(comX/total)-W/2, topY:topY, maxVel:maxVel, maxAng:maxAng, count:n};
+}
+
+function gameOver(reason){
+  if(state==='over') return;
+  state='over';
+  engine.timing.timeScale=0.28; slowmoEl.classList.add('show');
+  beep(400,0.7,'sawtooth',0.07,-320);
+  updateScore();
+  document.getElementById('finalScore').textContent=score;
+  document.getElementById('overTitle').textContent = score>=10 ? 'So close to a jelly skyscraper!' : 'It toppled!';
+  document.getElementById('overText').textContent=reason+' Final tower: '+score+' blob'+(score===1?'':'s')+' standing. Best this session: '+best+'.';
+  setTimeout(function(){ overlay.classList.add('show'); engine.timing.timeScale=1; slowmoEl.classList.remove('show'); },900);
+}
+
+function scheduleWind(now){
+  if(!wind.active && now>wind.nextAt && state!=='over'){
+    wind.active=true; wind.dir=Math.random()<0.5?-1:1;
+    wind.strength=rand(0.00035,0.0007)*(1+Math.min(1.2,score/10));
+    wind.until=now+rand(1600,2800);
+    windbar.textContent = wind.dir<0 ? '💨 Wind gust — pushing LEFT ←' : '💨 Wind gust — pushing RIGHT →';
+    windbar.classList.add('show'); beep(700,0.25,'sine',0.05,200);
+  }
+  if(wind.active && now>wind.until){
+    wind.active=false; windbar.classList.remove('show'); wind.nextAt=now+rand(5500,9500);
+  }
+  if(wind.active){
+    for(var i=0;i<blobs.length;i++){
+      var b=blobs[i].body;
+      var hFactor=Math.max(0.15,(pTop()-b.position.y)/220);
+      Body.applyForce(b,b.position,{x:wind.dir*wind.strength*b.mass*hFactor,y:0});
+    }
+    if(current && state==='aim'){ /* aim blob wobbles */ }
+  }
+}
+
+function step(now,dt){
+  if(paused||!engine) return;
+  scheduleWind(now);
+  var stats=towerStats();
+  var unstable = blobs.length>=3 && (Math.abs(stats.lean)>34 || stats.maxAng>0.12);
+  badge.classList.toggle('show', unstable && state!=='over');
+  // slow motion when things start moving fast (a collapse in progress)
+  var collapsing = blobs.length>=2 && stats.maxVel>4.2;
+  if((collapsing|| (unstable&&stats.maxVel>2.6)) && now>slowmoCooldown && state!=='over'){
+    slowmoUntil=now+1100; slowmoCooldown=now+2600;
+  }
+  if(now<slowmoUntil){ engine.timing.timeScale=0.32; slowmoEl.classList.add('show'); }
+  else { engine.timing.timeScale = state==='over'?0.28:1; if(state!=='over') slowmoEl.classList.remove('show'); }
+
+  Engine.update(engine, Math.min(33,dt));
+
+  // world scroll: when the tower nears the top, shift everything down
+  if(stats.count && stats.topY < 140 && state==='aim'){
+    var shift=180;
+    for(var si=0;si<blobs.length;si++) Body.setPosition(blobs[si].body,{x:blobs[si].body.position.x,y:blobs[si].body.position.y+shift});
+    Body.setPosition(platform,{x:platform.position.x,y:platform.position.y+shift});
+  }
+  // check fallen blobs
+  for(var i=0;i<blobs.length;i++){
+    var b=blobs[i].body;
+    if(b.position.y > H+400 || b.position.y > pTop()+70){
+      if(state!=='over') gameOver('A blob tumbled off the pedestal.');
+    }
+  }
+  // falling blob settled?
+  if(state==='falling' && fallingBlob){
+    var speed=Math.hypot(fallingBlob.velocity.x,fallingBlob.velocity.y);
+    if(fallingBlob.position.y > pTop()+40){ gameOver('That drop missed the tower completely.'); }
+    else if(speed<0.45){ settledTimer+=dt; if(settledTimer>450){
+      // check it is supported on tower/platform (not rolling off)
+      state='aim'; fallingBlob=null; newAimBlob(); updateScore();
+      if(score>0 && score%5===0) toast('🎉 '+score+' blobs balanced!');
+    }} else settledTimer=0;
+  }
+  updateScore();
+}
+
+// ---- Drawing ----
+function drawBlob(x,y,r,colorIdx,squish,seed,faceMood,angle){
+  var c=COLORS[colorIdx];
+  var sx=1+squish*0.7, sy=1-squish*0.55;
+  ctx.save(); ctx.translate(x,y); ctx.rotate(angle||0); ctx.scale(sx,sy);
+  // body
+  ctx.beginPath();
+  // slightly blobby circle using wobble
+  for(var a=0;a<=Math.PI*2+0.1;a+=0.35){
+    var wob=1+Math.sin(a*3+seed*7)*0.03;
+    var px=Math.cos(a)*r*wob, py=Math.sin(a)*r*wob;
+    if(a===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+  }
+  ctx.closePath(); ctx.fillStyle=c.fill; ctx.fill();
+  ctx.lineWidth=3; ctx.strokeStyle=c.dark; ctx.stroke();
+  // shine
+  ctx.beginPath(); ctx.ellipse(-r*0.35,-r*0.4,r*0.22,r*0.12,-0.6,0,Math.PI*2);
+  ctx.fillStyle='rgba(255,255,255,.55)'; ctx.fill();
+  // face
+  ctx.fillStyle='#1e293b';
+  var eyeY=-r*0.08, eyeDX=r*0.34;
+  if(faceMood==='worried'){
+    ctx.beginPath(); ctx.arc(-eyeDX,eyeY,r*0.09,0,7); ctx.arc(eyeDX,eyeY,r*0.09,0,7); ctx.fill();
+    ctx.beginPath(); ctx.arc(0,r*0.32,r*0.16,Math.PI*1.15,Math.PI*1.85); ctx.lineWidth=2.5; ctx.strokeStyle='#1e293b'; ctx.stroke(); // frown-ish wobble mouth (open)
+    ctx.beginPath(); ctx.ellipse(0,r*0.3,r*0.13,r*0.09,0,0,7); ctx.fillStyle='#1e293b'; ctx.fill();
+  } else if(faceMood==='dizzy'){
+    ctx.lineWidth=2.5; ctx.strokeStyle='#1e293b';
+    [-eyeDX,eyeDX].forEach(function(ex){ ctx.beginPath(); ctx.moveTo(ex-4,eyeY-4); ctx.lineTo(ex+4,eyeY+4); ctx.moveTo(ex+4,eyeY-4); ctx.lineTo(ex-4,eyeY+4); ctx.stroke(); });
+    ctx.beginPath(); ctx.arc(0,r*0.28,r*0.14,0,7); ctx.fill();
+  } else {
+    ctx.beginPath(); ctx.arc(-eyeDX,eyeY,r*0.1,0,7); ctx.arc(eyeDX,eyeY,r*0.1,0,7); ctx.fill();
+    ctx.beginPath(); ctx.arc(0,r*0.12,r*0.28,0.15*Math.PI,0.85*Math.PI); ctx.lineWidth=2.5; ctx.strokeStyle='#1e293b'; ctx.stroke();
+    // cheeks
+    ctx.beginPath(); ctx.arc(-r*0.55,r*0.18,r*0.11,0,7); ctx.arc(r*0.55,r*0.18,r*0.11,0,7); ctx.fillStyle='rgba(255,120,150,.45)'; ctx.fill();
+  }
+  ctx.restore();
+}
+function draw(now){
+  ctx.clearRect(0,0,W,H);
+  // clouds
+  ctx.fillStyle='rgba(255,255,255,.75)';
+  [[W*0.15,60],[W*0.82,90],[W*0.6,40]].forEach(function(p,i){
+    var cx=p[0]+Math.sin(now/3000+i)*8, cy=p[1]+((camY*0.2)%20);
+    ctx.beginPath(); ctx.ellipse(cx,cy,42,16,0,0,7); ctx.ellipse(cx+28,cy+4,30,12,0,0,7); ctx.fill();
+  });
+  // wind streaks
+  if(wind.active){
+    ctx.strokeStyle='rgba(255,255,255,.85)'; ctx.lineWidth=3; ctx.lineCap='round';
+    for(var i=0;i<6;i++){
+      var y=60+((i*67+now/6)%(H-140)), x=((now/3*wind.dir + i*180)%(W+120)+(W+120))%(W+120)-60;
+      ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x+wind.dir*36,y); ctx.stroke();
+    }
+  }
+  var platScreenTop = pTop();
+  // pedestal
+  ctx.fillStyle='#b08968'; ctx.strokeStyle='#8a6642'; ctx.lineWidth=3;
+  var cx=W/2;
+  ctx.beginPath(); ctx.roundRect(cx-26, platScreenTop+26, 52, H-platScreenTop, 6); ctx.fill(); ctx.stroke();
+  ctx.fillStyle='#e9c46a';
+  ctx.beginPath(); ctx.roundRect(cx-platW/2-10, platScreenTop, platW+20, 28, 10); ctx.fill(); ctx.stroke();
+  // dashed drop guide
+  if(state==='aim'&&current&&!paused){
+    ctx.save(); ctx.setLineDash([6,8]); ctx.strokeStyle='rgba(30,41,59,.4)'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(aimX,96); ctx.lineTo(aimX,platScreenTop); ctx.stroke(); ctx.restore();
+    var bob=Math.sin(now/280)*4;
+    var mood = towerStats().lean && Math.abs(towerStats().lean)>30 ? 'worried':'happy';
+    drawBlob(aimX,58+bob,current.r,current.color,0.08,1,mood,Math.sin(now/500)*0.05);
+    if(wind.active){ /* nudge hint */ }
+  }
+  // blobs
+  var stats=towerStats();
+  var moodAll = state==='over'?'dizzy':(Math.abs(stats.lean)>30||stats.maxVel>2.5?'worried':'happy');
+  for(var i=0;i<blobs.length;i++){
+    var rec=blobs[i], b=rec.body;
+    rec.squish*=0.88;
+    var speedSquish=Math.min(0.3,Math.hypot(b.velocity.x,b.velocity.y)*0.025);
+    drawBlob(b.position.x, b.position.y, rec.r, rec.color, Math.max(rec.squish,speedSquish), rec.seed, moodAll, b.angle);
+  }
+  if(paused){
+    ctx.fillStyle='rgba(15,23,42,.45)'; ctx.fillRect(0,0,W,H);
+    ctx.fillStyle='#fff'; ctx.font='900 30px system-ui'; ctx.textAlign='center'; ctx.fillText('⏸ Paused',W/2,H/2);
+  }
+}
+function loop(now){
+  var dt=lastTime? now-lastTime:16; lastTime=now;
+  step(now,Math.min(50,dt));
+  draw(now||0);
+  requestAnimationFrame(loop);
+}
+
+// ---- Input ----
+function setAimFromEvent(e){
+  var r=canvas.getBoundingClientRect();
+  var x=(e.touches? e.touches[0].clientX : e.clientX)-r.left;
+  aimX=Math.max(30,Math.min(W-30,x));
+}
+canvas.addEventListener('pointermove',setAimFromEvent);
+canvas.addEventListener('pointerdown',function(e){ setAimFromEvent(e); drop(); });
+window.addEventListener('keydown',function(e){
+  if(e.code==='Space'){ e.preventDefault(); if(state==='over'){startGame();} else drop(); }
+  if(e.key==='ArrowLeft') aimX=Math.max(30,aimX-18);
+  if(e.key==='ArrowRight') aimX=Math.min(W-30,aimX+18);
+  if(e.key==='ArrowDown'){ e.preventDefault(); drop(); }
+});
+document.getElementById('dropBtn').addEventListener('click',drop);
+document.getElementById('restartBtn').addEventListener('click',function(){ startGame(); toast('Fresh tower — good luck! 🫧'); });
+document.getElementById('againBtn').addEventListener('click',startGame);
+document.getElementById('pauseBtn').addEventListener('click',function(){
+  if(state==='over') return; paused=!paused;
+  this.textContent=paused?'▶ Resume':'⏸ Pause';
+});
+document.getElementById('soundBtn').addEventListener('click',function(){ soundOn=!soundOn; this.textContent=soundOn?'🔊 Sound on':'🔇 Sound off'; if(soundOn) beep(660,0.08,'sine',0.1); });
+function copyChallenge(){
+  var txt='🫧 Jelly Stack challenge: I balanced '+best+' squishy blobs before my tower toppled. Think you can beat that without the wind getting you? 💨';
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(function(){toast('Challenge copied — send it to a friend! 🏆');},function(){toast(txt);}); }
+  else toast(txt);
+}
+document.getElementById('copyBtn').addEventListener('click',copyChallenge);
+document.getElementById('copyBtn2').addEventListener('click',copyChallenge);
+
+// wait for Matter to load
+var bootTries=0;
+function boot(){
+  if(typeof Matter==='undefined'){ bootTries++; if(bootTries<40){ setTimeout(boot,80); return; } toast('Physics failed to load — check connection and reload.'); return; }
+  resize(); aimX=W/2; startGame(); requestAnimationFrame(loop);
+}
+resize(); boot();
+})();
+</script>
+</body>
+</html>

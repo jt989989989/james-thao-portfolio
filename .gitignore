@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+*.pyo
+report.json
+queue.csv
+messages.md
+.DS_Store

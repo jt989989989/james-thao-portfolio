@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Scientific Calculator</title>
+<style>
+  :root { --bg:#f4f7fb; --panel:#fff; --ink:#0f172a; --muted:#64748b; --line:#dbe4f0; --accent:#1d4ed8; --accent-ink:#fff; --fn:#e8eefc; --op:#0f172a; --danger:#b91c1c; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0b1220; --panel:#111c33; --ink:#e2e8f0; --muted:#94a3b8; --line:#24344f; --accent:#3b82f6; --fn:#1b2a4a; --op:#e2e8f0; } }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; background:var(--bg); color:var(--ink); display:flex; justify-content:center; padding:24px 12px; }
+  .calc { width:min(480px,100%); background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:18px; box-shadow:0 10px 30px rgba(15,23,42,.12); }
+  h1 { font-size:20px; margin:0 0 4px; }
+  p.sub { color:var(--muted); font-size:13px; margin:0 0 14px; }
+  .display { border:1px solid var(--line); border-radius:12px; padding:12px 14px; min-height:84px; }
+  #expr { width:100%; border:0; outline:0; background:transparent; color:var(--ink); font-size:22px; font-family:ui-monospace,Menlo,monospace; }
+  #result { font-size:15px; color:var(--muted); min-height:22px; margin-top:4px; font-family:ui-monospace,Menlo,monospace; word-break:break-all; }
+  #result.error { color:var(--danger); }
+  .row { display:flex; gap:8px; margin:10px 0; flex-wrap:wrap; }
+  .row button { flex:1; }
+  button { border:1px solid var(--line); background:var(--panel); color:var(--ink); border-radius:10px; padding:12px 6px; font-size:16px; cursor:pointer; min-width:0; }
+  button:hover { border-color:var(--accent); }
+  button.fn { background:var(--fn); font-size:14px; }
+  button.op { background:var(--op); color:var(--panel); font-weight:700; }
+  button.eq { background:var(--accent); color:var(--accent-ink); font-weight:700; }
+  button.active { background:var(--accent); color:var(--accent-ink); }
+  .grid { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; }
+  .history { margin-top:14px; border-top:1px solid var(--line); padding-top:10px; }
+  .history h2 { font-size:14px; margin:0 0 6px; display:flex; justify-content:space-between; align-items:center; }
+  .history h2 button { padding:4px 10px; font-size:12px; }
+  #historyList { list-style:none; margin:0; padding:0; max-height:150px; overflow:auto; }
+  #historyList li { padding:6px 4px; border-bottom:1px solid var(--line); cursor:pointer; font-family:ui-monospace,Menlo,monospace; font-size:13px; }
+  #historyList li:hover { color:var(--accent); }
+  .empty { color:var(--muted); font-size:13px; }
+  kbd { font-family:ui-monospace,Menlo,monospace; }
+</style>
+</head>
+<body>
+<main class="calc">
+  <h1>Scientific Calculator</h1>
+  <p class="sub">Type an expression or tap the keys. Parsed with a real parser — no <kbd>eval()</kbd>.</p>
+
+  <div class="display">
+    <input id="expr" type="text" placeholder="e.g. sin(30)+2^10" autocomplete="off" spellcheck="false" aria-label="Expression" />
+    <div id="result" aria-live="polite"></div>
+  </div>
+
+  <div class="row">
+    <button id="degBtn" class="active" type="button">DEG</button>
+    <button id="radBtn" type="button">RAD</button>
+    <button type="button" data-insert="Ans">Ans</button>
+    <button type="button" data-insert="pi">π</button>
+    <button type="button" data-insert="e">e</button>
+  </div>
+  <div class="row">
+    <button type="button" data-action="mem-add">M+</button>
+    <button type="button" data-action="mem-sub">M−</button>
+    <button type="button" data-action="mem-recall">MR</button>
+    <button type="button" data-action="mem-clear">MC</button>
+    <button type="button" data-action="clear">C</button>
+  </div>
+
+  <div class="grid" id="keys"></div>
+
+  <div class="row">
+    <button type="button" data-action="back">⌫</button>
+    <button type="button" data-insert="(">(</button>
+    <button type="button" data-insert=")">)</button>
+    <button type="button" data-insert="%">%</button>
+    <button type="button" class="eq" data-action="equals">=</button>
+  </div>
+
+  <section class="history">
+    <h2>History <button type="button" data-action="clear-history">Clear</button></h2>
+    <ul id="historyList"><li class="empty">No calculations yet.</li></ul>
+  </section>
+</main>
+
+<script src="calculator.js"></script>
+<script>
+(function () {
+  var exprInput = document.getElementById("expr");
+  var resultEl = document.getElementById("result");
+  var historyList = document.getElementById("historyList");
+  var degBtn = document.getElementById("degBtn");
+  var radBtn = document.getElementById("radBtn");
+
+  var state = { ans: 0, memory: 0, angleMode: "deg", history: [] };
+
+  var keyDefs = [
+    ["sin(", "fn"], ["cos(", "fn"], ["tan(", "fn"], ["asin(", "fn"], ["acos(", "fn"],
+    ["atan(", "fn"], ["log(", "fn"], ["ln(", "fn"], ["sqrt(", "fn"], ["cbrt(", "fn"],
+    ["abs(", "fn"], ["exp(", "fn"], ["7", ""], ["8", ""], ["9", ""],
+    ["4", ""], ["5", ""], ["6", ""], ["*", "op"], ["/", "op"],
+    ["1", ""], ["2", ""], ["3", ""], ["+", "op"], ["-", "op"],
+    ["0", ""], [".", ""], ["^", "op"], ["!", "op"], ["floor(", "fn"],
+  ];
+
+  var keysEl = document.getElementById("keys");
+  keyDefs.forEach(function (def) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.textContent = def[0];
+    if (def[1]) b.className = def[1];
+    b.setAttribute("data-insert", def[0]);
+    keysEl.appendChild(b);
+  });
+
+  function setAngle(mode) {
+    state.angleMode = mode;
+    degBtn.classList.toggle("active", mode === "deg");
+    radBtn.classList.toggle("active", mode === "rad");
+  }
+  degBtn.addEventListener("click", function () { setAngle("deg"); });
+  radBtn.addEventListener("click", function () { setAngle("rad"); });
+
+  function showResult(text, isError) {
+    resultEl.textContent = text;
+    resultEl.classList.toggle("error", !!isError);
+  }
+
+  function evaluate() {
+    var expr = exprInput.value.trim();
+    if (!expr) { showResult("", false); return; }
+    try {
+      var value = Calculator.calculate(expr, { angleMode: state.angleMode, ans: state.ans });
+      state.ans = value;
+      showResult("= " + Calculator.formatResult(value), false);
+      state.history.unshift({ expr: expr, value: Calculator.formatResult(value) });
+      state.history = state.history.slice(0, 20);
+      renderHistory();
+      return value;
+    } catch (err) {
+      showResult(err.message || "Error", true);
+      return null;
+    }
+  }
+
+  function renderHistory() {
+    historyList.innerHTML = "";
+    if (!state.history.length) {
+      var li = document.createElement("li");
+      li.className = "empty";
+      li.textContent = "No calculations yet.";
+      historyList.appendChild(li);
+      return;
+    }
+    state.history.forEach(function (item) {
+      var li = document.createElement("li");
+      li.textContent = item.expr + " = " + item.value;
+      li.title = "Click to reuse this expression";
+      li.addEventListener("click", function () {
+        exprInput.value = item.expr;
+        exprInput.focus();
+        evaluate();
+      });
+      historyList.appendChild(li);
+    });
+  }
+
+  document.addEventListener("click", function (e) {
+    var t = e.target.closest("button");
+    if (!t) return;
+    if (t.hasAttribute("data-insert")) {
+      exprInput.value += t.getAttribute("data-insert");
+      exprInput.focus();
+      return;
+    }
+    var action = t.getAttribute("data-action");
+    if (!action) return;
+    if (action === "equals") evaluate();
+    else if (action === "clear") { exprInput.value = ""; showResult("", false); exprInput.focus(); }
+    else if (action === "back") { exprInput.value = exprInput.value.slice(0, -1); exprInput.focus(); }
+    else if (action === "clear-history") { state.history = []; renderHistory(); }
+    else if (action === "mem-add") { var v = evaluate(); if (v !== null) state.memory += v; }
+    else if (action === "mem-sub") { var v2 = evaluate(); if (v2 !== null) state.memory -= v2; }
+    else if (action === "mem-recall") { exprInput.value += Calculator.formatResult(state.memory); exprInput.focus(); }
+    else if (action === "mem-clear") { state.memory = 0; }
+  });
+
+  exprInput.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") { e.preventDefault(); evaluate(); }
+    else if (e.key === "Escape") { exprInput.value = ""; showResult("", false); }
+  });
+
+  exprInput.focus();
+})();
+</script>
+</body>
+</html>
