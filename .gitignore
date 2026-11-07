@@ -4,4 +4,6 @@ __pycache__/
 report.json
 queue.csv
 messages.md
+leads.csv
+.env
 .DS_Store

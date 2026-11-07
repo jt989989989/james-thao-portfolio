@@ -1,0 +1,8 @@
+business_name,niche,phone,website,address,city,state,zip,rating,review_count,google_maps_url,lead_score,notes
+Alpena Plumbing Pros,plumbing,(555) 010-1001,,123 River St,Alpena,MI,49707,4.2,4,https://maps.google.com/?cid=1001,70,no website; few reviews; mid rating — room to improve
+Thunder Bay Electric,electrical,(555) 010-1003,,78 State St,Alpena,MI,49707,3.6,8,https://maps.google.com/?cid=1003,70,no website; few reviews; mid rating — room to improve
+Bay City Cleaning Services,cleaning,(555) 010-1006,,15 Lake St,Alpena,MI,49707,4.1,3,https://maps.google.com/?cid=1006,70,no website; few reviews; mid rating — room to improve
+Northwood HVAC & Heating,hvac,(555) 010-1008,https://northwoodhvac.example.com,300 Chisholm St,Alpena,MI,49707,3.2,15,https://maps.google.com/?cid=1008,30,mid rating — room to improve
+Sunrise Roofing Co,roofing,,https://sunriseroofing.example.com,9 Pine St,Alpena,MI,49707,4.0,22,https://maps.google.com/?cid=1004,15,no phone listed; mid rating — room to improve
+Lakeside Dental Care,dental,(555) 010-1002,https://lakesidedental.example.com,45 Harbor Ave,Alpena,MI,49707,4.8,120,https://maps.google.com/?cid=1002,10,
+Alpena Family Medical,medical,(555) 010-1005,https://alpenafamilymedical.example.com,200 Washington Ave,Alpena,MI,49707,4.5,65,https://maps.google.com/?cid=1005,10,

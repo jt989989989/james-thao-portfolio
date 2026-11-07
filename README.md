@@ -13,6 +13,7 @@ This repository is my project index for programming and IT roles. Each project i
 | [SOC Log Analyzer](projects/soc-log-analyzer/) | CLI that parses auth logs and flags brute-force attempts and success-after-failure logins | Python (stdlib only) | SOC / security / IT |
 | [Missed-Call Follow-Up](projects/missed-call-followup/) | CLI that turns a missed-call CSV into a prioritized follow-up queue with message drafts | Python (stdlib only) | Automation / IT |
 | [Scientific Calculator](projects/scientific-calculator/) | Scientific calculator in the browser — full expressions, trig, logs, factorial, history, memory | JavaScript, no dependencies, no `eval()` | Front-end / algorithms |
+| [Lead Generator](projects/lead-generator/) | CLI that finds small-business leads from Google Maps data via the official Places API — scores and dedupes them into a CSV | Python (stdlib only) | Automation / data / sales ops |
 
 ## How to run them
 
@@ -47,6 +48,13 @@ python log_analyzer.py sample_auth.log
 # Missed-Call Follow-Up — 4 unique numbers from 5 sample calls
 cd ../missed-call-followup
 python followup.py sample_calls.csv
+
+# Lead Generator — 7 unit tests; demo yields 7 leads from 9 sample places
+cd ../lead-generator
+python -m unittest discover -s tests -v
+python lead_generator.py --demo
+# Live search (needs GOOGLE_PLACES_API_KEY, see the project's README):
+# python lead_generator.py plumbers --location "Alpena, MI" --max-results 25
 ```
 
 ## Notes
