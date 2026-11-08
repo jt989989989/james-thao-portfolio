@@ -1,4 +1,5 @@
 # ADHD My Way
+My first project during my internship as a software engineer touched up with modern skills. Originally built on Ionic 4 framework. Now updated with Ionic 8 framework.
 
 An **Ionic** mobile app that helps children under 12 focus on their daily tasks — with
 coins, a customisable avatar, and mini games to keep it fun.
