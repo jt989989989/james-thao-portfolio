@@ -15,6 +15,8 @@ This repository is my project index for programming and IT roles. Each project i
 | [Scientific Calculator](projects/scientific-calculator/) | Scientific calculator in the browser — full expressions, trig, logs, factorial, history, memory | JavaScript, no dependencies, no `eval()` | Front-end / algorithms |
 | [Lead Generator](projects/lead-generator/) | CLI that finds small-business leads from Google Maps data via the official Places API — scores and dedupes them into a CSV | Python (stdlib only) | Automation / data / sales ops |
 | [Password Strength Checker](projects/password-strength-checker/) | Defensive CLI that scores a password 0–100 and explains why — length, variety, common words, patterns; runs locally, never sends or saves a password | Python (stdlib only) | Security / defensive |
+| [Secret Scanner](projects/secret-scanner/) | Defensive CLI that scans a codebase for leaked secrets — AWS keys, GitHub/Slack tokens, JWTs, private keys, Stripe keys, passwords, high-entropy strings; reports file, line, rule, and severity | Python (stdlib only) | Security / defensive |
+| [Recon Scanner](projects/recon-scanner/) | Passive recon CLI — finds subdomains from Certificate Transparency (crt.sh), checks DNS liveness, and grades security headers + TLS on a domain; public data and one normal request only | Python (stdlib only) | Security / bug bounty |
 | [ADHD My Way](projects/adhd-my-way/) | Ionic app for children under 12 — daily quests earn coins, coins buy avatar customisations, plus Memory Match and Tap the Star mini games; everything stays on the device | Ionic 8, Capacitor 7, Vite, JavaScript | Mobile / front-end |
 
 ## How to run them
@@ -72,6 +74,18 @@ python lead_generator.py --demo
 cd ../password-strength-checker
 python -m unittest discover -s tests -v
 python password_checker.py --demo
+
+# Secret Scanner — 19 unit tests; demo scan of samples/ finds 9 secrets
+cd ../secret-scanner
+python -m unittest discover -s tests -v
+python secret_scanner.py samples/
+
+# Recon Scanner — 14 unit tests; offline demo finds 6 subdomains, grades headers D
+cd ../recon-scanner
+python -m unittest discover -s tests -v
+python recon_scanner.py --demo
+# Live recon (only on domains you own or that are in scope):
+# python recon_scanner.py example.com
 ```
 
 ## Notes

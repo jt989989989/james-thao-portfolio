@@ -1,0 +1,1 @@
+{"domain":"example.com","headers":{"Content-Type":"text/html; charset=UTF-8","Server":"ExampleServer/1.0","Strict-Transport-Security":"max-age=31536000; includeSubDomains","X-Content-Type-Options":"nosniff","X-Frame-Options":"SAMEORIGIN"},"tls_version":"TLSv1.3"}

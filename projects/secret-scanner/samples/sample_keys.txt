@@ -1,0 +1,10 @@
+# sample_keys.txt — FICTIONAL example file for the Secret Scanner demo.
+# The key below is NOT real: the body is placeholder text, not a real key.
+-----BEGIN RSA PRIVATE KEY-----
+MIIEowIBAAKCAQEA7bXk9mQ2vL8pR4tY7wN3bZ6sD1fG5hJ0cV3aB8eF2dK
+FAKEKEYFAKEKEYFAKEKEYFAKEKEYFAKEKEYFAKEKEYFAKEKEYFAKEKEYFAKE
+-----END RSA PRIVATE KEY-----
+
+# A deliberately short fake live key (shorter than a real Stripe key) —
+# it triggers this scanner's rule without looking like a real secret.
+STRIPE_KEY = "sk_live_4eC39HqLyjWDarjtT1z"
