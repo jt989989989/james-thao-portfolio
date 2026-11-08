@@ -1,6 +1,6 @@
 # James Thao — Portfolio Projects
 
-Hi, I'm James Thao — a techie with a passion for games, programming, security, AI, and more. A revolutionary.
+Hi, I'm James Thao — a technologist driven by curiosity and a love of building things that work beautifully. My work spans games, programming, security, AI, and more — the places where creativity meets engineering: playful systems, resilient software, and intelligent tools that solve real problems. I believe the best technology feels alive — crafted with care, tested in the open, and made to be explored. A revolutionary at heart, I'm here to build what comes next.
 
 This repository is my project index for programming and IT roles. Each project is finished, runnable, and documented — start with the README in its folder.
 
