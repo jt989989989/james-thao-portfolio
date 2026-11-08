@@ -1,0 +1,1655 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>Printed Text Reader HUD</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.5/dist/tesseract.min.js"></script>
+    <style>
+      :root {
+        --bg: #edf1ee;
+        --panel: #ffffff;
+        --panel-2: #f4f7f5;
+        --ink: #15211b;
+        --muted: #5b6d63;
+        --line: #d3ddd6;
+        --accent: #07734c;
+        --accent-bright: #2fe6a8;
+        --accent-ink: #ffffff;
+        --amber: #9a6206;
+        --amber-bg: #fdf0d5;
+        --stage-bg: #05080a;
+        --hud-ink: #e6fff3;
+        --hud-dim: #9fd8bf;
+        --hud-line: rgba(47, 230, 168, 0.55);
+        --radius: 14px;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #090d0c;
+          --panel: #121917;
+          --panel-2: #0d1211;
+          --ink: #e9f4ee;
+          --muted: #93a79c;
+          --line: #26332d;
+          --accent: #2fe6a8;
+          --accent-ink: #06231a;
+          --amber: #ffc46b;
+          --amber-bg: #2c2110;
+        }
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; }
+      body {
+        background: var(--bg);
+        color: var(--ink);
+        font-family: "Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      .mono { font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+      .layout {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 14px 14px 34px;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 14px;
+      }
+      @media (min-width: 960px) {
+        .layout { grid-template-columns: minmax(0, 1.45fr) minmax(330px, 1fr); align-items: start; padding: 20px 20px 40px; }
+        .stage-wrap { position: sticky; top: 20px; }
+      }
+
+      .layout > *, .panel > * { min-width: 0; }
+      .answer-row > div { min-width: 0; }
+      @media (max-width: 560px) {
+        .stage { aspect-ratio: 3 / 3.35; }
+        .hud-pill { font-size: 10px; letter-spacing: 0.08em; padding: 5px 8px; }
+        .stage-placeholder { padding: 56px 18px 20px; gap: 11px; }
+        .stage-placeholder h1 { font-size: 21px; }
+        .stage-placeholder p { font-size: 13.5px; line-height: 1.5; }
+        .steps span { font-size: 10.5px; padding: 5px 9px; }
+      }
+
+      /* ---------- Stage / viewfinder ---------- */
+      .stage {
+        position: relative;
+        background: var(--stage-bg);
+        border-radius: 18px;
+        overflow: hidden;
+        aspect-ratio: 4 / 3;
+        min-height: 320px;
+        box-shadow: 0 10px 34px rgba(0, 0, 0, 0.28);
+      }
+      @media (min-width: 960px) { .stage { aspect-ratio: 4 / 3.1; } }
+      .stage video, .stage img.photo {
+        position: absolute; inset: 0;
+        width: 100%; height: 100%;
+        object-fit: cover;
+        display: none;
+      }
+      .stage.live video, .stage.has-photo img.photo { display: block; }
+
+      .stage-placeholder {
+        position: absolute; inset: 0;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        gap: 14px; text-align: center; padding: 28px;
+        color: var(--hud-ink);
+        background:
+          radial-gradient(ellipse 70% 50% at 50% 42%, rgba(47, 230, 168, 0.10), transparent 70%),
+          var(--stage-bg);
+      }
+      .stage.live .stage-placeholder, .stage.has-photo .stage-placeholder { display: none; }
+      .stage-placeholder h1 {
+        font-size: clamp(22px, 4.6vw, 32px);
+        line-height: 1.15; margin: 0; font-weight: 800; letter-spacing: -0.01em;
+        max-width: 22ch;
+      }
+      .stage-placeholder p { margin: 0; color: var(--hud-dim); font-size: 15px; line-height: 1.55; max-width: 46ch; }
+      .steps { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 4px; }
+      .steps span {
+        font-family: "IBM Plex Mono", ui-monospace, monospace;
+        font-size: 11.5px; letter-spacing: 0.04em;
+        border: 1px solid rgba(47, 230, 168, 0.35); color: var(--hud-dim);
+        padding: 6px 10px; border-radius: 999px;
+      }
+      .steps b { color: var(--accent-bright); font-weight: 600; }
+
+      /* HUD chrome over the camera */
+      .hud-top {
+        position: absolute; top: 0; left: 0; right: 0;
+        display: flex; justify-content: space-between; align-items: flex-start;
+        padding: 12px 14px; pointer-events: none; z-index: 5;
+      }
+      .hud-pill {
+        font-family: "IBM Plex Mono", ui-monospace, monospace;
+        font-size: 11px; letter-spacing: 0.12em; font-weight: 600;
+        color: var(--hud-ink);
+        background: rgba(3, 12, 9, 0.62);
+        border: 1px solid var(--hud-line);
+        padding: 6px 10px; border-radius: 6px;
+        display: inline-flex; align-items: center; gap: 7px;
+        backdrop-filter: blur(3px);
+      }
+      .hud-pill .dot { width: 7px; height: 7px; border-radius: 50%; background: #5c6f66; flex: none; }
+      .hud-pill.on .dot { background: var(--accent-bright); box-shadow: 0 0 8px var(--accent-bright); }
+
+      .frame-corners { position: absolute; inset: 52px 18px 74px; pointer-events: none; z-index: 3; display: none; }
+      .stage.live .frame-corners, .stage.has-photo .frame-corners { display: block; }
+      .frame-corners i { position: absolute; width: 26px; height: 26px; border: 2px solid var(--hud-line); }
+      .frame-corners i:nth-child(1) { top: 0; left: 0; border-right: 0; border-bottom: 0; border-top-left-radius: 8px; }
+      .frame-corners i:nth-child(2) { top: 0; right: 0; border-left: 0; border-bottom: 0; border-top-right-radius: 8px; }
+      .frame-corners i:nth-child(3) { bottom: 0; left: 0; border-right: 0; border-top: 0; border-bottom-left-radius: 8px; }
+      .frame-corners i:nth-child(4) { bottom: 0; right: 0; border-left: 0; border-top: 0; border-bottom-right-radius: 8px; }
+
+      .scanline {
+        position: absolute; left: 20px; right: 20px; height: 2px; top: 60px;
+        background: linear-gradient(90deg, transparent, var(--accent-bright), transparent);
+        opacity: 0; z-index: 3; pointer-events: none;
+      }
+      .stage.scanning .scanline { opacity: 0.85; animation: sweep 1.6s ease-in-out infinite alternate; }
+      @keyframes sweep { from { top: 60px; } to { top: calc(100% - 84px); } }
+      @media (prefers-reduced-motion: reduce) {
+        .stage.scanning .scanline { animation: none; top: 50%; }
+      }
+
+      /* Stare-to-define reticle */
+      .reticle {
+        position: absolute; left: 50%; top: 46%;
+        transform: translate(-50%, -50%);
+        width: min(52%, 280px);
+        z-index: 4; pointer-events: none;
+        display: none; text-align: center;
+      }
+      .stage.live .reticle, .stage.has-photo .reticle { display: block; }
+      .reticle-label {
+        font-family: "IBM Plex Mono", ui-monospace, monospace;
+        font-size: 10px; letter-spacing: 0.16em; color: var(--hud-dim);
+        text-shadow: 0 1px 6px rgba(0,0,0,0.8);
+        margin-bottom: 6px;
+      }
+      .reticle-box {
+        border: 1.5px solid var(--hud-line);
+        border-radius: 10px;
+        background: rgba(3, 12, 9, 0.25);
+        min-height: 58px;
+        display: flex; align-items: center; justify-content: center;
+        padding: 6px 10px;
+      }
+      .reticle-word {
+        font-family: "IBM Plex Mono", ui-monospace, monospace;
+        font-size: 21px; font-weight: 600; color: #ffffff;
+        text-shadow: 0 1px 8px rgba(0,0,0,0.9);
+        word-break: break-word;
+      }
+      .reticle-word.empty { color: rgba(255,255,255,0.45); font-size: 14px; font-weight: 400; }
+      .dwell-track { height: 4px; background: rgba(255,255,255,0.22); border-radius: 4px; margin-top: 8px; overflow: hidden; }
+      .dwell-fill { height: 100%; width: 0%; background: var(--accent-bright); border-radius: 4px; transition: width 0.12s linear; }
+      .dwell-note {
+        font-family: "IBM Plex Mono", ui-monospace, monospace;
+        font-size: 10.5px; color: var(--hud-dim); margin-top: 6px;
+        text-shadow: 0 1px 6px rgba(0,0,0,0.8); min-height: 14px;
+      }
+
+      /* Definition popup — the "lens" readout */
+      .def-popup {
+        position: absolute; left: 50%; top: 12%;
+        transform: translateX(-50%);
+        width: min(88%, 430px);
+        z-index: 6; display: none;
+        background: rgba(3, 14, 10, 0.82);
+        border: 1px solid var(--hud-line);
+        border-radius: 10px;
+        padding: 10px 14px 11px;
+        color: var(--hud-ink);
+        backdrop-filter: blur(4px);
+        text-align: left;
+      }
+      .def-popup.show { display: block; }
+      .def-popup .dw {
+        font-family: "IBM Plex Mono", ui-monospace, monospace;
+        font-size: 17px; font-weight: 600; color: var(--accent-bright);
+      }
+      .def-popup .dp { font-size: 11px; color: var(--hud-dim); font-style: italic; margin-left: 6px; }
+      .def-popup .dd { font-size: 14.5px; line-height: 1.45; margin-top: 3px; }
+
+      .hud-status {
+        position: absolute; left: 14px; right: 14px; bottom: 12px; z-index: 5;
+        display: none;
+        font-family: "IBM Plex Mono", ui-monospace, monospace;
+        font-size: 12px; color: var(--hud-ink);
+        background: rgba(3, 12, 9, 0.62);
+        border: 1px solid rgba(47, 230, 168, 0.3);
+        border-radius: 6px; padding: 7px 10px;
+        backdrop-filter: blur(3px);
+      }
+      .stage.live .hud-status, .stage.has-photo .hud-status { display: block; }
+
+      /* ---------- Side panel ---------- */
+      .panel { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+
+      .answer-card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 16px 18px 15px;
+      }
+      .answer-kicker {
+        font-family: "IBM Plex Mono", ui-monospace, monospace;
+        font-size: 11px; letter-spacing: 0.14em; font-weight: 600;
+        color: var(--accent); margin: 0 0 8px;
+        display: flex; align-items: center; gap: 8px;
+      }
+      .answer-row { display: flex; gap: 14px; align-items: flex-start; }
+      .letter-badge {
+        flex: none; width: 52px; height: 52px; border-radius: 12px;
+        background: var(--accent); color: var(--accent-ink);
+        font-size: 27px; font-weight: 800;
+        display: none; align-items: center; justify-content: center;
+      }
+      .letter-badge.show { display: flex; }
+      .answer-headline { font-size: 27px; font-weight: 800; line-height: 1.16; letter-spacing: -0.01em; margin: 0; overflow-wrap: anywhere; }
+      .answer-headline.waiting { font-size: 19px; font-weight: 700; color: var(--muted); line-height: 1.35; }
+      .answer-detail { margin: 7px 0 0; font-size: 14.5px; line-height: 1.5; color: var(--muted); }
+      .answer-flag {
+        display: none; margin-top: 11px;
+        background: var(--amber-bg); color: var(--amber);
+        border-radius: 9px; padding: 9px 12px;
+        font-size: 13.5px; line-height: 1.45; font-weight: 500;
+      }
+      .answer-flag.show { display: block; }
+
+      .controls-card, .text-card, .history-card, .how-card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 15px 16px;
+      }
+      .card-title {
+        font-family: "IBM Plex Mono", ui-monospace, monospace;
+        font-size: 11px; letter-spacing: 0.14em; font-weight: 600;
+        color: var(--muted); margin: 0 0 11px;
+      }
+      .btn-row { display: flex; flex-wrap: wrap; gap: 9px; }
+      button {
+        font: inherit; cursor: pointer;
+        border-radius: 10px; border: 1px solid var(--line);
+        background: var(--panel-2); color: var(--ink);
+        font-size: 14.5px; font-weight: 600;
+        padding: 11px 15px; min-height: 44px;
+        display: inline-flex; align-items: center; gap: 8px;
+      }
+      button:hover { border-color: var(--accent); }
+      button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+      button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 700; }
+      button[disabled] { opacity: 0.45; cursor: not-allowed; }
+      button[disabled]:hover { border-color: var(--line); }
+      button.toggle[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+      button svg { width: 17px; height: 17px; flex: none; }
+      .controls-note { margin: 11px 0 0; font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+      textarea {
+        width: 100%; min-height: 118px; resize: vertical;
+        font-family: "IBM Plex Mono", ui-monospace, monospace;
+        font-size: 13.5px; line-height: 1.55;
+        color: var(--ink); background: var(--panel-2);
+        border: 1px solid var(--line); border-radius: 10px;
+        padding: 11px 12px;
+      }
+      textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+      .text-meta { font-size: 12.5px; color: var(--muted); margin: 8px 0 0; min-height: 16px; }
+      .sample-row { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 11px; }
+      .sample-row button {
+        min-height: 36px; padding: 7px 11px; font-size: 12.5px; font-weight: 500;
+        border-radius: 999px;
+      }
+      .sample-label { font-size: 12.5px; color: var(--muted); align-self: center; margin-right: 2px; }
+
+      .history-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 9px; }
+      .history-list li { font-size: 13.5px; line-height: 1.45; border-top: 1px solid var(--line); padding-top: 9px; }
+      .history-list li:first-child { border-top: 0; padding-top: 0; }
+      .history-list .hq { color: var(--muted); display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .history-list .ha { font-weight: 700; }
+      .history-empty { font-size: 13.5px; color: var(--muted); margin: 0; }
+
+      .how-card ul { margin: 0; padding-left: 18px; font-size: 13.5px; line-height: 1.6; color: var(--muted); }
+      .how-card li::marker { color: var(--accent); }
+      .how-card b { color: var(--ink); font-weight: 600; }
+    </style>
+  </head>
+  <body>
+    <main class="layout">
+      <!-- ===== Camera stage ===== -->
+      <div class="stage-wrap">
+        <section class="stage" id="stage" aria-label="Camera view">
+          <video id="video" autoplay playsinline muted></video>
+          <img class="photo" id="photoImg" alt="Photo of printed text you chose" />
+
+          <div class="stage-placeholder" id="placeholder">
+            <h1>Point at printed text.<br />Get the answer in view.</h1>
+            <p>This is problem-solving mode: the camera reads a printed question and the answer appears as a heads-up display — letter and answer for multiple choice (math, vocabulary, science, geography, history, general knowledge and cybersecurity — Security+ topics and all 8 CISSP domains), the worked result for open math, a one-line definition when you hold on a single word.</p>
+            <div class="steps">
+              <span><b>1</b>&nbsp; START CAMERA</span>
+              <span><b>2</b>&nbsp; FRAME THE TEXT</span>
+              <span><b>3</b>&nbsp; CAPTURE &amp; READ</span>
+            </div>
+          </div>
+
+          <div class="hud-top">
+            <span class="hud-pill" id="modePill"><span class="dot"></span>PROBLEM-SOLVING MODE</span>
+            <span class="hud-pill mono" id="ocrPill">READER IDLE</span>
+          </div>
+
+          <div class="frame-corners"><i></i><i></i><i></i><i></i></div>
+          <div class="scanline"></div>
+
+          <div class="reticle" aria-hidden="true">
+            <div class="reticle-label">HOLD A WORD HERE · 3 SEC = DEFINITION</div>
+            <div class="reticle-box"><span class="reticle-word empty" id="reticleWord">no word centered</span></div>
+            <div class="dwell-track"><div class="dwell-fill" id="dwellFill"></div></div>
+            <div class="dwell-note" id="dwellNote">Turn on Auto-scan to use stare-to-define</div>
+          </div>
+
+          <div class="def-popup" id="defPopup" role="status">
+            <span class="dw" id="defWord"></span><span class="dp" id="defPos"></span>
+            <div class="dd" id="defText"></div>
+          </div>
+
+          <div class="hud-status mono" id="hudStatus">Camera off — start the camera, upload a photo, or paste text.</div>
+        </section>
+      </div>
+
+      <!-- ===== Panel ===== -->
+      <div class="panel">
+        <section class="answer-card" aria-live="polite">
+          <p class="answer-kicker">◈ HEADS-UP ANSWER</p>
+          <div class="answer-row">
+            <div class="letter-badge" id="letterBadge">?</div>
+            <div>
+              <p class="answer-headline waiting" id="ansHeadline">Nothing read yet. Start the camera and tap Capture &amp; Read.</p>
+              <p class="answer-detail" id="ansDetail"></p>
+            </div>
+          </div>
+          <div class="answer-flag" id="ansFlag"></div>
+        </section>
+
+        <section class="controls-card">
+          <p class="card-title">CONTROLS</p>
+          <div class="btn-row">
+            <button type="button" class="primary" id="camBtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              <span id="camBtnLabel">Start camera</span>
+            </button>
+            <button type="button" id="captureBtn" disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+              Capture &amp; Read
+            </button>
+            <button type="button" class="toggle" id="autoBtn" aria-pressed="false" disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+              Auto-scan
+            </button>
+            <button type="button" id="uploadBtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/></svg>
+              Upload photo
+            </button>
+            <input type="file" id="fileInput" accept="image/*" hidden />
+          </div>
+          <p class="controls-note" id="controlsNote">Reading happens on this device — the camera image is never uploaded. For a general-knowledge question it checks a built-in fact bank first, then looks the question up in a reference source to pick between the printed options. The bank now includes a cybersecurity section: Security+ topics (CIA triad, phishing and social engineering, malware, firewalls, encryption, ports, incident response) plus CISSP-domain knowledge across all 8 domains.</p>
+        </section>
+
+        <section class="text-card">
+          <p class="card-title">TEXT IT READ</p>
+          <textarea id="textInput" placeholder="The words from the page will appear here after a read. You can also type or paste a printed question yourself, then tap Solve."></textarea>
+          <p class="text-meta mono" id="textMeta"></p>
+          <div class="btn-row" style="margin-top:10px;">
+            <button type="button" class="primary" id="solveBtn">Solve this text</button>
+            <button type="button" id="clearBtn">Clear</button>
+          </div>
+          <div class="sample-row">
+            <span class="sample-label">Try a sample:</span>
+            <button type="button" data-sample="mc">Multiple choice · math</button>
+            <button type="button" data-sample="algebra">Multiple choice · algebra</button>
+            <button type="button" data-sample="geography">Multiple choice · geography</button>
+            <button type="button" data-sample="science">Multiple choice · science</button>
+            <button type="button" data-sample="history">Multiple choice · history</button>
+            <button type="button" data-sample="open">Open math</button>
+            <button type="button" data-sample="vocab">Vocabulary</button>
+            <button type="button" data-sample="cyber-cia">Cybersecurity · CIA triad</button>
+            <button type="button" data-sample="cyber-port">Cybersecurity · ports</button>
+            <button type="button" data-sample="cyber-ransomware">Cybersecurity · malware</button>
+            <button type="button" data-sample="cissp-ale">CISSP · risk (ALE)</button>
+            <button type="button" data-sample="cissp-rbac">CISSP · IAM (access control)</button>
+          </div>
+        </section>
+
+        <section class="history-card">
+          <p class="card-title">RECENT READS — THIS SESSION ONLY</p>
+          <p class="history-empty" id="historyEmpty">Nothing read yet this session.</p>
+          <ul class="history-list" id="historyList"></ul>
+        </section>
+
+        <section class="how-card">
+          <p class="card-title">HOW EACH READ IS ANSWERED</p>
+          <ul>
+            <li><b>Multiple choice — any subject:</b> the answer shows as a letter plus the answer text, with a one-line reason. Math is worked out, vocabulary is checked against a dictionary, and general-knowledge questions (science, geography, history and more) are checked against a built-in fact bank and then a reference lookup that scores each printed option. If two options could fit, it flags that instead of guessing.</li>
+            <li><b>Cybersecurity:</b> a dedicated bank covers Security+ style questions — CIA triad, phishing / social engineering, malware types, firewalls, encryption and hashing, common ports, and incident response — and CISSP-domain questions across all 8 domains: security &amp; risk management, asset security, security architecture &amp; engineering, communication &amp; network security, identity &amp; access management, security assessment &amp; testing, security operations, and software development security. Questions that name a term and offer definitions are scored against the bank's definition for that term.</li>
+            <li><b>Open questions:</b> math shows the worked result; a general question shows the fact-bank answer, or the best reference match when there is one.</li>
+            <li><b>Open math:</b> the worked result appears, with the expression it was calculated from.</li>
+            <li><b>Stare-to-define:</b> with Auto-scan on, hold one word in the center box for about 3 seconds and its definition appears in the lens view. Look away and it clears.</li>
+            <li><b>Misreads happen:</b> if the read confidence is low, check the text box — fix any wrong characters and tap Solve again.</li>
+          </ul>
+        </section>
+      </div>
+    </main>
+
+    <script>
+      "use strict";
+      var $ = function (id) { return document.getElementById(id); };
+
+      var stage = $("stage"), video = $("video"), photoImg = $("photoImg");
+      var modePill = $("modePill"), ocrPill = $("ocrPill"), hudStatus = $("hudStatus");
+      var reticleWord = $("reticleWord"), dwellFill = $("dwellFill"), dwellNote = $("dwellNote");
+      var defPopup = $("defPopup"), defWord = $("defWord"), defPos = $("defPos"), defText = $("defText");
+      var ansHeadline = $("ansHeadline"), ansDetail = $("ansDetail"), ansFlag = $("ansFlag"), letterBadge = $("letterBadge");
+      var textInput = $("textInput"), textMeta = $("textMeta");
+      var camBtn = $("camBtn"), camBtnLabel = $("camBtnLabel"), captureBtn = $("captureBtn"),
+          autoBtn = $("autoBtn"), uploadBtn = $("uploadBtn"), fileInput = $("fileInput");
+
+      var stream = null;          // camera stream
+      var sourceKind = null;      // 'video' | 'image' | null
+      var ocrWorker = null;       // Tesseract worker (created lazily)
+      var ocrBusy = false;
+      var autoScan = false;
+      var autoTimer = null;
+      var readsLog = [];
+
+      function setStatus(msg) { hudStatus.textContent = msg; }
+      function setOcrPill(msg) { ocrPill.textContent = msg; }
+
+      /* ---------------- Camera ---------------- */
+      function startCamera() {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          setStatus("Camera isn't available in this browser view — upload a photo or paste the text instead.");
+          $("controlsNote").textContent = "Camera isn't available here. The Upload photo and paste-text paths below work the same way.";
+          return;
+        }
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false })
+          .then(function (s) {
+            stream = s;
+            video.srcObject = s;
+            sourceKind = "video";
+            stage.classList.add("live");
+            stage.classList.remove("has-photo");
+            modePill.classList.add("on");
+            camBtnLabel.textContent = "Stop camera";
+            captureBtn.disabled = false;
+            autoBtn.disabled = false;
+            setStatus("Camera on. Frame the printed text inside the corners, then Capture & Read.");
+          })
+          .catch(function () {
+            setStatus("Camera permission wasn't granted — upload a photo or paste the text instead.");
+          });
+      }
+      function stopCamera() {
+        if (stream) { stream.getTracks().forEach(function (t) { t.stop(); }); stream = null; }
+        video.srcObject = null;
+        if (sourceKind === "video") sourceKind = null;
+        stage.classList.remove("live");
+        modePill.classList.remove("on");
+        camBtnLabel.textContent = "Start camera";
+        setAutoScan(false);
+        if (!stage.classList.contains("has-photo")) {
+          captureBtn.disabled = true; autoBtn.disabled = true;
+          setStatus("Camera off — start the camera, upload a photo, or paste text.");
+        }
+      }
+      camBtn.addEventListener("click", function () { stream ? stopCamera() : startCamera(); });
+
+      /* ---------------- Photo upload ---------------- */
+      uploadBtn.addEventListener("click", function () { fileInput.click(); });
+      fileInput.addEventListener("change", function () {
+        var f = fileInput.files && fileInput.files[0];
+        if (!f) return;
+        var url = URL.createObjectURL(f);
+        photoImg.onload = function () {
+          sourceKind = "image";
+          stage.classList.add("has-photo");
+          captureBtn.disabled = false;
+          autoBtn.disabled = false;
+          setStatus("Photo loaded — reading it now.");
+          captureAndRead();
+        };
+        photoImg.src = url;
+      });
+
+      /* ---------------- OCR ---------------- */
+      function frameCanvas(maxWidth) {
+        var src = sourceKind === "image" ? photoImg : video;
+        var sw = sourceKind === "image" ? photoImg.naturalWidth : video.videoWidth;
+        var sh = sourceKind === "image" ? photoImg.naturalHeight : video.videoHeight;
+        if (!sw || !sh) return null;
+        var scale = Math.min(1, maxWidth / sw);
+        var c = document.createElement("canvas");
+        c.width = Math.round(sw * scale);
+        c.height = Math.round(sh * scale);
+        c.getContext("2d").drawImage(src, 0, 0, c.width, c.height);
+        return c;
+      }
+
+      function getWorker() {
+        if (ocrWorker) return Promise.resolve(ocrWorker);
+        if (!window.Tesseract) return Promise.reject(new Error("reader unavailable"));
+        setOcrPill("READER LOADING…");
+        return Tesseract.createWorker("eng", 1, {
+          logger: function (m) {
+            if (m.status === "recognizing text") setOcrPill("READING " + Math.round((m.progress || 0) * 100) + "%");
+          }
+        }).then(function (w) { ocrWorker = w; return w; });
+      }
+
+      function extractWords(data) {
+        var out = [];
+        if (data.words && data.words.length) {
+          data.words.forEach(function (w) { if (w.text && w.bbox) out.push({ text: w.text, bbox: w.bbox }); });
+          if (out.length) return out;
+        }
+        (data.blocks || []).forEach(function (b) {
+          (b.paragraphs || []).forEach(function (p) {
+            (p.lines || []).forEach(function (l) {
+              (l.words || []).forEach(function (w) { if (w.text && w.bbox) out.push({ text: w.text, bbox: w.bbox }); });
+            });
+          });
+        });
+        return out;
+      }
+
+      function recognize(canvas) {
+        return getWorker().then(function (w) {
+          return w.recognize(canvas, {}, { blocks: true }).then(function (r) { return r.data; })
+            .catch(function () { return w.recognize(canvas).then(function (r) { return r.data; }); });
+        });
+      }
+
+      function captureAndRead() {
+        if (ocrBusy || !sourceKind) return;
+        var canvas = frameCanvas(1600);
+        if (!canvas) { setStatus("No picture yet — wait for the camera to settle and try again."); return; }
+        ocrBusy = true;
+        stage.classList.add("scanning");
+        setOcrPill("READING 0%");
+        setStatus("Reading the printed text…");
+        recognize(canvas).then(function (data) {
+          var text = (data.text || "").trim();
+          var conf = Math.round(data.confidence || 0);
+          if (!text) {
+            setStatus("Nothing readable in frame — move closer, flatten the page, and add light.");
+            showAnswer({ status: "cant", headline: "No text found in that frame", detail: "Move closer to the page, keep it flat and well lit, and capture again." });
+            return;
+          }
+          textInput.value = text;
+          textMeta.textContent = "Read confidence ~" + conf + "% · " + text.length + " characters" + (conf < 60 ? " — low confidence, check the text for misreads before trusting the answer." : "");
+          setStatus("Text read. Solving…");
+          return solveAndShow(text);
+        }).catch(function () {
+          setStatus("The on-device reader couldn't start here — paste the text below and tap Solve instead.");
+          showAnswer({ status: "cant", headline: "Reader unavailable in this view", detail: "Type or paste the printed question in the text box below and tap Solve this text — the solving half works without the camera reader." });
+        }).then(function () {
+          ocrBusy = false;
+          stage.classList.remove("scanning");
+          setOcrPill("READER READY");
+        });
+      }
+      captureBtn.addEventListener("click", captureAndRead);
+
+      /* ---------------- Answer display ---------------- */
+      function showAnswer(res) {
+        letterBadge.classList.remove("show");
+        ansFlag.classList.remove("show");
+        ansHeadline.classList.remove("waiting");
+        if (res.letter) { letterBadge.textContent = res.letter; letterBadge.classList.add("show"); }
+        ansHeadline.textContent = res.headline;
+        ansDetail.textContent = res.detail || "";
+        if (res.flag) { ansFlag.textContent = res.flag; ansFlag.classList.add("show"); }
+        var q = (textInput.value || "").split(/\n/)[0] || "Read";
+        readsLog.unshift({ q: q, a: (res.letter ? res.letter + " — " : "") + res.headline, bad: res.status !== "solved" });
+        if (readsLog.length > 5) readsLog.pop();
+        renderHistory();
+      }
+      function renderHistory() {
+        var list = $("historyList");
+        list.innerHTML = "";
+        $("historyEmpty").style.display = readsLog.length ? "none" : "block";
+        readsLog.forEach(function (h) {
+          var li = document.createElement("li");
+          var qs = document.createElement("span"); qs.className = "hq"; qs.textContent = h.q;
+          var as = document.createElement("span"); as.className = "ha"; as.textContent = h.a;
+          li.appendChild(qs); li.appendChild(as);
+          list.appendChild(li);
+        });
+      }
+
+      /* ---------------- Math engine (safe parser, no eval) ---------------- */
+      function makeParser(s) {
+        var i = 0;
+        function skip() { while (s[i] === " ") i++; }
+        function parseExpression() {
+          var v = parseTerm();
+          for (;;) { skip(); if (s[i] === "+") { i++; v += parseTerm(); } else if (s[i] === "-") { i++; v -= parseTerm(); } else return v; }
+        }
+        function parseTerm() {
+          var v = parsePower();
+          for (;;) { skip(); if (s[i] === "*") { i++; v *= parsePower(); } else if (s[i] === "/") { i++; v /= parsePower(); } else return v; }
+        }
+        function parsePower() {
+          var v = parseUnary(); skip();
+          if (s[i] === "^") { i++; v = Math.pow(v, parsePower()); }
+          return v;
+        }
+        function parseUnary() {
+          skip();
+          if (s[i] === "-") { i++; return -parseUnary(); }
+          if (s[i] === "+") { i++; return parseUnary(); }
+          var v = parsePrimary();
+          for (;;) { skip(); if (s[i] === "%") { i++; v = v / 100; } else break; }
+          return v;
+        }
+        function parsePrimary() {
+          skip();
+          if (s[i] === "(") { i++; var v = parseExpression(); skip(); if (s[i] === ")") i++; return v; }
+          var m = /^\d+(?:\.\d+)?/.exec(s.slice(i));
+          if (!m) throw new Error("bad token");
+          i += m[0].length;
+          return parseFloat(m[0]);
+        }
+        return { run: function () { var v = parseExpression(); skip(); if (i < s.length) throw new Error("trailing"); return v; } };
+      }
+
+      function fmtNum(v) {
+        if (!isFinite(v)) return "—";
+        var r = Math.round(v * 10000) / 10000;
+        if (Number.isInteger(r) && Math.abs(r) < 1e15) return r.toLocaleString("en-US");
+        return String(r);
+      }
+      function prettyExpr(expr) {
+        return expr.replace(/\*/g, " × ").replace(/\//g, " ÷ ").replace(/-/g, " − ").replace(/\s+/g, " ").trim();
+      }
+
+      function findExpression(text) {
+        var t = " " + text.replace(/,/g, "").replace(/[×✕]/g, "*").replace(/÷/g, "/").replace(/[−–—]/g, "-") + " ";
+        var re = /\(?\s*\d+(?:\.\d+)?\s*(?:[+\-*\/^]\s*\(?\s*\d+(?:\.\d+)?\s*\)?\s*)+/g;
+        var best = null, m;
+        while ((m = re.exec(t))) {
+          var cand = m[0].trim();
+          if (/[+\-*\/^]/.test(cand) && (!best || cand.length > best.length)) best = cand;
+        }
+        if (!best) return null;
+        var open = 0, close = 0, k;
+        for (k = 0; k < best.length; k++) { if (best[k] === "(") open++; if (best[k] === ")") close++; }
+        while (close > open && best.endsWith(")")) { best = best.slice(0, -1); close--; }
+        while (/[+\-*\/^.(]$/.test(best)) best = best.slice(0, -1);
+        try {
+          var v = makeParser(best).run();
+          if (isFinite(v)) return { expr: best, value: v };
+        } catch (e) { /* fall through */ }
+        return null;
+      }
+
+      function percentOf(text) {
+        var m = /(\d+(?:\.\d+)?)\s*%\s*of\s*(\d+(?:\.\d+)?)/i.exec(text.replace(/,/g, ""));
+        if (!m) return null;
+        var p = parseFloat(m[1]), n = parseFloat(m[2]);
+        return { pct: p, n: n, value: p / 100 * n };
+      }
+
+      function solveLinear(text) {
+        var t = text.replace(/,/g, "").replace(/[−–—]/g, "-");
+        var m = /(\d+(?:\.\d+)?)\s*x\s*([+\-])\s*(\d+(?:\.\d+)?)\s*=\s*(-?\d+(?:\.\d+)?)/i.exec(t);
+        if (m) {
+          var a = parseFloat(m[1]), b = parseFloat(m[3]) * (m[2] === "-" ? -1 : 1), c = parseFloat(m[4]);
+          if (a !== 0) return { a: a, b: b, c: c, value: (c - b) / a, form: "ab" };
+        }
+        m = /x\s*([+\-])\s*(\d+(?:\.\d+)?)\s*=\s*(-?\d+(?:\.\d+)?)/i.exec(t);
+        if (m) { var b2 = parseFloat(m[2]) * (m[1] === "-" ? -1 : 1); return { a: 1, b: b2, c: parseFloat(m[3]), value: parseFloat(m[3]) - b2, form: "b" }; }
+        m = /(\d+(?:\.\d+)?)\s*x\s*=\s*(-?\d+(?:\.\d+)?)/i.exec(t);
+        if (m && parseFloat(m[1]) !== 0) return { a: parseFloat(m[1]), b: 0, c: parseFloat(m[2]), value: parseFloat(m[2]) / parseFloat(m[1]), form: "a" };
+        return null;
+      }
+
+      function wordMath(text) {
+        var t = text.replace(/,/g, "");
+        var pats = [
+          [/sum of\s+(-?\d+(?:\.\d+)?)\s+and\s+(-?\d+(?:\.\d+)?)/i, function (a, b) { return a + b; }, "+"],
+          [/product of\s+(-?\d+(?:\.\d+)?)\s+and\s+(-?\d+(?:\.\d+)?)/i, function (a, b) { return a * b; }, "×"],
+          [/difference between\s+(-?\d+(?:\.\d+)?)\s+and\s+(-?\d+(?:\.\d+)?)/i, function (a, b) { return a - b; }, "−"],
+          [/quotient of\s+(-?\d+(?:\.\d+)?)\s+and\s+(-?\d+(?:\.\d+)?)/i, function (a, b) { return a / b; }, "÷"]
+        ];
+        for (var i = 0; i < pats.length; i++) {
+          var m = pats[i][0].exec(t);
+          if (m) { var a = parseFloat(m[1]), b = parseFloat(m[2]); return { label: fmtNum(a) + " " + pats[i][2] + " " + fmtNum(b), value: pats[i][1](a, b) }; }
+        }
+        var sq = /(\d+(?:\.\d+)?)\s+squared/i.exec(t);
+        if (sq) { var n = parseFloat(sq[1]); return { label: fmtNum(n) + "²", value: n * n }; }
+        var sr = /square root of\s+(\d+(?:\.\d+)?)/i.exec(t);
+        if (sr) { var n2 = parseFloat(sr[1]); return { label: "√" + fmtNum(n2), value: Math.sqrt(n2) }; }
+        return null;
+      }
+
+      function mathAnswer(text) {
+        var po = percentOf(text);
+        if (po) return { value: po.value, reason: fmtNum(po.pct) + "% of " + fmtNum(po.n) + " = " + fmtNum(po.pct) + " ÷ 100 × " + fmtNum(po.n) + " = " + fmtNum(po.value) + "." };
+        var lin = solveLinear(text);
+        if (lin) {
+          var steps = lin.form === "a"
+            ? "x = " + fmtNum(lin.c) + " ÷ " + fmtNum(lin.a) + " = " + fmtNum(lin.value) + "."
+            : fmtNum(lin.a) + "x = " + fmtNum(lin.c) + (lin.b >= 0 ? " − " + fmtNum(lin.b) : " + " + fmtNum(-lin.b)) + " = " + fmtNum(lin.c - lin.b) + ", so x = " + fmtNum(lin.value) + ".";
+          return { value: lin.value, reason: "Solving for x: " + steps, isX: true };
+        }
+        var wm = wordMath(text);
+        if (wm) return { value: wm.value, reason: wm.label + " = " + fmtNum(wm.value) + "." };
+        var ex = findExpression(text);
+        if (ex) return { value: ex.value, reason: prettyExpr(ex.expr) + " = " + fmtNum(ex.value) + " — division and multiplication before addition and subtraction." };
+        return null;
+      }
+
+      /* ---------------- Multiple choice parsing ---------------- */
+      function parseOptions(text) {
+        var lines = text.split(/\n/), opts = [], stemLines = [], current = null;
+        var optRe = /^\s*\(?([A-Ea-e])\s*[\)\.\:\-]\s*(.+)$/;
+        var numRe = /^\s*\(?([1-5])\s*[\)\.\:\-]\s*(.+)$/;
+        var usedNum = false;
+        lines.forEach(function (line) {
+          var m = optRe.exec(line);
+          if (m) { current = { letter: m[1].toUpperCase(), text: m[2].trim() }; opts.push(current); return; }
+          var nm = numRe.exec(line);
+          // Numbered options (1. 2. 3. 4.) only count once a question stem exists,
+          // so a numbered list in the stem is not mistaken for options.
+          if (nm && stemLines.join(" ").trim().length > 3 && (opts.length || /\?\s*$/.test(stemLines.join(" ").trim()) || stemLines.length)) {
+            var idx = parseInt(nm[1], 10) - 1;
+            if (idx >= 0 && idx < 5 && (opts.length === 0 || usedNum)) {
+              usedNum = true;
+              current = { letter: "ABCDE"[idx], text: nm[2].trim() }; opts.push(current); return;
+            }
+          }
+          if (current) { if (line.trim()) current.text += " " + line.trim(); }
+          else stemLines.push(line);
+        });
+        if (opts.length >= 2) return { stem: stemLines.join(" ").trim(), options: opts };
+        // Inline fallback: "Question? A. 24 B. 36 C. 48"
+        var marker = /(?:^|\s)([A-E])[\)\.]\s+/g, hits = [], mm;
+        while ((mm = marker.exec(text))) hits.push({ letter: mm[1].toUpperCase(), start: mm.index, contentStart: marker.lastIndex });
+        if (hits.length >= 3 && hits[0].letter === "A") {
+          var inline = [];
+          for (var i = 0; i < hits.length; i++) {
+            var end = i + 1 < hits.length ? hits[i + 1].start : text.length;
+            inline.push({ letter: hits[i].letter, text: text.slice(hits[i].contentStart, end).trim() });
+          }
+          return { stem: text.slice(0, hits[0].start).trim(), options: inline };
+        }
+        return null;
+      }
+
+      function optionNumber(txt) {
+        var clean = txt.replace(/[$,]/g, "");
+        var frac = /(-?\d+)\s*\/\s*(\d+)/.exec(clean);
+        if (frac) return parseFloat(frac[1]) / parseFloat(frac[2]);
+        var m = /-?\d+(?:\.\d+)?/.exec(clean);
+        return m ? parseFloat(m[0]) : null;
+      }
+      function closeNum(a, b) { return Math.abs(a - b) <= Math.max(0.011, Math.abs(b) * 0.001); }
+
+      function matchMathOption(opts, value) {
+        var found = null;
+        opts.forEach(function (o) {
+          var n = optionNumber(o.text);
+          if (n !== null && closeNum(n, value)) found = o;
+        });
+        return found;
+      }
+
+      /* ---------------- Dictionary ---------------- */
+      var BUILTIN = {
+        photosynthesis: ["noun", "The process by which green plants use sunlight, water, and carbon dioxide to make their own food and release oxygen."],
+        gravity: ["noun", "The force that pulls objects toward each other, and toward the center of a planet."],
+        evaporation: ["noun", "The process by which a liquid slowly changes into a gas or vapor."],
+        fraction: ["noun", "A part of a whole, written as one number over another, such as 1/2."],
+        habitat: ["noun", "The natural home or environment of a plant or animal."],
+        ancient: ["adjective", "Belonging to a very long time ago; very old."],
+        rapid: ["adjective", "Happening in a short time, or at a fast pace."],
+        serene: ["adjective", "Calm, peaceful, and untroubled."],
+        enormous: ["adjective", "Very large in size or amount."],
+        journey: ["noun", "A trip from one place to another, especially a long one."],
+        observe: ["verb", "To watch something carefully in order to learn about it."],
+        predict: ["verb", "To say what you think will happen in the future."],
+        energy: ["noun", "The power to do work, move things, or produce heat and light."],
+        liquid: ["noun", "A substance that flows freely, like water, and takes the shape of its container."],
+        magnet: ["noun", "A piece of metal that attracts iron and some other metals."],
+        orbit: ["noun", "The curved path an object follows as it travels around a planet or star."],
+        climate: ["noun", "The usual weather conditions of a place over a long period."],
+        multiply: ["verb", "To increase a number by a given amount of times, such as 3 × 4 = 12."],
+        brave: ["adjective", "Ready to face danger or pain without showing fear."],
+        compare: ["verb", "To examine two or more things to see how they are alike or different."]
+      };
+      function oneLine(def) {
+        var d = def.replace(/\s+/g, " ").trim();
+        var cut = d.indexOf(". ");
+        if (cut > 20 && cut < 150) d = d.slice(0, cut + 1);
+        if (d.length > 150) d = d.slice(0, 147).trim() + "…";
+        return d;
+      }
+      function lookupWord(word) {
+        var w = word.toLowerCase().replace(/[^a-z'-]/g, "");
+        if (!w) return Promise.resolve(null);
+        return fetch("https://api.dictionaryapi.dev/api/v2/entries/en/" + encodeURIComponent(w))
+          .then(function (r) { if (!r.ok) throw new Error("nf"); return r.json(); })
+          .then(function (j) {
+            var entry = j[0], meaning = entry.meanings[0], def = meaning.definitions[0];
+            return { word: entry.word, pos: meaning.partOfSpeech || "", def: oneLine(def.definition), synonyms: (def.synonyms || []).concat(meaning.synonyms || []) };
+          })
+          .catch(function () {
+            if (BUILTIN[w]) return { word: w, pos: BUILTIN[w][0], def: BUILTIN[w][1], synonyms: [] };
+            return null;
+          });
+      }
+
+      var STOP = { the: 1, a: 1, an: 1, of: 1, to: 1, in: 1, is: 1, that: 1, or: 1, and: 1, by: 1, for: 1, with: 1, as: 1, it: 1, its: 1, one: 1, on: 1, at: 1, from: 1, are: 1, was: 1, very: 1, so: 1 };
+      function tokens(s) {
+        return (s.toLowerCase().match(/[a-z]+/g) || []).filter(function (w) { return w.length > 2 && !STOP[w]; });
+      }
+      function overlapScore(aTokens, bText) {
+        var b = {}, n = 0;
+        tokens(bText).forEach(function (w) { b[w] = 1; });
+        aTokens.forEach(function (w) { if (b[w]) n++; });
+        return n;
+      }
+
+      /* ---------------- Solver ---------------- */
+      function extractDefineWord(stem) {
+        var m = /["“”']([A-Za-z][A-Za-z'-]*)["“”']/.exec(stem);
+        if (m) return m[1];
+        m = /(?:word|term)\s+([A-Za-z][A-Za-z'-]*)/i.exec(stem);
+        if (m && !/^(is|means|mean|does)$/i.test(m[1])) return m[1];
+        m = /(?:define|meaning of|does)\s+([A-Za-z][A-Za-z'-]*)/i.exec(stem);
+        if (m && !/^(the|a|an)$/i.test(m[1])) return m[1];
+        return null;
+      }
+
+      function solveMcVocabulary(stem, opts) {
+        // Case 1: stem asks what a word means -> score options against its dictionary definition
+        var word = extractDefineWord(stem);
+        var meansAsk = /mean|definition|define/i.test(stem);
+        if (word && meansAsk) {
+          return lookupWord(word).then(function (info) {
+            if (!info) return null;
+            var defTokens = tokens(info.def).concat(info.synonyms.map(function (s) { return s.toLowerCase(); }));
+            var scored = opts.map(function (o) { return { o: o, s: overlapScore(defTokens, o.text) }; });
+            scored.sort(function (x, y) { return y.s - x.s; });
+            if (scored[0].s > 0 && scored[0].s > (scored[1] ? scored[1].s : 0)) {
+              return { status: "solved", letter: scored[0].o.letter, headline: scored[0].o.text, detail: "\"" + info.word + "\" (" + info.pos + ") — " + info.def };
+            }
+            if (scored[0].s > 0) {
+              return { status: "uncertain", headline: "Not certain between " + scored[0].o.letter + " and " + scored[1].o.letter, detail: "\"" + info.word + "\" means: " + info.def, flag: "⚠ Two options overlap the definition of \"" + info.word + "\" — flagged instead of guessed, per the plan." };
+            }
+            return null;
+          });
+        }
+        // Case 2: "Which word means '…'?" -> fetch each single-word option's definition
+        var phrase = null;
+        var qm = /["“”']([^"“”']{3,})["“”']/.exec(stem);
+        if (qm) phrase = qm[1];
+        else { var mm = /means\s+(.+)$/i.exec(stem); if (mm) phrase = mm[1]; }
+        var singleWordOpts = opts.filter(function (o) { return /^[A-Za-z][A-Za-z'-]*$/.test(o.text.trim()); });
+        if (phrase && singleWordOpts.length >= 2) {
+          var phraseTokens = tokens(phrase);
+          return Promise.all(singleWordOpts.map(function (o) {
+            return lookupWord(o.text.trim()).then(function (info) {
+              if (!info) return { o: o, s: -1, info: null };
+              var hay = info.def + " " + info.synonyms.join(" ");
+              return { o: o, s: overlapScore(phraseTokens, hay), info: info };
+            });
+          })).then(function (scored) {
+            scored.sort(function (x, y) { return y.s - x.s; });
+            if (scored[0].s > 0 && scored[0].s > (scored[1] ? scored[1].s : 0)) {
+              return { status: "solved", letter: scored[0].o.letter, headline: scored[0].o.text, detail: "\"" + scored[0].info.word + "\" — " + scored[0].info.def };
+            }
+            if (scored[0].s > 0) {
+              return { status: "uncertain", headline: "Not certain between " + scored[0].o.letter + " and " + scored[1].o.letter, detail: "Both definitions overlap \"" + phrase + "\" — check the wording on the page.", flag: "⚠ Two options could fit — flagged instead of guessed, per the plan." };
+            }
+            return null;
+          });
+        }
+        return Promise.resolve(null);
+      }
+
+      /* ---------------- General knowledge: built-in fact bank ----------------
+         Each fact lists the keywords that must all appear in the question,
+         the correct answer text, and a one-line reason. Matching is done
+         against the printed options, so the same bank answers both
+         multiple-choice and open questions. */
+      function normText(s) {
+        return (s || "").toLowerCase().replace(/[’‘]/g, "'").replace(/[^a-z0-9 ]+/g, " ").replace(/\s+/g, " ").trim();
+      }
+      var FACTS = [
+        { k: ["capital", "france"], a: "Paris", r: "Paris is the capital and largest city of France." },
+        { k: ["capital", "japan"], a: "Tokyo", r: "Tokyo is the capital of Japan." },
+        { k: ["capital", "australia"], a: "Canberra", r: "Canberra is the capital of Australia." },
+        { k: ["capital", "canada"], a: "Ottawa", r: "Ottawa is the capital of Canada." },
+        { k: ["capital", "italy"], a: "Rome", r: "Rome is the capital of Italy." },
+        { k: ["capital", "spain"], a: "Madrid", r: "Madrid is the capital of Spain." },
+        { k: ["capital", "germany"], a: "Berlin", r: "Berlin is the capital of Germany." },
+        { k: ["capital", "england"], a: "London", r: "London is the capital of England and the United Kingdom." },
+        { k: ["capital", "united kingdom"], a: "London", r: "London is the capital of the United Kingdom." },
+        { k: ["capital", "china"], a: "Beijing", r: "Beijing is the capital of China." },
+        { k: ["capital", "india"], a: "New Delhi", r: "New Delhi is the capital of India." },
+        { k: ["capital", "brazil"], a: "Brasilia", r: "Brasília is the capital of Brazil." },
+        { k: ["capital", "mexico"], a: "Mexico City", r: "Mexico City is the capital of Mexico." },
+        { k: ["capital", "russia"], a: "Moscow", r: "Moscow is the capital of Russia." },
+        { k: ["capital", "egypt"], a: "Cairo", r: "Cairo is the capital of Egypt." },
+        { k: ["capital", "south korea"], a: "Seoul", r: "Seoul is the capital of South Korea." },
+        { k: ["capital", "united states"], a: "Washington, D.C.", r: "Washington, D.C. is the capital of the United States." },
+        { k: ["capital", "america"], a: "Washington, D.C.", r: "Washington, D.C. is the capital of the United States." },
+        { k: ["largest planet"], a: "Jupiter", r: "Jupiter is the largest planet in our solar system." },
+        { k: ["smallest planet"], a: "Mercury", r: "Mercury is the smallest planet in our solar system." },
+        { k: ["red planet"], a: "Mars", r: "Mars is called the Red Planet because of its reddish, iron-rich surface." },
+        { k: ["closest planet", "sun"], a: "Mercury", r: "Mercury is the closest planet to the Sun." },
+        { k: ["planet", "live on"], a: "Earth", r: "Earth is the planet we live on." },
+        { k: ["center", "solar system"], a: "Sun", r: "The Sun is at the center of our solar system." },
+        { k: ["natural satellite", "earth"], a: "Moon", r: "The Moon is Earth's only natural satellite." },
+        { k: ["largest ocean"], a: "Pacific Ocean", r: "The Pacific is the largest and deepest ocean on Earth." },
+        { k: ["longest river"], a: "Nile", r: "The Nile is generally taught as the longest river in the world, at about 6,650 km." },
+        { k: ["largest desert"], a: "Sahara", r: "The Sahara is the largest hot desert in the world." },
+        { k: ["highest mountain"], a: "Mount Everest", r: "Mount Everest is the highest mountain above sea level." },
+        { k: ["tallest mountain"], a: "Mount Everest", r: "Mount Everest is the tallest mountain above sea level." },
+        { k: ["largest country"], a: "Russia", r: "Russia is the largest country in the world by land area." },
+        { k: ["smallest country"], a: "Vatican City", r: "Vatican City is the smallest country in the world." },
+        { k: ["how many continents"], a: "7", r: "There are 7 continents: Africa, Antarctica, Asia, Europe, North America, Oceania and South America." },
+        { k: ["how many states", "united states"], a: "50", r: "The United States has 50 states." },
+        { k: ["how many days", "leap year"], a: "366", r: "A leap year has 366 days — February gains an extra day." },
+        { k: ["chemical symbol", "water"], a: "H2O", r: "Water is H₂O — two hydrogen atoms and one oxygen atom." },
+        { k: ["formula", "water"], a: "H2O", r: "The chemical formula for water is H₂O." },
+        { k: ["chemical symbol", "gold"], a: "Au", r: "Au is the chemical symbol for gold, from the Latin 'aurum'." },
+        { k: ["chemical symbol", "iron"], a: "Fe", r: "Fe is the chemical symbol for iron, from the Latin 'ferrum'." },
+        { k: ["chemical symbol", "oxygen"], a: "O", r: "O is the chemical symbol for oxygen." },
+        { k: ["chemical symbol", "hydrogen"], a: "H", r: "H is the chemical symbol for hydrogen." },
+        { k: ["chemical symbol", "carbon"], a: "C", r: "C is the chemical symbol for carbon." },
+        { k: ["chemical symbol", "sodium"], a: "Na", r: "Na is the chemical symbol for sodium." },
+        { k: ["boiling point", "water"], a: "100", r: "Water boils at 100°C (212°F) at sea level." },
+        { k: ["freezing point", "water"], a: "0", r: "Water freezes at 0°C (32°F)." },
+        { k: ["powerhouse", "cell"], a: "Mitochondria", r: "The mitochondria are known as the powerhouse of the cell — they produce its energy." },
+        { k: ["plants", "make their own food"], a: "Photosynthesis", r: "Photosynthesis is how green plants make their own food using sunlight." },
+        { k: ["gas", "plants absorb"], a: "Carbon dioxide", r: "Plants absorb carbon dioxide from the air for photosynthesis." },
+        { k: ["gas", "need to breathe"], a: "Oxygen", r: "Humans need oxygen from the air to breathe." },
+        { k: ["gas", "breathe in"], a: "Oxygen", r: "We breathe in oxygen and breathe out carbon dioxide." },
+        { k: ["force", "pulls objects"], a: "Gravity", r: "Gravity is the force that pulls objects toward each other." },
+        { k: ["largest organ", "human body"], a: "Skin", r: "The skin is the largest organ of the human body." },
+        { k: ["how many bones", "adult"], a: "206", r: "An adult human skeleton has 206 bones." },
+        { k: ["bones", "human body"], a: "206", r: "An adult human body has 206 bones." },
+        { k: ["organ", "pumps blood"], a: "Heart", r: "The heart pumps blood around the body." },
+        { k: ["shape", "dna"], a: "Double helix", r: "DNA is shaped like a double helix — a twisted ladder." },
+        { k: ["main source of energy", "earth"], a: "Sun", r: "The Sun is Earth's main source of energy." },
+        { k: ["animals", "only eat plants"], a: "Herbivores", r: "Animals that eat only plants are called herbivores." },
+        { k: ["animals", "only eat meat"], a: "Carnivores", r: "Animals that eat only meat are called carnivores." },
+        { k: ["largest mammal"], a: "Blue whale", r: "The blue whale is the largest mammal — and the largest animal known to have lived." },
+        { k: ["fastest land animal"], a: "Cheetah", r: "The cheetah is the fastest land animal." },
+        { k: ["mammal", "can fly"], a: "Bat", r: "The bat is the only mammal that can truly fly." },
+        { k: ["first president", "united states"], a: "George Washington", r: "George Washington was the first President of the United States (1789–1797)." },
+        { k: ["president during the civil war"], a: "Abraham Lincoln", r: "Abraham Lincoln was president during the American Civil War." },
+        { k: ["declaration of independence", "signed"], a: "1776", r: "The Declaration of Independence was adopted in 1776." },
+        { k: ["declaration of independence", "year"], a: "1776", r: "The Declaration of Independence was adopted in 1776." },
+        { k: ["world war ii", "end"], a: "1945", r: "World War II ended in 1945." },
+        { k: ["world war 2", "end"], a: "1945", r: "World War II ended in 1945." },
+        { k: ["first man", "moon"], a: "Neil Armstrong", r: "Neil Armstrong was the first person to walk on the Moon, in 1969." },
+        { k: ["first person", "moon"], a: "Neil Armstrong", r: "Neil Armstrong was the first person to walk on the Moon, in 1969." },
+        { k: ["invented the light bulb"], a: "Thomas Edison", r: "Thomas Edison is credited with the practical electric light bulb." },
+        { k: ["painted the mona lisa"], a: "Leonardo da Vinci", r: "Leonardo da Vinci painted the Mona Lisa." },
+        { k: ["wrote romeo and juliet"], a: "William Shakespeare", r: "William Shakespeare wrote Romeo and Juliet." },
+        { k: ["author of romeo and juliet"], a: "William Shakespeare", r: "William Shakespeare wrote Romeo and Juliet." },
+        { k: ["who wrote", "hamlet"], a: "William Shakespeare", r: "William Shakespeare wrote Hamlet." },
+        { k: ["sides", "triangle"], a: "3", r: "A triangle has 3 sides." },
+        { k: ["sides", "square"], a: "4", r: "A square has 4 equal sides." },
+        { k: ["right angle", "degrees"], a: "90", r: "A right angle measures 90 degrees." },
+        { k: ["degrees", "circle"], a: "360", r: "There are 360 degrees in a full circle." },
+        { k: ["speed of light"], a: "300,000", r: "Light travels at about 300,000 kilometres per second in a vacuum." },
+        { k: ["continent", "egypt"], a: "Africa", r: "Egypt is in Africa (north-east Africa)." },
+        { k: ["ocean", "east coast", "united states"], a: "Atlantic Ocean", r: "The Atlantic Ocean borders the east coast of the United States." },
+        { k: ["ocean", "west coast", "united states"], a: "Pacific Ocean", r: "The Pacific Ocean borders the west coast of the United States." },
+        { k: ["currency", "japan"], a: "Yen", r: "The currency of Japan is the yen." },
+        { k: ["currency", "united kingdom"], a: "Pound", r: "The currency of the United Kingdom is the pound sterling." },
+        { k: ["language", "brazil"], a: "Portuguese", r: "Portuguese is the official language of Brazil." },
+        { k: ["language", "spain"], a: "Spanish", r: "Spanish is the official language of Spain." }
+      ];
+
+      /* ---------------- Cybersecurity bank (Security+ + CISSP domains) ----------------
+         Same {k, a, r} shape as FACTS: k = keywords that must all appear in
+         the question, a = the correct answer text as printed in the options,
+         r = one-line reason. CISSP entries are grouped by the 8 domains.
+         This is study knowledge for the prototype — not a certification claim. */
+      var CYBER_FACTS = [
+        /* --- Foundations & CIA triad (Security+) --- */
+        { k: ["cia triad"], a: "Confidentiality Integrity Availability", r: "The CIA triad is Confidentiality, Integrity, and Availability — the three goals of information security." },
+        { k: ["cia", "stands for"], a: "Confidentiality Integrity Availability", r: "In cybersecurity, CIA stands for Confidentiality, Integrity, and Availability." },
+        { k: ["prevents unauthorized disclosure"], a: "Confidentiality", r: "Confidentiality prevents unauthorized disclosure of information." },
+        { k: ["prevents unauthorized modification"], a: "Integrity", r: "Integrity ensures data is accurate and has not been altered without authorization." },
+        { k: ["data has not been altered"], a: "Integrity", r: "Integrity is about data being complete, accurate, and unaltered." },
+        { k: ["accessible when needed", "authorized users"], a: "Availability", r: "Availability means systems and data are accessible to authorized users when needed." },
+        { k: ["cannot deny", "performed an action"], a: "Non-repudiation", r: "Non-repudiation means a party cannot deny having sent a message or performed an action." },
+        { k: ["least privilege"], a: "Least privilege", r: "Least privilege: users get only the access they need to do their job — nothing more." },
+        { k: ["only the access they need"], a: "Least privilege", r: "Giving only the minimum access needed is the principle of least privilege." },
+        { k: ["multiple layers of security"], a: "Defense in depth", r: "Defense in depth layers multiple controls so one failure does not expose everything." },
+        { k: ["layered security"], a: "Defense in depth", r: "Layered, overlapping controls are defense in depth." },
+        { k: ["never trust", "always verify"], a: "Zero Trust", r: "Zero Trust assumes no user or device is trusted by default — always verify." },
+        { k: ["zero day"], a: "Zero-day", r: "A zero-day is a vulnerability unknown to the vendor, with no patch available yet." },
+        { k: ["vulnerability with no patch"], a: "Zero-day", r: "An unpatched, previously unknown flaw is a zero-day vulnerability." },
+        { k: ["nation state", "highly skilled", "long term"], a: "Advanced Persistent Threat", r: "An APT is a well-funded, persistent attacker — often a nation-state — that stays hidden for a long time." },
+        { k: ["advanced persistent threat"], a: "Advanced Persistent Threat", r: "APT stands for Advanced Persistent Threat." },
+        { k: ["authorized employee", "misuses access"], a: "Insider threat", r: "An insider threat comes from someone inside the organization who misuses their access." },
+        { k: ["decoy system", "lure attackers"], a: "Honeypot", r: "A honeypot is a decoy system set up to attract and observe attackers." },
+        { k: ["physically isolated", "no network connection"], a: "Air gap", r: "An air-gapped system is physically isolated from unsecured networks." },
+        /* --- Social engineering (Security+) --- */
+        { k: ["phishing"], a: "Phishing", r: "Phishing uses fraudulent messages — usually email — to trick people into revealing credentials or installing malware." },
+        { k: ["fraudulent email"], a: "Phishing", r: "Fraudulent emails that trick recipients into giving up credentials are phishing." },
+        { k: ["email", "reveal their password"], a: "Phishing", r: "Tricking users by email into revealing passwords is phishing, a social engineering attack." },
+        { k: ["email", "click a link", "credentials"], a: "Phishing", r: "A deceptive email urging a click to steal credentials is phishing." },
+        { k: ["deceptive email"], a: "Phishing", r: "Deceptive messages designed to steal credentials or money are phishing." },
+        { k: ["targeted phishing", "specific individual"], a: "Spear phishing", r: "Spear phishing targets a specific person or organization with a tailored message." },
+        { k: ["spear phishing"], a: "Spear phishing", r: "Spear phishing is phishing aimed at a specific, researched target." },
+        { k: ["phishing", "senior executive"], a: "Whaling", r: "Whaling is phishing aimed at senior executives — the 'big fish'." },
+        { k: ["whaling"], a: "Whaling", r: "Whaling targets high-value executives with phishing." },
+        { k: ["phishing", "phone call"], a: "Vishing", r: "Vishing is voice phishing — fraud over a phone call." },
+        { k: ["voice phishing"], a: "Vishing", r: "Vishing is phishing done by voice or phone." },
+        { k: ["phishing", "text message"], a: "Smishing", r: "Smishing is phishing by SMS text message." },
+        { k: ["sms phishing"], a: "Smishing", r: "SMS phishing is called smishing." },
+        { k: ["manipulating people", "divulge confidential"], a: "Social engineering", r: "Social engineering manipulates people — not systems — into giving up access or information." },
+        { k: ["pretexting"], a: "Pretexting", r: "Pretexting invents a believable scenario or identity to trick a victim into sharing information." },
+        { k: ["invented scenario", "gain trust"], a: "Pretexting", r: "Using an invented scenario to earn trust and extract information is pretexting." },
+        { k: ["tailgating"], a: "Tailgating", r: "Tailgating is following an authorized person through a secure door without credentials." },
+        { k: ["following an authorized person", "secure door"], a: "Tailgating", r: "Slipping in behind an authorized person is tailgating." },
+        /* --- Malware (Security+) --- */
+        { k: ["encrypts", "demands payment"], a: "Ransomware", r: "Ransomware encrypts the victim's files and demands payment for the decryption key." },
+        { k: ["encrypted", "attacker demands payment"], a: "Ransomware", r: "Files encrypted with a payment demanded to unlock them is ransomware." },
+        { k: ["ransomware"], a: "Ransomware", r: "Ransomware holds data hostage by encrypting it until a ransom is paid." },
+        { k: ["disguised as legitimate"], a: "Trojan", r: "A Trojan disguises itself as legitimate software while hiding a malicious payload." },
+        { k: ["appears to be legitimate software"], a: "Trojan", r: "Malware that looks like legitimate software is a Trojan." },
+        { k: ["spreads on its own", "without a host"], a: "Worm", r: "A worm self-replicates and spreads across networks without needing a host file or human action." },
+        { k: ["self replicating", "across a network"], a: "Worm", r: "Self-replicating malware that spreads by itself over a network is a worm." },
+        { k: ["attaches itself to a file"], a: "Virus", r: "A virus attaches to a host file and spreads when that file is run or shared." },
+        { k: ["requires a host file"], a: "Virus", r: "Unlike a worm, a virus needs a host file to spread." },
+        { k: ["records keystrokes"], a: "Keylogger", r: "A keylogger secretly records keystrokes, capturing passwords and other typed data." },
+        { k: ["keystrokes", "steal passwords"], a: "Keylogger", r: "Malware that captures everything typed is a keylogger." },
+        { k: ["hides", "maintain root access"], a: "Rootkit", r: "A rootkit hides malware and maintains privileged (root) access on a compromised system." },
+        { k: ["conceals malware", "privileged access"], a: "Rootkit", r: "A rootkit conceals malicious activity while keeping administrator-level access." },
+        { k: ["hidden entry point", "bypasses authentication"], a: "Backdoor", r: "A backdoor is a hidden way into a system that bypasses normal authentication." },
+        { k: ["secretly monitors", "collects information without"], a: "Spyware", r: "Spyware secretly monitors a user and collects their information." },
+        { k: ["remote access trojan"], a: "Remote Access Trojan", r: "A RAT (Remote Access Trojan) gives an attacker remote control of the victim's machine." },
+        { k: ["malicious software"], a: "Malware", r: "Malware is any software designed to harm, exploit, or gain unauthorized access." },
+        /* --- Password attacks (Security+) --- */
+        { k: ["tries every possible combination"], a: "Brute force", r: "A brute force attack tries every possible password combination until one works." },
+        { k: ["wordlist", "common passwords"], a: "Dictionary attack", r: "A dictionary attack tries passwords from a wordlist of common choices." },
+        { k: ["precomputed hashes"], a: "Rainbow table", r: "A rainbow table uses precomputed hashes to crack passwords quickly." },
+        { k: ["reused passwords", "breached"], a: "Credential stuffing", r: "Credential stuffing reuses username/password pairs leaked from other breaches." },
+        { k: ["few common passwords", "many accounts"], a: "Password spraying", r: "Password spraying tries a few common passwords against many accounts to avoid lockouts." },
+        { k: ["gain higher level of access", "exploit"], a: "Privilege escalation", r: "Privilege escalation exploits a flaw to gain more access than intended." },
+        /* --- Firewalls, network defenses & ports (Security+) --- */
+        { k: ["filters network traffic"], a: "Firewall", r: "A firewall filters incoming and outgoing traffic based on a set of rules." },
+        { k: ["filters traffic", "based on rules"], a: "Firewall", r: "Blocking or allowing traffic by rule set is a firewall's job." },
+        { k: ["firewall"], a: "Firewall", r: "A firewall monitors and controls network traffic according to security rules." },
+        { k: ["detects intrusions", "alerts", "does not block"], a: "Intrusion Detection System", r: "An IDS detects and alerts on suspicious activity — it does not block it." },
+        { k: ["actively blocks", "intrusion"], a: "Intrusion Prevention System", r: "An IPS goes beyond detection: it actively blocks the attack." },
+        { k: ["intrusion prevention"], a: "Intrusion Prevention System", r: "IPS stands for Intrusion Prevention System." },
+        { k: ["intrusion detection"], a: "Intrusion Detection System", r: "IDS stands for Intrusion Detection System." },
+        { k: ["perimeter network", "internal network and the internet"], a: "DMZ", r: "A DMZ is a screened subnet that hosts public services between the internet and the internal network." },
+        { k: ["screened subnet"], a: "DMZ", r: "A screened subnet is another name for a DMZ." },
+        { k: ["encrypted tunnel", "public network"], a: "VPN", r: "A VPN creates an encrypted tunnel over a public network." },
+        { k: ["virtual private network"], a: "VPN", r: "VPN stands for Virtual Private Network." },
+        { k: ["collects and analyzes log"], a: "SIEM", r: "A SIEM collects and analyzes log and event data from across the organization to detect threats." },
+        { k: ["security information and event management"], a: "SIEM", r: "SIEM stands for Security Information and Event Management." },
+        { k: ["logically separates", "network segments", "broadcast"], a: "VLAN", r: "A VLAN logically separates devices into their own network segments on the same physical network." },
+        { k: ["attacker secretly intercepts"], a: "Man-in-the-middle", r: "A man-in-the-middle attack secretly intercepts and possibly alters communication between two parties." },
+        { k: ["intercepts communication between two parties"], a: "Man-in-the-middle", r: "Intercepting traffic between two parties who think they talk directly is a man-in-the-middle attack." },
+        { k: ["floods", "multiple compromised systems"], a: "DDoS", r: "A DDoS attack floods a target from many compromised systems at once, overwhelming it." },
+        { k: ["distributed denial of service"], a: "DDoS", r: "DDoS stands for Distributed Denial of Service." },
+        { k: ["overwhelms a server", "single source", "unavailable"], a: "Denial of Service", r: "A DoS attack from a single source makes a service unavailable to legitimate users." },
+        { k: ["https", "port"], a: "443", r: "HTTPS uses port 443 by default." },
+        { k: ["port", "secure web traffic"], a: "443", r: "Secure web traffic (HTTPS) uses port 443." },
+        { k: ["http", "port"], a: "80", r: "HTTP uses port 80 by default." },
+        { k: ["ssh", "port"], a: "22", r: "SSH uses port 22 by default." },
+        { k: ["secure shell", "port"], a: "22", r: "Secure Shell (SSH) uses port 22." },
+        { k: ["smtp", "port"], a: "25", r: "SMTP sends email on port 25." },
+        { k: ["sending email", "port"], a: "25", r: "SMTP, used to send email, uses port 25." },
+        { k: ["dns", "port"], a: "53", r: "DNS uses port 53 for name resolution queries." },
+        { k: ["domain name system", "port"], a: "53", r: "DNS uses port 53." },
+        { k: ["rdp", "port"], a: "3389", r: "Remote Desktop Protocol (RDP) uses port 3389." },
+        { k: ["remote desktop", "port"], a: "3389", r: "Remote Desktop Protocol uses port 3389." },
+        { k: ["ftp", "port"], a: "21", r: "FTP transfers files on port 21 (control) by default." },
+        { k: ["telnet", "port"], a: "23", r: "Telnet uses port 23 — and sends data, including credentials, in cleartext." },
+        { k: ["pop3", "port"], a: "110", r: "POP3 retrieves email on port 110." },
+        { k: ["imap", "port"], a: "143", r: "IMAP retrieves email on port 143." },
+        { k: ["ldap", "port"], a: "389", r: "LDAP directory services use port 389." },
+        { k: ["kerberos", "port"], a: "88", r: "Kerberos authentication uses port 88." },
+        { k: ["snmp", "port"], a: "161", r: "SNMP manages network devices on port 161." },
+        { k: ["ntp", "port"], a: "123", r: "NTP synchronizes clocks on port 123." },
+        /* --- Cryptography (Security+) --- */
+        { k: ["same key", "encrypt and decrypt"], a: "Symmetric encryption", r: "Symmetric encryption uses the same single key to encrypt and decrypt." },
+        { k: ["uses the same key"], a: "Symmetric encryption", r: "One shared key for both directions is symmetric encryption." },
+        { k: ["public key", "private key"], a: "Asymmetric encryption", r: "Asymmetric encryption uses a key pair: a public key to encrypt and a private key to decrypt." },
+        { k: ["pair of keys", "public and private"], a: "Asymmetric encryption", r: "A public/private key pair is asymmetric encryption." },
+        { k: ["aes", "symmetric"], a: "Symmetric encryption", r: "AES is a symmetric encryption algorithm — the same key encrypts and decrypts." },
+        { k: ["advanced encryption standard"], a: "AES", r: "AES stands for Advanced Encryption Standard, a symmetric cipher." },
+        { k: ["rsa", "asymmetric"], a: "Asymmetric encryption", r: "RSA is an asymmetric algorithm using public and private keys." },
+        { k: ["one way", "cannot be reversed", "fingerprint"], a: "Hashing", r: "Hashing is one-way: it produces a fixed fingerprint that cannot be reversed to the original data." },
+        { k: ["one way function", "verify integrity"], a: "Hashing", r: "Hashing verifies integrity with a one-way function — any change produces a different hash." },
+        { k: ["sha 256", "hash"], a: "SHA-256", r: "SHA-256 is a widely used hashing algorithm producing a 256-bit hash." },
+        { k: ["signed with", "private key", "verify with public"], a: "Digital signature", r: "A digital signature is created with the sender's private key and verified with their public key." },
+        { k: ["proves identity of the sender", "message has not changed"], a: "Digital signature", r: "A digital signature proves who sent a message and that it was not altered." },
+        { k: ["transport layer security", "stands for"], a: "TLS", r: "TLS stands for Transport Layer Security, the protocol behind HTTPS." },
+        { k: ["certificate authority", "issues digital certificates"], a: "Certificate Authority", r: "A Certificate Authority (CA) issues and vouches for digital certificates." },
+        /* --- Incident response (Security+) --- */
+        { k: ["first step", "incident response"], a: "Preparation", r: "Preparation — plans, tools, and training in place before anything happens — is the first phase of incident response." },
+        { k: ["isolate the affected system"], a: "Containment", r: "Containment isolates affected systems to stop an incident from spreading." },
+        { k: ["stop an incident from spreading"], a: "Containment", r: "Limiting the damage and spread of an incident is containment." },
+        { k: ["remove the root cause", "malware from all systems"], a: "Eradication", r: "Eradication removes the root cause of the incident, such as malware and compromised accounts." },
+        { k: ["restore systems", "back to normal operations"], a: "Recovery", r: "Recovery restores systems to normal operation and monitors them for recurrence." },
+        { k: ["final phase", "incident response", "what went well"], a: "Lessons learned", r: "Lessons learned — reviewing what happened and improving — is the final phase of incident response." },
+        { k: ["lessons learned", "incident response"], a: "Lessons learned", r: "The post-incident review is the lessons learned phase." },
+        /* ============ CISSP Domain 1: Security and Risk Management ============ */
+        { k: ["ale", "calculated"], a: "SLE x ARO", r: "CISSP D1 — ALE (Annualized Loss Expectancy) = SLE × ARO." },
+        { k: ["annualized loss expectancy", "formula"], a: "SLE x ARO", r: "CISSP D1 — ALE = Single Loss Expectancy × Annualized Rate of Occurrence." },
+        { k: ["single loss expectancy", "formula"], a: "AV x EF", r: "CISSP D1 — SLE = Asset Value (AV) × Exposure Factor (EF)." },
+        { k: ["sle", "asset value"], a: "AV x EF", r: "CISSP D1 — SLE = AV × EF." },
+        { k: ["assigns a dollar value", "risk analysis"], a: "Quantitative", r: "CISSP D1 — Quantitative risk analysis assigns monetary (dollar) values; qualitative uses subjective ratings." },
+        { k: ["subjective", "high medium low", "risk"], a: "Qualitative", r: "CISSP D1 — Qualitative analysis rates risk subjectively (high / medium / low) instead of in dollars." },
+        { k: ["buying insurance", "risk"], a: "Risk transference", r: "CISSP D1 — Buying insurance transfers (shares) the financial impact of a risk with a third party." },
+        { k: ["transferring risk", "third party"], a: "Risk transference", r: "CISSP D1 — Risk transference shifts the impact to a third party, e.g. through insurance." },
+        { k: ["cost of mitigation exceeds", "accept"], a: "Risk acceptance", r: "CISSP D1 — When mitigation costs more than the risk is worth, management formally accepts the risk." },
+        { k: ["keep business operating", "during a disruption"], a: "Business continuity", r: "CISSP D1 — A Business Continuity Plan keeps critical business functions running during a disruption." },
+        { k: ["business continuity plan", "stands for bcp"], a: "Business Continuity Plan", r: "CISSP D1 — BCP is the Business Continuity Plan." },
+        { k: ["restore it systems", "after a disaster"], a: "Disaster Recovery Plan", r: "CISSP D1 — A Disaster Recovery Plan focuses on restoring IT systems after a disaster; the BCP covers the whole business." },
+        { k: ["disaster recovery", "it systems"], a: "Disaster Recovery Plan", r: "CISSP D1 — Disaster recovery is the IT-focused part of recovery, under the broader BCP." },
+        { k: ["research", "before acting", "investigate"], a: "Due diligence", r: "CISSP D1 — Due diligence is investigating and understanding risks before acting." },
+        { k: ["prudent actions", "implementing controls", "protect assets"], a: "Due care", r: "CISSP D1 — Due care is taking the prudent actions a reasonable person would to protect assets." },
+        { k: ["maximum tolerable downtime"], a: "MTD", r: "CISSP D1 — MTD is the Maximum Tolerable Downtime before a business suffers unacceptable harm." },
+        { k: ["recovery time objective"], a: "RTO", r: "CISSP D1 — RTO is the target time to restore a system after a disruption." },
+        { k: ["recovery point objective"], a: "RPO", r: "CISSP D1 — RPO is the maximum amount of data loss measured in time (how far back you must restore from)." },
+        { k: ["maximum data loss", "acceptable", "time"], a: "RPO", r: "CISSP D1 — The acceptable data-loss window is the Recovery Point Objective (RPO)." },
+        /* ============ CISSP Domain 2: Asset Security ============ */
+        { k: ["accountable for classifying data"], a: "Data owner", r: "CISSP D2 — The data owner decides classification and is accountable for the data." },
+        { k: ["data owner", "responsible for"], a: "Data owner", r: "CISSP D2 — The data owner is accountable for data classification and protection requirements." },
+        { k: ["implements the controls", "day to day", "data"], a: "Data custodian", r: "CISSP D2 — The data custodian handles day-to-day storage, protection, and backup as directed by the owner." },
+        { k: ["day to day", "data owner"], a: "Data custodian", r: "CISSP D2 — Day-to-day protection of data, carried out as directed by the data owner, is the data custodian's job." },
+        { k: ["day to day protection of data"], a: "Data custodian", r: "CISSP D2 — Day-to-day storage, protection, and backup of data is the data custodian role." },
+        { k: ["day to day storage"], a: "Data custodian", r: "CISSP D2 — Day-to-day storage and backup of data is handled by the data custodian." },
+        { k: ["data custodian"], a: "Data custodian", r: "CISSP D2 — Custodians implement the owner's requirements: storage, backups, and access enforcement." },
+        { k: ["personally identifiable information"], a: "PII", r: "CISSP D2 — PII stands for Personally Identifiable Information." },
+        { k: ["protected health information"], a: "PHI", r: "CISSP D2 — PHI stands for Protected Health Information, covered by HIPAA." },
+        { k: ["exceptionally grave damage", "national security"], a: "Top Secret", r: "CISSP D2 — Disclosure causing exceptionally grave damage to national security is classified Top Secret." },
+        { k: ["stored on a hard drive", "data state"], a: "Data at rest", r: "CISSP D2 — Stored data is data at rest, protected with disk/file encryption and access controls." },
+        { k: ["moving across a network", "data state"], a: "Data in transit", r: "CISSP D2 — Data moving across a network is data in transit, protected with TLS/VPN encryption." },
+        { k: ["how long data should be kept"], a: "Data retention", r: "CISSP D2 — A retention policy defines how long data is kept before secure destruction." },
+        /* ============ CISSP Domain 3: Security Architecture and Engineering ============ */
+        { k: ["bell lapadula", "no read up"], a: "Bell-LaPadula", r: "CISSP D3 — Bell-LaPadula protects confidentiality: no read up, no write down." },
+        { k: ["no read up", "no write down"], a: "Bell-LaPadula", r: "CISSP D3 — 'No read up, no write down' is the Bell-LaPadula confidentiality model." },
+        { k: ["bell lapadula"], a: "Bell-LaPadula", r: "CISSP D3 — Bell-LaPadula is the confidentiality model (no read up, no write down)." },
+        { k: ["biba", "integrity"], a: "Biba", r: "CISSP D3 — Biba is the integrity model: no read down, no write up." },
+        { k: ["no read down", "no write up"], a: "Biba", r: "CISSP D3 — 'No read down, no write up' is the Biba integrity model." },
+        { k: ["integrity model", "well formed transactions"], a: "Clark-Wilson", r: "CISSP D3 — Clark-Wilson enforces integrity through well-formed transactions and separation of duties." },
+        { k: ["trusted platform module"], a: "TPM", r: "CISSP D3 — A TPM is a hardware chip that securely stores keys and supports secure boot measurement." },
+        { k: ["dedicated hardware appliance", "cryptographic keys"], a: "HSM", r: "CISSP D3 — An HSM (Hardware Security Module) is dedicated hardware for generating and protecting cryptographic keys." },
+        { k: ["hardware security module"], a: "HSM", r: "CISSP D3 — HSM stands for Hardware Security Module." },
+        { k: ["verifies firmware", "boot process", "trusted"], a: "Secure Boot", r: "CISSP D3 — Secure Boot verifies that firmware and bootloaders are signed and trusted before loading them." },
+        /* ============ CISSP Domain 4: Communication and Network Security ============ */
+        { k: ["osi model", "how many layers"], a: "7", r: "CISSP D4 — The OSI model has 7 layers, from Physical (1) to Application (7)." },
+        { k: ["how many layers", "osi"], a: "7", r: "CISSP D4 — There are 7 layers in the OSI model." },
+        { k: ["layer 4 of the osi"], a: "Transport", r: "CISSP D4 — Layer 4 of the OSI model is the Transport layer (TCP/UDP)." },
+        { k: ["layer 3 of the osi"], a: "Network", r: "CISSP D4 — Layer 3 of the OSI model is the Network layer (IP, routing)." },
+        { k: ["layer 7 of the osi"], a: "Application", r: "CISSP D4 — Layer 7 of the OSI model is the Application layer." },
+        { k: ["ipsec", "entire original packet", "new header"], a: "Tunnel mode", r: "CISSP D4 — IPsec tunnel mode encrypts the entire original packet inside a new IP packet — used for VPNs." },
+        { k: ["ipsec", "only the payload"], a: "Transport mode", r: "CISSP D4 — IPsec transport mode protects only the payload, keeping the original IP header." },
+        { k: ["encapsulating security payload"], a: "ESP", r: "CISSP D4 — ESP provides confidentiality (encryption) plus integrity for IPsec traffic." },
+        { k: ["esp", "ipsec protocol", "encryption"], a: "ESP", r: "CISSP D4 — ESP is the IPsec protocol that encrypts the payload." },
+        { k: ["divides a network", "smaller isolated segments"], a: "Network segmentation", r: "CISSP D4 — Segmentation isolates systems into smaller zones, limiting how far an attacker can move." },
+        /* ============ CISSP Domain 5: Identity and Access Management ============ */
+        { k: ["verifying a user", "identity", "password"], a: "Authentication", r: "CISSP D5 — Authentication verifies a claimed identity (e.g. password, MFA); authorization decides what they may do." },
+        { k: ["proves their identity"], a: "Authentication", r: "CISSP D5 — Proving who you are is authentication." },
+        { k: ["determines what resources", "user can access", "after authentication"], a: "Authorization", r: "CISSP D5 — Authorization grants or denies access to resources after identity is authenticated." },
+        { k: ["job role"], a: "Role-Based Access Control", r: "CISSP D5 — RBAC assigns permissions by job role." },
+        { k: ["role based access control"], a: "Role-Based Access Control", r: "CISSP D5 — RBAC stands for Role-Based Access Control." },
+        { k: ["owner decides who can access"], a: "Discretionary Access Control", r: "CISSP D5 — In DAC, the resource owner decides who gets access." },
+        { k: ["discretionary access control"], a: "Discretionary Access Control", r: "CISSP D5 — DAC lets the data owner set access permissions." },
+        { k: ["classification labels", "clearance", "system enforces"], a: "Mandatory Access Control", r: "CISSP D5 — MAC uses labels and clearances enforced by the system — owners cannot override it." },
+        { k: ["mandatory access control"], a: "Mandatory Access Control", r: "CISSP D5 — MAC is label-based access control enforced by the system." },
+        { k: ["access based on attributes"], a: "Attribute-Based Access Control", r: "CISSP D5 — ABAC evaluates attributes of the user, resource, and environment (e.g. time, location)." },
+        { k: ["attribute based access control"], a: "Attribute-Based Access Control", r: "CISSP D5 — ABAC stands for Attribute-Based Access Control." },
+        { k: ["ticket granting ticket"], a: "Kerberos", r: "CISSP D5 — Kerberos issues a Ticket Granting Ticket (TGT) after logon, used to request service tickets." },
+        { k: ["kerberos", "tickets"], a: "Kerberos", r: "CISSP D5 — Kerberos is the ticket-based authentication protocol used by Active Directory." },
+        { k: ["xml based", "identity federation", "assertions"], a: "SAML", r: "CISSP D5 — SAML uses XML assertions to federate identity between an IdP and a service provider." },
+        { k: ["saml", "stands for"], a: "SAML", r: "CISSP D5 — SAML is Security Assertion Markup Language, used for federated single sign-on." },
+        { k: ["delegated authorization", "api access", "without sharing credentials"], a: "OAuth", r: "CISSP D5 — OAuth 2.0 delegates authorization for API access without sharing the user's password." },
+        { k: ["identity layer on top of oauth"], a: "OpenID Connect", r: "CISSP D5 — OpenID Connect adds identity (authentication and ID tokens) on top of OAuth 2.0." },
+        { k: ["one set of credentials", "multiple applications"], a: "Single Sign-On", r: "CISSP D5 — Single Sign-On (SSO) lets a user log in once and access many applications." },
+        { k: ["single sign on"], a: "Single Sign-On", r: "CISSP D5 — SSO stands for Single Sign-On." },
+        { k: ["something you know", "something you have", "something you are"], a: "Multi-factor authentication", r: "CISSP D5 — MFA combines factors: something you know, have, and are." },
+        { k: ["two or more", "authentication factors"], a: "Multi-factor authentication", r: "CISSP D5 — Using two or more different factor types is multi-factor authentication." },
+        { k: ["fingerprint scan", "factor"], a: "Something you are", r: "CISSP D5 — Biometrics like a fingerprint are 'something you are'." },
+        /* ============ CISSP Domain 6: Security Assessment and Testing ============ */
+        { k: ["actively exploits vulnerabilities"], a: "Penetration test", r: "CISSP D6 — A penetration test goes beyond scanning: it actively exploits vulnerabilities like a real attacker." },
+        { k: ["attempts to exploit", "authorized"], a: "Penetration test", r: "CISSP D6 — Authorized exploitation of weaknesses is a penetration test." },
+        { k: ["identifies vulnerabilities", "without exploiting"], a: "Vulnerability scan", r: "CISSP D6 — A vulnerability scan identifies known weaknesses but does not exploit them." },
+        { k: ["scans for known vulnerabilities"], a: "Vulnerability scan", r: "CISSP D6 — Scanning finds and reports vulnerabilities; a pen test proves them by exploiting." },
+        { k: ["no prior knowledge", "tester", "black box"], a: "Black box", r: "CISSP D6 — Black box testing gives the tester no prior knowledge of the system." },
+        { k: ["no information about the system", "testing"], a: "Black box", r: "CISSP D6 — Testing with zero internal knowledge is black box testing." },
+        { k: ["full knowledge", "source code", "testing"], a: "White box", r: "CISSP D6 — White box testing gives the tester full knowledge, including source code." },
+        { k: ["partial knowledge", "testing"], a: "Gray box", r: "CISSP D6 — Gray box testing gives partial knowledge — like a normal user's view plus some internals." },
+        { k: ["random invalid data", "crash the application"], a: "Fuzzing", r: "CISSP D6 — Fuzzing feeds random, unexpected data to an application to find crashes and flaws." },
+        { k: ["fuzzing"], a: "Fuzzing", r: "CISSP D6 — Fuzzing tests with malformed, random inputs to uncover bugs." },
+        /* ============ CISSP Domain 7: Security Operations ============ */
+        { k: ["most volatile", "collect first"], a: "Order of volatility", r: "CISSP D7 — Evidence is collected in order of volatility: CPU cache and RAM first, disks and logs later." },
+        { k: ["order of volatility"], a: "Order of volatility", r: "CISSP D7 — The order of volatility runs from most volatile (memory) to least (backups/archives)." },
+        { k: ["who handled the evidence"], a: "Chain of custody", r: "CISSP D7 — Chain of custody documents everyone who handled evidence, so it stays admissible." },
+        { k: ["chain of custody"], a: "Chain of custody", r: "CISSP D7 — Chain of custody tracks evidence handling from collection to court." },
+        { k: ["automates", "orchestrates incident response"], a: "SOAR", r: "CISSP D7 — SOAR (Security Orchestration, Automation and Response) automates response playbooks; a SIEM only detects and alerts." },
+        { k: ["security orchestration automation and response"], a: "SOAR", r: "CISSP D7 — SOAR stands for Security Orchestration, Automation and Response." },
+        { k: ["monitors", "24 7", "detect and respond to threats"], a: "Security Operations Center", r: "CISSP D7 — A SOC (Security Operations Center) monitors and responds to threats around the clock." },
+        { k: ["security operations center"], a: "Security Operations Center", r: "CISSP D7 — SOC stands for Security Operations Center." },
+        { k: ["backs up only data changed since the last backup"], a: "Incremental backup", r: "CISSP D7 — An incremental backup copies only what changed since the last backup of any type." },
+        { k: ["since the last full backup", "changed data"], a: "Differential backup", r: "CISSP D7 — A differential backup copies everything changed since the last full backup." },
+        { k: ["raid 1", "mirroring"], a: "RAID 1", r: "CISSP D7 — RAID 1 is mirroring: identical copies on two disks." },
+        { k: ["mirroring", "two disks", "raid"], a: "RAID 1", r: "CISSP D7 — Mirroring across two disks is RAID 1." },
+        { k: ["raid 5", "parity"], a: "RAID 5", r: "CISSP D7 — RAID 5 stripes data with distributed parity across three or more disks." },
+        { k: ["striping with parity"], a: "RAID 5", r: "CISSP D7 — Striping with parity is RAID 5." },
+        /* ============ CISSP Domain 8: Software Development Security ============ */
+        { k: ["malicious sql", "database query"], a: "SQL injection", r: "CISSP D8 — SQL injection inserts malicious SQL into an application's database query." },
+        { k: ["sql injection"], a: "SQL injection", r: "CISSP D8 — SQL injection exploits unsanitized input in database queries; parameterized queries prevent it." },
+        { k: ["malicious script", "victim browser", "web page"], a: "Cross-Site Scripting", r: "CISSP D8 — XSS injects malicious scripts into web pages viewed by other users." },
+        { k: ["cross site scripting"], a: "Cross-Site Scripting", r: "CISSP D8 — XSS stands for Cross-Site Scripting." },
+        { k: ["xss", "stands for"], a: "Cross-Site Scripting", r: "CISSP D8 — XSS stands for Cross-Site Scripting." },
+        { k: ["more data than a buffer can hold"], a: "Buffer overflow", r: "CISSP D8 — A buffer overflow writes more data than a buffer can hold, corrupting memory." },
+        { k: ["buffer overflow"], a: "Buffer overflow", r: "CISSP D8 — Buffer overflows come from missing bounds checking on input." },
+        { k: ["best defense against injection attacks", "validate"], a: "Input validation", r: "CISSP D8 — Validating and sanitizing all input (ideally allow-listing) is the core defense against injection." },
+        { k: ["tricks a logged in user", "unintended request"], a: "Cross-Site Request Forgery", r: "CISSP D8 — CSRF tricks an authenticated user's browser into sending an unintended request." },
+        { k: ["cross site request forgery"], a: "Cross-Site Request Forgery", r: "CISSP D8 — CSRF stands for Cross-Site Request Forgery." },
+        { k: ["security built into every phase", "development lifecycle"], a: "DevSecOps", r: "CISSP D8 — DevSecOps integrates security into every phase of development and operations." },
+        { k: ["devsecops"], a: "DevSecOps", r: "CISSP D8 — DevSecOps shifts security left, into the whole SDLC." },
+        { k: ["software development life cycle"], a: "SDLC", r: "CISSP D8 — SDLC stands for Software Development Life Cycle." }
+      ];
+
+      /* Definitions for the reverse style: the question names a term and the
+         options are definition phrases. Options are scored against these. */
+      var CYBER_DEFS = [
+        { t: "phishing", d: "Fraudulent email or message that tricks people into revealing passwords, credentials, or sensitive information, or into installing malware." },
+        { t: "spear phishing", d: "Targeted phishing aimed at a specific person or organization using personal details to appear convincing." },
+        { t: "ransomware", d: "Malicious software that encrypts the victim files and demands payment in exchange for the decryption key." },
+        { t: "firewall", d: "A device or software that monitors and filters network traffic, allowing or blocking it based on security rules." },
+        { t: "trojan", d: "Malware disguised as legitimate software that tricks users into installing it." },
+        { t: "worm", d: "Malware that replicates itself and spreads across networks automatically without a host file or user action." },
+        { t: "virus", d: "Malware that attaches to a host file or program and spreads when the file is executed or shared." },
+        { t: "keylogger", d: "Malware that secretly records keystrokes to steal passwords and other typed information." },
+        { t: "rootkit", d: "Tools that hide malware and maintain privileged root level access on a compromised system." },
+        { t: "honeypot", d: "A decoy system intentionally left exposed to attract, detect, and study attackers." },
+        { t: "hashing", d: "A one way function that converts data into a fixed length fingerprint used to verify integrity and cannot be reversed." },
+        { t: "symmetric encryption", d: "Encryption that uses the same single shared key to encrypt and decrypt data." },
+        { t: "asymmetric encryption", d: "Encryption that uses a pair of keys, a public key for encryption and a private key for decryption." },
+        { t: "vpn", d: "A virtual private network that creates an encrypted tunnel for data over a public network such as the internet." },
+        { t: "siem", d: "A system that collects, correlates, and analyzes log and security event data from across the organization to detect threats." },
+        { t: "zero trust", d: "A security model that trusts no user or device by default and always verifies identity before granting access." },
+        { t: "least privilege", d: "The principle that users and systems should have only the minimum access needed to perform their job." },
+        { t: "defense in depth", d: "Using multiple overlapping layers of security controls so that failure of one layer does not expose the whole system." },
+        { t: "kerberos", d: "A ticket based authentication protocol that uses a trusted third party to verify users and services." },
+        { t: "sql injection", d: "An attack that inserts malicious SQL code into an application input so it runs in the database query." },
+        { t: "buffer overflow", d: "An attack or flaw where more data is written into a memory buffer than it can hold, corrupting memory and possibly executing code." },
+        { t: "penetration test", d: "An authorized simulated attack that actively exploits vulnerabilities to test how far an attacker could get." },
+        { t: "vulnerability scan", d: "An automated scan that identifies known vulnerabilities and missing patches without exploiting them." },
+        { t: "chain of custody", d: "Documentation that records who collected, handled, and stored evidence so it remains admissible in court." },
+        { t: "data custodian", d: "The person or team responsible for the day to day storage, protection, backup, and handling of data as directed by the data owner." },
+        { t: "data owner", d: "The person accountable for information assets who decides data classification and who may access the data." },
+        { t: "bell lapadula", d: "A confidentiality security model with no read up and no write down rules based on classification levels." },
+        { t: "biba", d: "An integrity security model with no read down and no write up rules that prevents contamination of trusted data." },
+        { t: "fuzzing", d: "Testing by feeding random, invalid, and unexpected data into an application to find crashes and vulnerabilities." },
+        { t: "man in the middle", d: "An attack where the attacker secretly intercepts and relays communication between two parties who believe they are talking directly." }
+      ];
+      function findCyberDefTerm(text) {
+        var t = normText(text), best = null;
+        CYBER_DEFS.forEach(function (e) { if ((" " + t + " ").indexOf(" " + normText(e.t) + " ") !== -1 && (!best || e.t.length > best.t.length)) best = e; });
+        return best;
+      }
+      function solveMcCyberDef(stem, opts) {
+        var entry = findCyberDefTerm(stem);
+        if (!entry) return null;
+        // Only use definition scoring when options look like phrases, not term names
+        var phraseOpts = opts.filter(function (o) { return o.text.trim().split(/\s+/).length >= 3; });
+        if (phraseOpts.length < 2) return null;
+        var defTokens = tokens(entry.d);
+        var scored = opts.map(function (o) { return { o: o, s: overlapScore(defTokens, o.text) }; });
+        scored.sort(function (x, y) { return y.s - x.s; });
+        if (scored[0].s >= 2 && scored[0].s > (scored[1] ? scored[1].s : 0)) {
+          return { status: "solved", letter: scored[0].o.letter, headline: scored[0].o.text, detail: "\"" + entry.t + "\" — " + entry.d };
+        }
+        if (scored[0].s >= 2 && scored[1]) {
+          return { status: "uncertain", headline: "Not certain between " + scored[0].o.letter + " and " + scored[1].o.letter, detail: "\"" + entry.t + "\" — " + entry.d, flag: "⚠ Two options overlap the definition of \"" + entry.t + "\" — flagged instead of guessed." };
+        }
+        return null;
+      }
+      function findFact(text) {
+        var t = " " + normText(text) + " ";
+        var best = null;
+        FACTS.concat(CYBER_FACTS).forEach(function (f) {
+          var ok = true;
+          f.k.forEach(function (kw) { if (t.indexOf(" " + normText(kw)) === -1 && t.indexOf(normText(kw) + " ") === -1 && t.indexOf(" " + normText(kw) + " ") === -1) { /* fall back to substring */ if (normText(text).indexOf(normText(kw)) === -1) ok = false; } });
+          if (ok && (!best || f.k.join(" ").length > best.k.join(" ").length)) best = f;
+        });
+        return best;
+      }
+      function optionMatchesAnswer(optText, answer) {
+        var o = normText(optText), a = normText(answer);
+        if (!o || !a) return false;
+        if (o === a) return true;
+        if ((" " + o + " ").indexOf(" " + a + " ") !== -1) return true;
+        if ((" " + a + " ").indexOf(" " + o + " ") !== -1 && o.length >= 3) return true;
+        // Numeric answers: 206, 100, 366, 50 …
+        var an = optionNumber(answer), on = optionNumber(optText);
+        if (an !== null && on !== null && /^\d/.test(answer.trim())) {
+          // Only trust the number when the option is mostly that number
+          if (normText(optText).replace(/[^0-9]/g, "") === String(Math.round(an)) || closeNum(on, an) && optText.replace(/[^0-9.,°cf ]/gi, "").trim().length >= String(Math.round(an)).length) return closeNum(on, an);
+        }
+        // Chemical symbols are case-sensitive in print but OCR / options vary: H2O vs H₂O
+        var oSq = o.replace(/ /g, ""), aSq = a.replace(/ /g, "");
+        if (oSq === aSq) return true;
+        // Formula answers ("SLE x ARO") differ from wrong options only by the
+        // operator, which normalization erases — require a multiplication sign
+        // and no "+" in the option before trusting a token match.
+        if (/^[a-z]+\s+x\s+[a-z]+$/i.test(answer.trim())) {
+          var hasMul = /[×✕*]/.test(optText) || /\bx\b/i.test(optText);
+          if (!hasMul || optText.indexOf("+") !== -1) return false;
+        }
+        // Token-set match: every significant word of the answer appears in the
+        // option (or vice versa) — handles "Confidentiality, Integrity, and
+        // Availability" vs "Confidentiality Integrity Availability" and
+        // formula answers like "SLE x ARO" vs "ALE = SLE × ARO".
+        var aToks = a.split(" ").filter(function (w) { return w.length >= 2; });
+        var oToks = o.split(" ").filter(function (w) { return w.length >= 2; });
+        if (aToks.length >= 2 && aToks.every(function (w) { return oToks.indexOf(w) !== -1; })) return true;
+        if (oToks.length >= 2 && oToks.every(function (w) { return aToks.indexOf(w) !== -1; })) return true;
+        return false;
+      }
+      function solveMcFact(stem, opts, fullText) {
+        var fact = findFact(stem) || findFact(fullText || "");
+        if (!fact) return null;
+        var hits = opts.filter(function (o) { return optionMatchesAnswer(o.text, fact.a); });
+        if (hits.length === 1) return { status: "solved", letter: hits[0].letter, headline: hits[0].text, detail: fact.r };
+        if (hits.length > 1) return { status: "uncertain", headline: "Not certain between " + hits[0].letter + " and " + hits[1].letter, detail: fact.r, flag: "⚠ More than one printed option matches the known answer — flagged instead of guessed. Check the options in the text box." };
+        return null;
+      }
+
+      /* ---------------- General knowledge: reference lookup (Wikipedia) ----------------
+         Scores each printed option against encyclopedia text for the
+         question. The question decides the search; the options are never
+         sent as the answer — they are only scored against what the
+         reference says. */
+      function stripHtml(s) { var d = document.createElement("div"); d.innerHTML = s || ""; return d.textContent || ""; }
+      function wikiCorpus(query) {
+        var searchUrl = "https://en.wikipedia.org/w/api.php?action=query&list=search&srnamespace=0&srlimit=4&format=json&origin=*&srsearch=" + encodeURIComponent(query);
+        return fetch(searchUrl).then(function (r) { if (!r.ok) throw new Error("wiki"); return r.json(); }).then(function (j) {
+          var results = (j.query && j.query.search) || [];
+          if (!results.length) return "";
+          var snippets = results.map(function (s) { return stripHtml(s.snippet); }).join(" ");
+          var titles = results.map(function (s) { return s.title; }).join("|");
+          var pageUrl = "https://en.wikipedia.org/w/api.php?action=query&prop=extracts&explaintext=1&format=json&origin=*&titles=" + encodeURIComponent(titles);
+          return fetch(pageUrl).then(function (r) { return r.json(); }).then(function (j2) {
+            var extracts = [];
+            var pages = (j2.query && j2.query.pages) || {};
+            Object.keys(pages).forEach(function (key) { if (pages[key].extract) extracts.push(pages[key].extract); });
+            return (snippets + " " + extracts.join(" ")).slice(0, 16000);
+          }).catch(function () { return snippets; });
+        });
+      }
+      function scoreOptionInCorpus(optText, corpusNorm) {
+        var o = normText(optText);
+        if (!o) return 0;
+        var score = 0;
+        if ((" " + corpusNorm + " ").indexOf(" " + o + " ") !== -1) score += 14;
+        var toks = o.split(" ").filter(function (w) { return w.length > 2 && !STOP[w]; });
+        if (!toks.length) toks = o.split(" ");
+        toks.forEach(function (w) {
+          var count = 0, idx = 0;
+          while ((idx = corpusNorm.indexOf(w, idx)) !== -1 && count < 5) { count++; idx += w.length; }
+          score += Math.min(count, 4);
+        });
+        // A purely numeric option scores only on an exact stand-alone match
+        if (/^\d+$/.test(o)) score = (" " + corpusNorm + " ").indexOf(" " + o + " ") !== -1 ? score : 0;
+        return score;
+      }
+      function solveMcWiki(stem, opts) {
+        var query = stem.replace(/\s+/g, " ").trim();
+        if (query.length < 8) return Promise.resolve(null);
+        if (typeof setStatus === "function") setStatus("Checking a reference source for this question…");
+        return wikiCorpus(query).then(function (corpus) {
+          if (!corpus) return null;
+          var cn = normText(corpus);
+          var scored = opts.map(function (o) { return { o: o, s: scoreOptionInCorpus(o.text, cn) }; });
+          scored.sort(function (x, y) { return y.s - x.s; });
+          var top = scored[0], second = scored[1] || { s: 0, o: null };
+          if (top.s >= 6 && top.s - second.s >= 3) {
+            return { status: "solved", letter: top.o.letter, headline: top.o.text, detail: "Best match in the reference for this question — \"" + top.o.text + "\" is the option the reference supports." };
+          }
+          if (top.s >= 6 && second.o) {
+            return { status: "uncertain", headline: "Not certain between " + top.o.letter + " and " + second.o.letter, detail: "The reference mentions both options for this question, so no single answer stands out.", flag: "⚠ Two options could fit — flagged instead of guessed. Check the exact wording on the page." };
+          }
+          return null;
+        }).catch(function () { return null; });
+      }
+      function solveOpenWiki(text) {
+        var query = text.replace(/\s+/g, " ").trim();
+        if (query.length < 8) return Promise.resolve(null);
+        return wikiCorpus(query).then(function (corpus) {
+          if (!corpus) return null;
+          var clean = corpus.replace(/\s+/g, " ").trim();
+          var sentence = clean.split(/(?<=\.)\s+/).filter(function (s) { return s.length > 25; })[0] || clean.slice(0, 180);
+          if (!sentence) return null;
+          return { status: "solved", headline: "Reference answer", detail: oneLine(sentence) };
+        }).catch(function () { return null; });
+      }
+
+      function solve(text) {
+        var mc = parseOptions(text);
+        if (mc) {
+          var ma = mathAnswer(mc.stem) || mathAnswer(text.split(/\n/)[0] || "");
+          if (ma) {
+            var hit = matchMathOption(mc.options, ma.value);
+            if (hit) return Promise.resolve({ status: "solved", letter: hit.letter, headline: hit.text, detail: ma.reason });
+            return Promise.resolve({ status: "uncertain", headline: (ma.isX ? "x = " : "") + fmtNum(ma.value) + " — not among the options", detail: ma.reason, flag: "⚠ The worked answer doesn't match any printed option. The text may have been misread — check the numbers in the text box and solve again." });
+          }
+          // General knowledge, offline fact bank — instant and reliable for common questions
+          var factHit = solveMcFact(mc.stem, mc.options, mc.stem);
+          if (factHit) return Promise.resolve(factHit);
+          // Cybersecurity reverse style: term named, options are definitions
+          var cyberDefHit = solveMcCyberDef(mc.stem, mc.options);
+          if (cyberDefHit) return Promise.resolve(cyberDefHit);
+          return solveMcVocabulary(mc.stem, mc.options).then(function (v) {
+            if (v) return v;
+            // General knowledge, reference lookup — scores the printed options
+            return solveMcWiki(mc.stem, mc.options).then(function (w) {
+              if (w) return w;
+              return { status: "cant", headline: "Read it — no confident answer found", detail: "The question and its " + mc.options.length + " options were read and are in the text box below. It was checked as math, vocabulary and general knowledge, but no option stood out clearly — check for misread words and tap Solve again." };
+            });
+          });
+        }
+        var ma2 = mathAnswer(text);
+        if (ma2) return Promise.resolve({ status: "solved", headline: (ma2.isX ? "x = " : "") + fmtNum(ma2.value), detail: ma2.reason });
+        var factOpen = findFact(text);
+        if (factOpen) {
+          // "What is phishing?" style: if the question names a banked term and
+          // asks for its meaning, the definition is the answer, not the term.
+          var cDef = findCyberDefTerm(text);
+          if (cDef && /what is|define|definition|meaning|describe/i.test(text) && normText(factOpen.a) === normText(cDef.t)) {
+            return Promise.resolve({ status: "solved", headline: cDef.t, detail: cDef.d });
+          }
+          return Promise.resolve({ status: "solved", headline: factOpen.a, detail: factOpen.r });
+        }
+        var cDefOpen = findCyberDefTerm(text);
+        if (cDefOpen && /what is|define|definition|meaning|describe/i.test(text)) {
+          return Promise.resolve({ status: "solved", headline: cDefOpen.t, detail: cDefOpen.d });
+        }
+        var trimmed = text.trim();
+        var word = extractDefineWord(trimmed);
+        if (word && /mean|define|definition/i.test(trimmed)) {
+          return lookupWord(word).then(function (info) {
+            if (info) return { status: "solved", headline: info.word, detail: (info.pos ? info.pos + " — " : "") + info.def };
+            return { status: "cant", headline: "No definition found for \"" + word + "\"", detail: "The word was read, but the dictionary has no entry for it — check the spelling in the text box." };
+          });
+        }
+        if (/^[A-Za-z][A-Za-z'-]*$/.test(trimmed)) {
+          return lookupWord(trimmed).then(function (info) {
+            if (info) return { status: "solved", headline: info.word, detail: (info.pos ? info.pos + " — " : "") + info.def };
+            return { status: "cant", headline: "No definition found for \"" + trimmed + "\"", detail: "A single word was read, but the dictionary has no entry for it — check the spelling in the text box." };
+          });
+        }
+        // Open general question with no options: try the reference lookup
+        if (/\?\s*$/.test(trimmed) || /^(what|which|who|where|when|how many|how much)\b/i.test(trimmed)) {
+          return solveOpenWiki(trimmed).then(function (w) {
+            if (w) return w;
+            return { status: "cant", headline: "Read it — no confident answer found", detail: "The question was read and checked against the fact bank and a reference source, but no clear answer came back. The text is in the box below — fix any misread words and tap Solve again, or add A–D options if it is a multiple-choice question." };
+          });
+        }
+        return Promise.resolve({
+          status: "cant",
+          headline: "Read it — no confident answer found",
+          detail: "This answers multiple-choice questions in any subject, arithmetic, simple solve-for-x, and word definitions. The text it read is in the box below — if numbers or a word were misread, fix them and tap Solve again."
+        });
+      }
+
+      function solveAndShow(text) {
+        return solve(text).then(function (res) {
+          showAnswer(res);
+          setStatus(res.status === "solved" ? "Answer is in the heads-up display." : "Read complete — see the answer panel.");
+        });
+      }
+
+      $("solveBtn").addEventListener("click", function () {
+        var t = textInput.value.trim();
+        if (!t) { textMeta.textContent = "The text box is empty — capture a read, upload a photo, or type a question first."; return; }
+        textMeta.textContent = "";
+        solveAndShow(t);
+      });
+      $("clearBtn").addEventListener("click", function () {
+        textInput.value = ""; textMeta.textContent = "";
+        ansHeadline.textContent = "Nothing read yet. Start the camera and tap Capture & Read.";
+        ansHeadline.classList.add("waiting");
+        ansDetail.textContent = ""; ansFlag.classList.remove("show"); letterBadge.classList.remove("show");
+      });
+
+      var SAMPLES = {
+        mc: "What is 15% of 240?\nA. 24\nB. 36\nC. 48\nD. 60",
+        algebra: "If 3x + 5 = 20, what is the value of x?\nA. 3\nB. 4\nC. 5\nD. 6",
+        geography: "What is the capital of France?\nA. London\nB. Berlin\nC. Paris\nD. Madrid",
+        science: "Which planet is known as the Red Planet?\nA. Venus\nB. Mars\nC. Jupiter\nD. Saturn",
+        history: "Who was the first President of the United States?\nA. Abraham Lincoln\nB. Thomas Jefferson\nC. George Washington\nD. John Adams",
+        open: "Solve: 48 ÷ 6 + 3 × 4",
+        vocab: "What does the word \"rapid\" mean?\nA. Very slow\nB. Happening quickly\nC. Extremely loud\nD. Full of color",
+        "cyber-cia": "What does the CIA triad stand for in cybersecurity?\nA. Central Intelligence Agency\nB. Confidentiality, Integrity, and Availability\nC. Confidentiality, Integrity, and Accounting\nD. Control, Integrity, and Access",
+        "cyber-port": "Which port is used by HTTPS?\nA. 80\nB. 443\nC. 22\nD. 25",
+        "cyber-ransomware": "A hospital's files are encrypted and the attacker demands payment to unlock them. What type of malware is this?\nA. Keylogger\nB. Rootkit\nC. Ransomware\nD. Spyware",
+        "cissp-ale": "What is the formula for Annualized Loss Expectancy (ALE)?\nA. ALE = SLE × ARO\nB. ALE = AV × EF\nC. ALE = SLE + ARO\nD. ALE = AV − EF",
+        "cissp-rbac": "In which access control model are permissions assigned based on a user's job role?\nA. Discretionary Access Control (DAC)\nB. Mandatory Access Control (MAC)\nC. Role-Based Access Control (RBAC)\nD. Rule-Based Access Control"
+      };
+      document.querySelectorAll("[data-sample]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          textInput.value = SAMPLES[btn.getAttribute("data-sample")] || "";
+          textMeta.textContent = "Sample text — tap Solve this text, or edit it first.";
+          solveAndShow(textInput.value);
+        });
+      });
+
+      /* ---------------- Auto-scan + stare-to-define ---------------- */
+      var DWELL_MS = 3000;
+      var centerWord = null, dwellStart = 0, definedWord = null, dwellTick = null, defining = false;
+
+      function setAutoScan(on) {
+        autoScan = on;
+        autoBtn.setAttribute("aria-pressed", on ? "true" : "false");
+        autoBtn.textContent = on ? "Auto-scan on" : "Auto-scan";
+        if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
+        if (dwellTick) { clearInterval(dwellTick); dwellTick = null; }
+        if (on) {
+          dwellNote.textContent = "Hold one word in the box — its definition appears after ~3 seconds.";
+          autoTimer = setInterval(autoScanPass, 2600);
+          dwellTick = setInterval(updateDwellBar, 120);
+          autoScanPass();
+        } else {
+          dwellNote.textContent = "Turn on Auto-scan to use stare-to-define";
+          dwellFill.style.width = "0%";
+          centerWord = null; definedWord = null;
+          reticleWord.textContent = "no word centered"; reticleWord.classList.add("empty");
+          defPopup.classList.remove("show");
+        }
+      }
+      autoBtn.addEventListener("click", function () { setAutoScan(!autoScan); });
+
+      function updateDwellBar() {
+        if (!centerWord) { dwellFill.style.width = "0%"; return; }
+        var pct = Math.min(100, (Date.now() - dwellStart) / DWELL_MS * 100);
+        dwellFill.style.width = pct + "%";
+        if (pct >= 100 && centerWord !== definedWord && !defining) defineCenterWord(centerWord);
+      }
+
+      function defineCenterWord(word) {
+        defining = true;
+        lookupWord(word).then(function (info) {
+          defining = false;
+          if (centerWord !== word) return;
+          definedWord = word;
+          if (info) {
+            defWord.textContent = info.word;
+            defPos.textContent = info.pos || "";
+            defText.textContent = info.def;
+            defPopup.classList.add("show");
+            dwellNote.textContent = "Definition shown — look away to clear it.";
+          } else {
+            dwellNote.textContent = "No dictionary entry for \"" + word + "\" — hold another word.";
+          }
+        });
+      }
+
+      function autoScanPass() {
+        if (!autoScan || ocrBusy || !sourceKind) return;
+        var canvas = frameCanvas(1000);
+        if (!canvas) return;
+        ocrBusy = true;
+        stage.classList.add("scanning");
+        recognize(canvas).then(function (data) {
+          var words = extractWords(data);
+          var cx = canvas.width / 2, cy = canvas.height / 2;
+          var best = null, bestDist = Infinity;
+          words.forEach(function (w) {
+            var wx = (w.bbox.x0 + w.bbox.x1) / 2, wy = (w.bbox.y0 + w.bbox.y1) / 2;
+            if (Math.abs(wx - cx) > canvas.width * 0.30 || Math.abs(wy - cy) > canvas.height * 0.30) return;
+            var clean = w.text.replace(/[^A-Za-z'-]/g, "");
+            if (clean.length < 3) return;
+            var d = Math.abs(wx - cx) + Math.abs(wy - cy);
+            if (d < bestDist) { bestDist = d; best = clean.toLowerCase(); }
+          });
+          if (best && best !== centerWord) {
+            centerWord = best; dwellStart = Date.now(); definedWord = null;
+            defPopup.classList.remove("show");
+            reticleWord.textContent = best; reticleWord.classList.remove("empty");
+            dwellNote.textContent = "Hold steady — defining \"" + best + "\"…";
+          } else if (!best && centerWord) {
+            centerWord = null; definedWord = null;
+            defPopup.classList.remove("show");
+            reticleWord.textContent = "no word centered"; reticleWord.classList.add("empty");
+            dwellNote.textContent = "Look at a word to define it — looking away clears the definition.";
+          }
+          // Keep the full text fresh while auto-scanning, without re-solving every pass
+          if ((data.text || "").trim()) textInput.value = data.text.trim();
+        }).catch(function () { /* keep scanning silently */ })
+          .then(function () { ocrBusy = false; stage.classList.remove("scanning"); });
+      }
+
+      setOcrPill(window.Tesseract ? "READER READY" : "READER OFFLINE");
+      if (!window.Tesseract) setStatus("The reading library didn't load — paste text below and tap Solve, or reload.");
+    </script>
+  </body>
+</html>

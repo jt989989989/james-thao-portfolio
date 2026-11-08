@@ -8,6 +8,7 @@ This repository is my project index for programming and IT roles. Each project i
 
 | Project | What it is | Stack | Best for |
 |---|---|---|---|
+| [Printed Text Reader HUD (prototype)](projects/printed-text-reader-hud/) | You know the saying — give a tough job to a lazy person and see how they solve it. Well, this tool is meant to do that: point a camera at printed text and get the answer in a heads-up panel — multiple choice, math, definitions, general knowledge, Security+ and CISSP banks | JavaScript, HTML5, no dependencies | Front-end / problem-solving |
 | [Orbit Hop](projects/orbit-hop/) | Playable browser game — hop between orbits, dodge hazards, chase a high score | JavaScript, HTML5 Canvas | Game dev / front-end |
 | [Jelly Stack](projects/jelly-stack/) | Playable physics stacking game — drop soft jelly blocks, build a stable tower | JavaScript, Matter.js | Game dev / front-end |
 | [SOC Log Analyzer](projects/soc-log-analyzer/) | CLI that parses auth logs and flags brute-force attempts and success-after-failure logins | Python (stdlib only) | SOC / security / IT |
@@ -32,6 +33,10 @@ open projects/jelly-stack/index.html
 
 # Scientific Calculator
 open projects/scientific-calculator/index.html
+
+# Printed Text Reader HUD (prototype)
+open projects/printed-text-reader-hud/index.html
+# Camera needs HTTPS (GitHub Pages provides it); or try the 4 built-in samples with no camera
 ```
 
 Calculator tests — Node.js only, no extra packages:
