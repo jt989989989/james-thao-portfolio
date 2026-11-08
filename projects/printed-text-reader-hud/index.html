@@ -159,7 +159,7 @@
         .stage.scanning .scanline { animation: none; top: 50%; }
       }
 
-      /* Stare-to-define reticle */
+      /* Quick-define reticle */
       .reticle {
         position: absolute; left: 50%; top: 46%;
         transform: translate(-50%, -50%);
@@ -333,7 +333,7 @@
 
           <div class="stage-placeholder" id="placeholder">
             <h1>Point at printed text.<br />Get the answer in view.</h1>
-            <p>This is problem-solving mode: the camera reads a printed question and the answer appears as a heads-up display — letter and answer for multiple choice (math, vocabulary, science, geography, history, general knowledge and cybersecurity — Security+ topics and all 8 CISSP domains), the worked result for open math, a one-line definition when you hold on a single word.</p>
+            <p>Prototype — problem-solving mode. You know the saying, “give a tough job to a lazy person and they’ll find the easiest way to solve it”? That’s this tool: point the camera at a printed question and it does the reading and solving for you, right in view — letter and answer for multiple choice (math, vocabulary, science, geography, history, general knowledge and cybersecurity — Security+ topics and all 8 CISSP domains), the worked result for open math, and a quick one-line definition when you center a single word.</p>
             <div class="steps">
               <span><b>1</b>&nbsp; START CAMERA</span>
               <span><b>2</b>&nbsp; FRAME THE TEXT</span>
@@ -350,10 +350,10 @@
           <div class="scanline"></div>
 
           <div class="reticle" aria-hidden="true">
-            <div class="reticle-label">HOLD A WORD HERE · 3 SEC = DEFINITION</div>
+            <div class="reticle-label">CENTER A WORD HERE · QUICK DEFINITION</div>
             <div class="reticle-box"><span class="reticle-word empty" id="reticleWord">no word centered</span></div>
             <div class="dwell-track"><div class="dwell-fill" id="dwellFill"></div></div>
-            <div class="dwell-note" id="dwellNote">Turn on Auto-scan to use stare-to-define</div>
+            <div class="dwell-note" id="dwellNote">Turn on Auto-scan for instant word definitions</div>
           </div>
 
           <div class="def-popup" id="defPopup" role="status">
@@ -441,7 +441,8 @@
             <li><b>Cybersecurity:</b> a dedicated bank covers Security+ style questions — CIA triad, phishing / social engineering, malware types, firewalls, encryption and hashing, common ports, and incident response — and CISSP-domain questions across all 8 domains: security &amp; risk management, asset security, security architecture &amp; engineering, communication &amp; network security, identity &amp; access management, security assessment &amp; testing, security operations, and software development security. Questions that name a term and offer definitions are scored against the bank's definition for that term.</li>
             <li><b>Open questions:</b> math shows the worked result; a general question shows the fact-bank answer, or the best reference match when there is one.</li>
             <li><b>Open math:</b> the worked result appears, with the expression it was calculated from.</li>
-            <li><b>Stare-to-define:</b> with Auto-scan on, hold one word in the center box for about 3 seconds and its definition appears in the lens view. Look away and it clears.</li>
+            <li><b>Quick-define:</b> with Auto-scan on, just center one word in the box — its definition pops up in under a second, no holding or waiting. Look away and it clears.</li>
+            <li><b>About this prototype:</b> “Give a tough job to a lazy person and they’ll find the easiest way to solve it.” This tool is meant to do exactly that — you point, it reads and solves. Still a prototype, so expect the occasional misread.</li>
             <li><b>Misreads happen:</b> if the read confidence is low, check the text box — fix any wrong characters and tap Solve again.</li>
           </ul>
         </section>
@@ -1563,8 +1564,8 @@
         });
       });
 
-      /* ---------------- Auto-scan + stare-to-define ---------------- */
-      var DWELL_MS = 3000;
+      /* ---------------- Auto-scan + quick-define ---------------- */
+      var DWELL_MS = 650;
       var centerWord = null, dwellStart = 0, definedWord = null, dwellTick = null, defining = false;
 
       function setAutoScan(on) {
@@ -1574,12 +1575,12 @@
         if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
         if (dwellTick) { clearInterval(dwellTick); dwellTick = null; }
         if (on) {
-          dwellNote.textContent = "Hold one word in the box — its definition appears after ~3 seconds.";
-          autoTimer = setInterval(autoScanPass, 2600);
-          dwellTick = setInterval(updateDwellBar, 120);
+          dwellNote.textContent = "Center a word in the box — definition pops up in under a second.";
+          autoTimer = setInterval(autoScanPass, 900);
+          dwellTick = setInterval(updateDwellBar, 50);
           autoScanPass();
         } else {
-          dwellNote.textContent = "Turn on Auto-scan to use stare-to-define";
+          dwellNote.textContent = "Turn on Auto-scan for instant word definitions";
           dwellFill.style.width = "0%";
           centerWord = null; definedWord = null;
           reticleWord.textContent = "no word centered"; reticleWord.classList.add("empty");
@@ -1608,14 +1609,14 @@
             defPopup.classList.add("show");
             dwellNote.textContent = "Definition shown — look away to clear it.";
           } else {
-            dwellNote.textContent = "No dictionary entry for \"" + word + "\" — hold another word.";
+            dwellNote.textContent = "No dictionary entry for \"" + word + "\" — try another word.";
           }
         });
       }
 
       function autoScanPass() {
         if (!autoScan || ocrBusy || !sourceKind) return;
-        var canvas = frameCanvas(1000);
+        var canvas = frameCanvas(800);
         if (!canvas) return;
         ocrBusy = true;
         stage.classList.add("scanning");
@@ -1635,12 +1636,12 @@
             centerWord = best; dwellStart = Date.now(); definedWord = null;
             defPopup.classList.remove("show");
             reticleWord.textContent = best; reticleWord.classList.remove("empty");
-            dwellNote.textContent = "Hold steady — defining \"" + best + "\"…";
+            dwellNote.textContent = "Defining \"" + best + "\"…";
           } else if (!best && centerWord) {
             centerWord = null; definedWord = null;
             defPopup.classList.remove("show");
             reticleWord.textContent = "no word centered"; reticleWord.classList.add("empty");
-            dwellNote.textContent = "Look at a word to define it — looking away clears the definition.";
+            dwellNote.textContent = "Center a word to define it — looking away clears the definition.";
           }
           // Keep the full text fresh while auto-scanning, without re-solving every pass
           if ((data.text || "").trim()) textInput.value = data.text.trim();
