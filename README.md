@@ -1,6 +1,6 @@
 # James Thao — Portfolio Projects
 
-Hi, I'm James Thao — B.S. in Computer Science with a Cybersecurity Certification from the University of Wisconsin, CompTIA Security+, and experience as a Cloud Security Engineer at Lucid Motors, vSOC Engineer at Upstream Security, ROC Analyst at Johnson Controls, and Director at All Stars Automations.
+Hi, I'm James Thao — a techie with a passion for games, programming, security, AI, and more. A revolutionary.
 
 This repository is my project index for programming and IT roles. Each project is finished, runnable, and documented — start with the README in its folder.
 
@@ -80,13 +80,6 @@ python password_checker.py --demo
 - No secrets, credentials, API keys, or real customer / employer data are in this repo.
 - The Python tools are portfolio demos. They do not claim production use at any employer.
 - Orbit Hop also has a Facebook Instant Games build; the copy here runs in a normal browser, and the Facebook SDK script in it is inert outside Facebook.
-
-## Background
-
-- **All Stars Automations** — Director, Apr 2025–present — AI automation and workflow systems for small businesses
-- **Lucid Motors** — Cloud Security Engineer, Jan 2023–Feb 2025
-- **Upstream Security** — vSOC Engineer, Aug 2022–Aug 2024
-- **Johnson Controls** — ROC Analyst, Jun 2020–Jul 2022
 
 ## Contact
 
