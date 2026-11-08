@@ -1,0 +1,3 @@
+import{w as u}from"./index-B8hAYvA-.js";import{h as l,a as m,b as h}from"./haptic-DzAMWJuk-B8kf4f1C.js";import{createGesture as p}from"./index-Bck1OwMs-DrFIgt43.js";/*!
+ * (C) Ionic http://ionicframework.com - MIT License
+ */const A=(s,d)=>{let e,r;const a=(t,n,c)=>{if(typeof document>"u")return;const o=document.elementFromPoint(t,n);if(!o||!d(o)||o.disabled){i();return}o!==e&&(i(),f(o,c))},f=(t,n)=>{e=t,r||(r=e);const c=e;u(()=>c.classList.add("ion-activated")),n()},i=(t=!1)=>{if(!e)return;const n=e;u(()=>n.classList.remove("ion-activated")),t&&r!==e&&e.click(),e=void 0};return p({el:s,gestureName:"buttonActiveDrag",threshold:0,onStart:t=>a(t.currentX,t.currentY,h),onMove:t=>a(t.currentX,t.currentY,m),onEnd:()=>{i(!0),l(),r=void 0}})};export{A as c};

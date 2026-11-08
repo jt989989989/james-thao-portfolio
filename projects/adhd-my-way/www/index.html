@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="description" content="ADHD My Way — an Ionic app that helps children under 12 focus on daily tasks, earn coins, customise an avatar, and play mini games. Everything stays on the device." />
+    <title>ADHD My Way</title>
+    <script type="module" crossorigin src="./assets/index-B8hAYvA-.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-Dzgp-TF7.css">
+  </head>
+  <body>
+    <ion-app>
+      <ion-tabs>
+        <!-- ============ QUESTS TAB ============ -->
+        <ion-tab tab="quests">
+          <ion-header>
+            <ion-toolbar>
+              <ion-title>My Quests</ion-title>
+              <ion-buttons slot="end">
+                <ion-chip class="coin-chip" color="warning">
+                  <span class="coin-dot"></span><span class="coin-count">0</span>&nbsp;coins
+                </ion-chip>
+              </ion-buttons>
+            </ion-toolbar>
+          </ion-header>
+          <ion-content>
+            <ion-card>
+              <ion-card-header>
+                <ion-card-title>Today's progress</ion-card-title>
+              </ion-card-header>
+              <ion-card-content>
+                <p id="progress-label">0 of 6 quests done today</p>
+                <ion-progress-bar id="progress-bar" value="0" color="success"></ion-progress-bar>
+                <p id="stats-line"></p>
+              </ion-card-content>
+            </ion-card>
+
+            <ion-card>
+              <ion-card-header>
+                <ion-card-title>Daily quests</ion-card-title>
+                <ion-card-subtitle>Tick one off and earn 10 coins!</ion-card-subtitle>
+              </ion-card-header>
+              <ion-list id="task-list"></ion-list>
+              <div class="add-task-row">
+                <ion-input id="new-task-input" placeholder="Add your own quest…" maxlength="60" aria-label="New quest"></ion-input>
+                <ion-button id="add-task-btn" color="secondary">Add</ion-button>
+              </div>
+            </ion-card>
+
+            <ion-card>
+              <ion-card-header>
+                <ion-card-title>Focus timer</ion-card-title>
+                <ion-card-subtitle>Pick a time, press start, and focus on one quest. Finish it for +5 coins!</ion-card-subtitle>
+              </ion-card-header>
+              <ion-card-content>
+                <div class="timer-box">
+                  <div class="timer-label" id="timer-label">10:00</div>
+                  <ion-progress-bar id="timer-bar" value="0" color="tertiary"></ion-progress-bar>
+                  <div class="timer-buttons">
+                    <ion-button class="timer-length" data-minutes="5" fill="outline" size="small">5 min</ion-button>
+                    <ion-button class="timer-length" data-minutes="10" fill="outline" size="small">10 min</ion-button>
+                    <ion-button class="timer-length" data-minutes="15" fill="outline" size="small">15 min</ion-button>
+                  </div>
+                  <div class="timer-buttons">
+                    <ion-button id="timer-toggle" color="primary">Start</ion-button>
+                    <ion-button id="timer-reset" fill="outline" color="medium">Reset</ion-button>
+                  </div>
+                </div>
+              </ion-card-content>
+            </ion-card>
+          </ion-content>
+        </ion-tab>
+
+        <!-- ============ GAMES TAB ============ -->
+        <ion-tab tab="games">
+          <ion-header>
+            <ion-toolbar>
+              <ion-title>Mini Games</ion-title>
+              <ion-buttons slot="end">
+                <ion-chip class="coin-chip" color="warning">
+                  <span class="coin-dot"></span><span class="coin-count">0</span>&nbsp;coins
+                </ion-chip>
+              </ion-buttons>
+            </ion-toolbar>
+          </ion-header>
+          <ion-content>
+            <ion-card>
+              <ion-card-header>
+                <ion-card-title>Memory Match</ion-card-title>
+                <ion-card-subtitle>Find all 6 pairs to win 20 coins!</ion-card-subtitle>
+              </ion-card-header>
+              <ion-card-content>
+                <div class="memory-grid" id="memory-grid"></div>
+                <p id="memory-status">Pairs found: 0 of 6</p>
+                <ion-button id="memory-again" expand="block" fill="outline">Shuffle &amp; play again</ion-button>
+              </ion-card-content>
+            </ion-card>
+
+            <ion-card>
+              <ion-card-header>
+                <ion-card-title>Tap the Star</ion-card-title>
+                <ion-card-subtitle>Tap the star as many times as you can in 30 seconds. Each tap is +2 coins!</ion-card-subtitle>
+              </ion-card-header>
+              <ion-card-content>
+                <div class="star-area" id="star-area">
+                  <button class="star-target" id="star-target" type="button" aria-label="Tap the star"></button>
+                </div>
+                <p class="star-score" id="star-score">Stars tapped: 0 · 30s left</p>
+                <ion-button id="star-start" expand="block" color="secondary">Start game</ion-button>
+              </ion-card-content>
+            </ion-card>
+          </ion-content>
+        </ion-tab>
+
+        <!-- ============ AVATAR TAB ============ -->
+        <ion-tab tab="avatar">
+          <ion-header>
+            <ion-toolbar>
+              <ion-title>My Avatar</ion-title>
+              <ion-buttons slot="end">
+                <ion-chip class="coin-chip" color="warning">
+                  <span class="coin-dot"></span><span class="coin-count">0</span>&nbsp;coins
+                </ion-chip>
+              </ion-buttons>
+            </ion-toolbar>
+          </ion-header>
+          <ion-content>
+            <ion-card>
+              <ion-card-header>
+                <ion-card-title>This is me!</ion-card-title>
+                <ion-card-subtitle>Finish quests and win games to earn coins, then spend them below.</ion-card-subtitle>
+              </ion-card-header>
+              <ion-card-content>
+                <div class="avatar-wrap" id="avatar-preview"></div>
+              </ion-card-content>
+            </ion-card>
+
+            <ion-card>
+              <ion-card-header>
+                <ion-card-title>Avatar shop</ion-card-title>
+              </ion-card-header>
+              <ion-card-content id="shop"></ion-card-content>
+            </ion-card>
+
+            <p class="privacy-note">
+              Grown-ups: ADHD My Way has no accounts, no ads, no analytics and no
+              network calls. Everything — quests, coins and avatar choices — is stored
+              only on this device. Made for children under 12.
+            </p>
+            <div style="text-align:center; padding-bottom: 32px;">
+              <ion-button id="reset-btn" fill="clear" color="danger" size="small">Reset everything</ion-button>
+            </div>
+          </ion-content>
+        </ion-tab>
+
+        <ion-tab-bar slot="bottom">
+          <ion-tab-button tab="quests">
+            <ion-label>Quests</ion-label>
+          </ion-tab-button>
+          <ion-tab-button tab="games">
+            <ion-label>Games</ion-label>
+          </ion-tab-button>
+          <ion-tab-button tab="avatar">
+            <ion-label>Avatar</ion-label>
+          </ion-tab-button>
+        </ion-tab-bar>
+      </ion-tabs>
+    </ion-app>
+  </body>
+</html>

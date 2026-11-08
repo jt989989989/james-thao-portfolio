@@ -1,0 +1,3 @@
+/*!
+ * (C) Ionic http://ionicframework.com - MIT License
+ */const l=i=>{var e,r;for(let t=i;t;t=t.parentElement){const o=(e=t.getAttribute("dir"))===null||e===void 0?void 0:e.toLowerCase();if(o==="rtl")return!0;if(o==="ltr")return!1}return((r=document==null?void 0:document.dir)===null||r===void 0?void 0:r.toLowerCase())==="rtl"};export{l as i};

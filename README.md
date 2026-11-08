@@ -15,6 +15,7 @@ This repository is my project index for programming and IT roles. Each project i
 | [Scientific Calculator](projects/scientific-calculator/) | Scientific calculator in the browser — full expressions, trig, logs, factorial, history, memory | JavaScript, no dependencies, no `eval()` | Front-end / algorithms |
 | [Lead Generator](projects/lead-generator/) | CLI that finds small-business leads from Google Maps data via the official Places API — scores and dedupes them into a CSV | Python (stdlib only) | Automation / data / sales ops |
 | [Password Strength Checker](projects/password-strength-checker/) | Defensive CLI that scores a password 0–100 and explains why — length, variety, common words, patterns; runs locally, never sends or saves a password | Python (stdlib only) | Security / defensive |
+| [ADHD My Way](projects/adhd-my-way/) | Ionic app for children under 12 — daily quests earn coins, coins buy avatar customisations, plus Memory Match and Tap the Star mini games; everything stays on the device | Ionic 8, Capacitor 7, Vite, JavaScript | Mobile / front-end |
 
 ## How to run them
 
@@ -36,6 +37,16 @@ Calculator tests — Node.js only, no extra packages:
 ```bash
 cd projects/scientific-calculator
 node --test tests/calculator.test.js
+```
+
+ADHD My Way — 9 unit tests; web build served from www/:
+
+```bash
+cd projects/adhd-my-way
+npm install
+npm test
+npm run build
+# Demo: open www/index.html, or serve it — e.g. npx vite preview
 ```
 
 Python tools — Python 3.10+ only, no extra packages to install.

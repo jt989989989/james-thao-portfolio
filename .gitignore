@@ -1,6 +1,7 @@
 __pycache__/
 *.pyc
 *.pyo
+node_modules/
 report.json
 queue.csv
 messages.md
