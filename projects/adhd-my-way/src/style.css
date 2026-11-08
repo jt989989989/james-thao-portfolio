@@ -1,11 +1,13 @@
 /* ADHD My Way — simple, bright, kid-friendly. Plain shapes and flat colours. */
 
 :root {
-  --ion-color-primary: #6c5ce7;
-  --ion-color-secondary: #00b894;
-  --ion-color-tertiary: #f2c94c;
-  --ion-color-success: #00b894;
-  --ion-color-warning: #f2a541;
+  /* Accent palette from the official ADHD My Way logo:
+     rainbow star (red / blue / green / yellow) + green wordmark. */
+  --ion-color-primary: #43a047;
+  --ion-color-secondary: #1e88e5;
+  --ion-color-tertiary: #fdd835;
+  --ion-color-success: #43a047;
+  --ion-color-warning: #fb8c00;
   --ion-font-family: 'Comic Sans MS', 'Chalkboard SE', 'Segoe UI', system-ui, sans-serif;
 }
 
@@ -20,7 +22,7 @@ ion-card {
 }
 
 ion-toolbar {
-  --background: #6c5ce7;
+  --background: #43a047;
   --color: #ffffff;
 }
 
@@ -72,7 +74,7 @@ ion-tab-bar {
 .timer-label {
   font-size: 3rem;
   font-weight: bold;
-  color: #6c5ce7;
+  color: #43a047;
 }
 
 .timer-buttons {
@@ -135,7 +137,7 @@ ion-tab-bar {
   aspect-ratio: 1;
   border: none;
   border-radius: 14px;
-  background: #6c5ce7;
+  background: #1e88e5;
   color: #ffffff;
   font-size: 2rem;
   font-weight: bold;
@@ -194,4 +196,65 @@ ion-tab-bar {
   color: #636e72;
   text-align: center;
   padding: 0 16px 24px;
+}
+
+/* Official logo */
+.app-logo {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  background: #ffffff;
+  padding: 2px;
+  margin-left: 4px;
+}
+
+.logo-lockup {
+  display: block;
+  width: 150px;
+  margin: 0 auto 8px;
+}
+
+/* Bigger tap targets, for little fingers */
+ion-button {
+  min-height: 52px;
+  font-size: 1.05rem;
+}
+
+ion-tab-bar {
+  height: 64px;
+}
+
+ion-tab-button {
+  font-size: 0.95rem;
+}
+
+ion-checkbox {
+  --size: 28px;
+}
+
+ion-item {
+  --min-height: 56px;
+}
+
+.memory-card {
+  font-size: 2.4rem;
+}
+
+.star-target {
+  width: 72px;
+  height: 72px;
+}
+
+/* Phone-width shell: on wide screens the app sits in a centred phone
+   column, like a real phone app, instead of stretching across a desktop. */
+@media (min-width: 520px) {
+  body {
+    background: #232a33;
+  }
+
+  ion-app {
+    max-width: 430px;
+    margin: 0 auto;
+    box-shadow: 0 0 60px rgba(0, 0, 0, 0.55);
+  }
 }

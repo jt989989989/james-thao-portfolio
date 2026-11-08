@@ -106,7 +106,7 @@ function accessorySvg(acc) {
     case 'star':
       return `<path d="M158 158 l4 9 10 1 -7 7 2 10 -9 -5 -9 5 2 -10 -7 -7 10 -1 Z" fill="#f2c94c" stroke="#b8860b" stroke-width="1"/>`;
     case 'headphones':
-      return `<path d="M52 118 Q52 52 100 52 Q148 52 148 118" fill="none" stroke="#6c5ce7" stroke-width="10"/><rect x="42" y="106" width="18" height="30" rx="8" fill="#6c5ce7"/><rect x="140" y="106" width="18" height="30" rx="8" fill="#6c5ce7"/>`;
+      return `<path d="M52 118 Q52 52 100 52 Q148 52 148 118" fill="none" stroke="#1e88e5" stroke-width="10"/><rect x="42" y="106" width="18" height="30" rx="8" fill="#1e88e5"/><rect x="140" y="106" width="18" height="30" rx="8" fill="#1e88e5"/>`;
     default:
       return '';
   }
@@ -314,8 +314,8 @@ const starGame = { running: false, taps: 0, left: 30, moveHandle: null, tickHand
 function placeStar() {
   const area = $('#star-area');
   const star = $('#star-target');
-  const maxX = area.clientWidth - 64;
-  const maxY = area.clientHeight - 64;
+  const maxX = area.clientWidth - 72;
+  const maxY = area.clientHeight - 72;
   star.style.left = `${Math.max(0, Math.floor(Math.random() * maxX))}px`;
   star.style.top = `${Math.max(0, Math.floor(Math.random() * maxY))}px`;
 }

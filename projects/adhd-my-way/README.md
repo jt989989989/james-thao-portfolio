@@ -1,4 +1,7 @@
 # ADHD My Way
+
+![ADHD My Way logo](public/logo.svg)
+
 My first project during my internship as a software engineer touched up with modern skills. Originally built on Ionic 4 framework. Now updated with Ionic 8 framework.
 
 An **Ionic** mobile app that helps children under 12 focus on their daily tasks — with
@@ -7,6 +10,10 @@ coins, a customisable avatar, and mini games to keep it fun.
 > **Day 1 of the 100-day programming challenge** (8 Nov 2026). v1 launch.
 > Roadmap: v2 focus timer + task categories + streaks · v3 new mini game + more
 > avatar items · v4 weekly rewards / achievements + summary screen.
+>
+> **Update (8 Nov 2026)** — phone-friendly layout (the app now sits in a
+> centred phone-width column on wide screens, with bigger tap targets) and
+> the official ADHD My Way logo, shown in the app header and above.
 
 ## What it does
 
@@ -75,6 +82,7 @@ adhd-my-way/
 ├── capacitor.config.json # Capacitor app id / name / webDir
 ├── ionic.config.json     # Ionic project type
 ├── vite.config.js        # relative base so it works under GitHub Pages
+├── public/               # official logo files (logo.svg, logo-star.svg)
 ├── src/
 │   ├── main.js           # Ionic wiring: tabs, timer, games, shop, storage
 │   ├── logic.js          # pure rules (coins, tasks, shop, decks) — tested

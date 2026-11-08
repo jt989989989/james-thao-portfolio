@@ -5,8 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="description" content="ADHD My Way — an Ionic app that helps children under 12 focus on daily tasks, earn coins, customise an avatar, and play mini games. Everything stays on the device." />
     <title>ADHD My Way</title>
-    <script type="module" crossorigin src="./assets/index-B8hAYvA-.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-Dzgp-TF7.css">
+    <link rel="icon" type="image/svg+xml" href="./logo-star.svg" />
+    <script type="module" crossorigin src="./assets/index-CyoA4XMp.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-BQvD4xiR.css">
   </head>
   <body>
     <ion-app>
@@ -15,6 +16,9 @@
         <ion-tab tab="quests">
           <ion-header>
             <ion-toolbar>
+              <ion-buttons slot="start">
+                <img class="app-logo" src="./logo-star.svg" alt="ADHD My Way logo" />
+              </ion-buttons>
               <ion-title>My Quests</ion-title>
               <ion-buttons slot="end">
                 <ion-chip class="coin-chip" color="warning">
@@ -75,6 +79,9 @@
         <ion-tab tab="games">
           <ion-header>
             <ion-toolbar>
+              <ion-buttons slot="start">
+                <img class="app-logo" src="./logo-star.svg" alt="ADHD My Way logo" />
+              </ion-buttons>
               <ion-title>Mini Games</ion-title>
               <ion-buttons slot="end">
                 <ion-chip class="coin-chip" color="warning">
@@ -116,6 +123,9 @@
         <ion-tab tab="avatar">
           <ion-header>
             <ion-toolbar>
+              <ion-buttons slot="start">
+                <img class="app-logo" src="./logo-star.svg" alt="ADHD My Way logo" />
+              </ion-buttons>
               <ion-title>My Avatar</ion-title>
               <ion-buttons slot="end">
                 <ion-chip class="coin-chip" color="warning">
@@ -131,6 +141,7 @@
                 <ion-card-subtitle>Finish quests and win games to earn coins, then spend them below.</ion-card-subtitle>
               </ion-card-header>
               <ion-card-content>
+                <img class="logo-lockup" src="./logo.svg" alt="ADHD My Way logo" />
                 <div class="avatar-wrap" id="avatar-preview"></div>
               </ion-card-content>
             </ion-card>

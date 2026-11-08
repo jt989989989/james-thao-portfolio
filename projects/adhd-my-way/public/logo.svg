@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 262" role="img" aria-label="ADHD My Way logo">
+  <title>ADHD My Way</title>
+  <!-- Official ADHD My Way logo, recreated as SVG: rainbow four-point star
+       over a soft shadow, with the green ADHDmyway wordmark below. -->
+  <ellipse cx="100" cy="202" rx="68" ry="8" fill="#000000" opacity="0.12"/>
+  <polygon points="100,6 118,82 100,100 82,82" fill="#e53935"/>
+  <polygon points="194,100 118,118 100,100 118,82" fill="#43a047"/>
+  <polygon points="100,100 82,118 100,194" fill="#66bb6a"/>
+  <polygon points="100,100 100,194 118,118" fill="#fdd835"/>
+  <polygon points="6,100 82,82 100,100 82,118" fill="#1e88e5"/>
+  <text x="100" y="248" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="700"><tspan fill="#43a047">ADHD</tspan><tspan fill="#7cb342">myway</tspan></text>
+</svg>

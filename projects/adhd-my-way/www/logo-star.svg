@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="ADHD My Way star logo">
+  <title>ADHD My Way star</title>
+  <!-- Four-point star, split into the official logo colours:
+       red (top), blue (left), green (right), green + yellow (bottom). -->
+  <polygon points="100,6 118,82 100,100 82,82" fill="#e53935"/>
+  <polygon points="194,100 118,118 100,100 118,82" fill="#43a047"/>
+  <polygon points="100,100 82,118 100,194" fill="#66bb6a"/>
+  <polygon points="100,100 100,194 118,118" fill="#fdd835"/>
+  <polygon points="6,100 82,82 100,100 82,118" fill="#1e88e5"/>
+</svg>
