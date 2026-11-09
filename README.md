@@ -18,6 +18,8 @@ This repository is my project index for programming and IT roles. Each project i
 | [Password Strength Checker](projects/password-strength-checker/) | Defensive CLI that scores a password 0–100 and explains why — length, variety, common words, patterns; runs locally, never sends or saves a password | Python (stdlib only) | Security / defensive |
 | [Secret Scanner](projects/secret-scanner/) | Defensive CLI that scans a codebase for leaked secrets — AWS keys, GitHub/Slack tokens, JWTs, private keys, Stripe keys, passwords, high-entropy strings; reports file, line, rule, and severity | Python (stdlib only) | Security / defensive |
 | [Recon Scanner](projects/recon-scanner/) | Passive recon CLI — finds subdomains from Certificate Transparency (crt.sh), checks DNS liveness, and grades security headers + TLS on a domain; public data and one normal request only | Python (stdlib only) | Security / bug bounty |
+| [SQL Detective](projects/sql-detective/) | Fun SQL practice game — solve the case of the missing mascot by writing real SQL queries against a fictional SQLite database; hints and a checker included | Python (stdlib only, sqlite3) | SQL / databases / games |
+| [SQL Injection Lab](projects/sql-injection-lab/) | Educational local-only lab — try classic injection payloads against a deliberately vulnerable login, then see the same payloads fail against parameterized queries; spot-it and fix-it guide included | Python (stdlib only, sqlite3) | Security / defensive |
 | [ADHD My Way](projects/adhd-my-way/) | Ionic app for children under 12 — daily quests earn coins, coins buy avatar customisations, plus Memory Match and Tap the Star mini games; everything stays on the device | Ionic 8, Capacitor 7, Vite, JavaScript | Mobile / front-end |
 
 ## How to run them
@@ -91,6 +93,18 @@ python -m unittest discover -s tests -v
 python recon_scanner.py --demo
 # Live recon (only on domains you own or that are in scope):
 # python recon_scanner.py example.com
+
+# SQL Detective — 12 unit tests; solve the mascot mystery with SQL
+cd ../sql-detective
+python -m unittest discover -s tests -v
+python sql_detective.py --demo
+# Play it yourself: python sql_detective.py
+
+# SQL Injection Lab — 13 unit tests; local demo only, no network
+cd ../sql-injection-lab
+python -m unittest discover -s tests -v
+python sql_injection_lab.py --demo
+# Interactive menu: python sql_injection_lab.py
 ```
 
 ## Notes
