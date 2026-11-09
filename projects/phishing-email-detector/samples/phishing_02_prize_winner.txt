@@ -1,0 +1,14 @@
+From: Prize Center <winner@freeprize-claim.example>
+Subject: Congratulations! You have WON a $1,000 gift card
+Date: Sun, 08 Nov 2026 19:02:00 +0000
+
+Congratulations!
+
+You have been selected as a winner in our ShopSphere customer giveaway. You have won a $1,000 gift card! Claim your prize now before it expires tonight.
+
+To receive your gift card, pay only a small shipping fee with your credit card here:
+https://bit.ly/claim-prize-now
+
+This offer expires in 2 hours. Act now and claim your reward!
+
+Prize Center Team

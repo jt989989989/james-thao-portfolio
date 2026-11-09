@@ -1,0 +1,14 @@
+From: ShopSphere Orders <orders@shopsphere.example>
+Subject: Your ShopSphere order #481516 has shipped
+Date: Sun, 08 Nov 2026 15:22:00 +0000
+
+Hi Alex,
+
+Thanks for your order! Your parcel shipped this morning and should arrive on Thursday. You can track it from your account on our site:
+
+https://shopsphere.example/orders/481516/track
+
+Order summary: 1x wireless mouse, 1x desk mat. Total $42.98, paid by card ending 4242.
+
+Thanks for shopping with us,
+ShopSphere Orders

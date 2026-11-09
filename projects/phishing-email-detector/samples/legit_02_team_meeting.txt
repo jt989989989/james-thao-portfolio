@@ -1,0 +1,11 @@
+From: Maya Chen <maya.chen@riverside.example>
+Subject: Planning meeting Tuesday at 10am
+Date: Mon, 09 Nov 2026 07:55:00 +0000
+
+Hi team,
+
+A reminder that our weekly planning meeting is Tuesday at 10am in room 3. Please bring your updates and any blockers to discuss.
+
+The agenda is on the shared drive. See you there.
+
+Maya

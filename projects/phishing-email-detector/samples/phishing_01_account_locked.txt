@@ -1,0 +1,15 @@
+From: Northbank Security <alerts@northbank-secure.example>
+Reply-To: support@northbank-helpdesk.example
+Subject: URGENT: Your Northbank account will be suspended within 24 hours
+Date: Mon, 09 Nov 2026 08:14:00 +0000
+
+Dear Customer,
+
+We detected unusual activity on your Northbank account. Your account will be suspended within 24 hours unless you verify your identity immediately.
+
+Click here to verify your password and restore access now:
+[northbank.example/account/verify](https://northbank-secure.example/login/verify?id=88412)
+
+Do not delay. If you do not act now, you will lose access to your money.
+
+Northbank Security Team

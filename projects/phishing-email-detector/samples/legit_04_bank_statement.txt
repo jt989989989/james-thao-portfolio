@@ -1,0 +1,11 @@
+From: Northbank <statements@northbank.example>
+Subject: Your November statement is ready
+Date: Mon, 09 Nov 2026 08:00:00 +0000
+
+Hi Jordan,
+
+Your monthly statement is ready. Sign in through our app or website as usual if you would like to review it. No action is needed.
+
+If you have any questions, call the number on the back of your card.
+
+Northbank

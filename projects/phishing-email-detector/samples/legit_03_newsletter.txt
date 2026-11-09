@@ -1,0 +1,14 @@
+From: CloudDesk Newsletter <news@clouddesk.example>
+Subject: CloudDesk monthly newsletter — November
+Date: Sat, 07 Nov 2026 12:00:00 +0000
+
+Hello,
+
+Welcome to the November newsletter. This month we cover the new dashboard, a guide to keyboard shortcuts, and a look at what is coming next.
+
+Read the full update on our blog:
+https://clouddesk.example/blog/november-update
+
+If you no longer want these emails, you can unsubscribe from your account settings.
+
+The CloudDesk Team
