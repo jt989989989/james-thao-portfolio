@@ -11,6 +11,7 @@ This repository is my project index for programming and IT roles. Each project i
 | [Printed Text Reader HUD (prototype)](projects/printed-text-reader-hud/) | You know the saying — give a tough job to a lazy person and see how they solve it. Well, this tool is meant to do that: point a camera at printed text and get the answer in a heads-up panel — multiple choice, math, definitions, general knowledge, Security+ and CISSP banks | JavaScript, HTML5, no dependencies | Front-end / problem-solving |
 | [Orbit Hop](projects/orbit-hop/) | Playable browser game — hop between orbits, dodge hazards, chase a high score | JavaScript, HTML5 Canvas | Game dev / front-end |
 | [Jelly Stack](projects/jelly-stack/) | Playable physics stacking game — drop soft jelly blocks, build a stable tower | JavaScript, Matter.js | Game dev / front-end |
+| [Life of a Man](projects/life-of-a-man/) | Satire board-game life sim — roll dice around a 40-square Board of Life, ages 18 to 65, quarterly choices, debt, marriage, midlife crises, and a tombstone ending; happiness is the main score | JavaScript, HTML5, no dependencies | Game dev / front-end |
 | [SOC Log Analyzer](projects/soc-log-analyzer/) | CLI that parses auth logs and flags brute-force attempts and success-after-failure logins | Python (stdlib only) | SOC / security / IT |
 | [Missed-Call Follow-Up](projects/missed-call-followup/) | CLI that turns a missed-call CSV into a prioritized follow-up queue with message drafts | Python (stdlib only) | Automation / IT |
 | [Scientific Calculator](projects/scientific-calculator/) | Scientific calculator in the browser — full expressions, trig, logs, factorial, history, memory | JavaScript, no dependencies, no `eval()` | Front-end / algorithms |
@@ -32,6 +33,9 @@ open projects/orbit-hop/index.html
 
 # Jelly Stack
 open projects/jelly-stack/index.html
+
+# Life of a Man
+open projects/life-of-a-man/index.html
 
 # Scientific Calculator
 open projects/scientific-calculator/index.html

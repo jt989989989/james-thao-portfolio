@@ -1,0 +1,1379 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<meta name="color-scheme" content="light dark"/>
+<link rel="icon" href="data:,">
+<title>Life of a Man</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Barlow:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#ece9e2; --panel:#ffffff; --panel2:#f6f3ec; --ink:#1a1815; --muted:#6b665c;
+  --line:#ddd6c8; --amber:#c2410c; --amber2:#ea580c; --gold:#b45309;
+  --green:#15803d; --red:#b91c1c; --blue:#1d4ed8; --track:#e7e2d6;
+  --shadow:0 10px 30px rgba(26,24,21,.12);
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#131210; --panel:#1e1c19; --panel2:#262320; --ink:#f3efe6; --muted:#a8a195; --line:#3a362f; --track:#33302a; --shadow:0 10px 30px rgba(0,0,0,.45); }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Barlow",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+h1,h2,h3,.oswald{font-family:"Oswald",sans-serif;text-transform:uppercase;letter-spacing:.02em}
+button{font-family:inherit;cursor:pointer}
+.wrap{max-width:1180px;margin:0 auto;padding:18px 16px 40px}
+.top{margin:6px 0 16px}
+.top h1{font-size:clamp(34px,6vw,58px);line-height:.95;margin:0}
+.top h1 span{color:var(--amber2)}
+.tag{font-size:17px;color:var(--muted);max-width:680px;margin:8px 0 0;line-height:1.45}
+.tag b{color:var(--ink)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:16px 0}
+.stat.hero{grid-column:span 2}
+.boardpanel{margin:0 0 14px}
+.boardhead{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between;border-bottom:2px solid var(--line);padding-bottom:12px;margin-bottom:12px}
+.boardhead h2{font-size:18px;margin:0}
+.dicewrap{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.diefaces{width:62px;height:62px;border-radius:14px;background:var(--ink);color:var(--panel);display:flex;align-items:center;justify-content:center;font-family:"Oswald";font-size:34px;box-shadow:var(--shadow)}
+.rollbtn{border:none;background:var(--amber2);color:#fff;font-family:"Oswald";text-transform:uppercase;letter-spacing:.05em;font-size:17px;padding:13px 20px;border-radius:11px}
+.rollbtn:hover{background:var(--amber)} .rollbtn:disabled{opacity:.45;cursor:default}
+.boardgrid{display:grid;grid-template-columns:repeat(8,1fr);gap:7px}
+.tile{position:relative;border:1.5px solid var(--line);border-radius:10px;background:var(--panel2);min-height:74px;padding:7px 6px;font-size:11px;line-height:1.25;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.tile .tic{font-size:19px;line-height:1}
+.tile .tname{font-weight:700;font-size:11px}
+.tile .tnum{position:absolute;top:3px;left:6px;font-size:9px;color:var(--muted);font-weight:700}
+.tile.here{border-color:var(--amber2);border-width:3px;background:var(--panel);box-shadow:0 0 0 3px rgba(234,88,12,.25)}
+.tile .token{font-size:20px;line-height:1}
+.tile.t-pay{border-top:5px solid var(--green)} .tile.t-choice{border-top:5px solid var(--amber2)} .tile.t-chance{border-top:5px solid var(--red)} .tile.t-joy{border-top:5px solid #16a34a} .tile.t-debt{border-top:5px solid #7c3aed} .tile.t-home{border-top:5px solid var(--blue)} .tile.t-trap{border-top:5px solid #111} .tile.t-start{border-top:5px solid var(--gold)}
+.freeacts{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.freeacts button{background:var(--panel2);border:1.5px solid var(--line);border-radius:99px;padding:8px 13px;font-weight:700;font-size:13.5px}
+.freeacts button:hover{border-color:var(--amber2)} .freeacts button:disabled{opacity:.4;cursor:default}
+.freeacts .falabel{font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);align-self:center}
+.fatebox{margin-top:12px;border-radius:12px;padding:13px 15px;font-size:15.5px;line-height:1.5;border:2px dashed var(--line)}
+.fatebox.good{border-color:var(--green)} .fatebox.bad{border-color:var(--red)}
+.fatebox b{font-family:"Oswald";letter-spacing:.04em;text-transform:uppercase}
+.tombstone{max-width:560px;margin:6px auto 0;background:linear-gradient(180deg,#d8d2c4,#bdb5a2);color:#2b2721;border-radius:190px 190px 14px 14px;padding:34px 28px 24px;text-align:center;box-shadow:inset 0 0 0 4px rgba(0,0,0,.08), var(--shadow)}
+@media (prefers-color-scheme: dark){.tombstone{background:linear-gradient(180deg,#4a463f,#33302a);color:#efe9da}}
+.tombstone .rip{font-family:"Oswald";font-size:44px;letter-spacing:.2em;margin:0}
+.tombstone .tname2{font-family:"Oswald";font-size:26px;margin:6px 0 2px;text-transform:uppercase}
+.tombstone .tdates{color:inherit;opacity:.75;font-weight:700;letter-spacing:.08em}
+.tombstone .tepitaph{font-style:italic;line-height:1.5;margin:12px 0}
+.tombstone .tsum{text-align:left;font-size:14.5px;line-height:1.65;border-top:2px dashed rgba(0,0,0,.25);padding-top:12px;margin-top:12px}
+.tombstone .tsum b{font-family:"Oswald";letter-spacing:.03em}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px;box-shadow:var(--shadow)}
+.stat.hero{border-color:var(--amber2);border-width:2px}
+.stat .label{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.stat .val{font-family:"Oswald";font-size:30px;line-height:1;margin:4px 0 6px}
+.stat .val small{font-size:15px;color:var(--muted)}
+.meter{height:9px;background:var(--track);border-radius:99px;overflow:hidden}
+.meter i{display:block;height:100%;border-radius:99px;transition:width .6s ease}
+.m-hap{background:var(--amber2)} .m-str{background:var(--red)} .m-cred{background:var(--blue)}
+.sub{font-size:12.5px;color:var(--muted);margin-top:5px;line-height:1.3}
+.progressline{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);margin:2px 0 14px}
+.progressline .meter{flex:1}
+.layout{display:grid;grid-template-columns:290px 1fr 300px;gap:14px;align-items:start}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:16px}
+.panel h2{font-size:16px;margin:0 0 12px;border-bottom:2px solid var(--line);padding-bottom:8px}
+.sheet{display:grid;gap:0}
+.sheet div{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px dashed var(--line);font-size:14.5px}
+.sheet div:last-child{border-bottom:none}
+.sheet dt{color:var(--muted);font-weight:600}
+.sheet dd{margin:0;font-weight:700;text-align:right}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.chip{font-size:12px;font-weight:700;background:var(--panel2);border:1px solid var(--line);border-radius:99px;padding:4px 9px}
+.chip.bad{border-color:var(--red);color:var(--red)} .chip.good{border-color:var(--green);color:var(--green)}
+.stage{min-height:220px}
+.cardtag{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;padding:5px 10px;border-radius:99px;color:#fff;background:var(--ink)}
+.cardtag.choice{background:var(--amber)} .cardtag.chaos{background:var(--red)} .cardtag.joy{background:var(--green)} .cardtag.mile{background:var(--blue)} .cardtag.chain{background:#7c3aed} .cardtag.mil{background:#3f6212}
+.stage h2{font-size:clamp(24px,3.4vw,34px);line-height:1.05;margin:12px 0 8px;text-transform:none;letter-spacing:0;font-family:"Oswald"}
+.stage p.desc{font-size:17px;line-height:1.55;color:var(--ink);margin:0 0 6px}
+.stage p.flavor{font-size:14.5px;color:var(--muted);font-style:italic;line-height:1.5}
+.ledger{font-size:13.5px;background:var(--panel2);border:1px dashed var(--line);border-radius:10px;padding:9px 12px;margin-top:10px;line-height:1.5}
+.ledger b{font-family:"Oswald";letter-spacing:.04em}
+.choices{display:grid;gap:10px;margin-top:16px}
+.choice{text-align:left;background:var(--panel2);border:1.5px solid var(--line);border-radius:12px;padding:13px 14px;transition:border-color .15s, transform .15s}
+.choice:hover{border-color:var(--amber2)}
+.choice:active{transform:scale(.99)}
+.choice b{display:block;font-size:16.5px}
+.choice span{display:block;font-size:13.5px;color:var(--muted);margin-top:2px;line-height:1.4}
+.choice .fx{margin-top:7px;display:flex;flex-wrap:wrap;gap:5px}
+.fx em{font-style:normal;font-size:11.5px;font-weight:700;padding:2px 7px;border-radius:99px;background:var(--panel);border:1px solid var(--line)}
+.fx em.pos{color:var(--green)} .fx em.neg{color:var(--red)}
+.bigbtn{width:100%;border:none;background:var(--amber2);color:#fff;font-family:"Oswald";text-transform:uppercase;letter-spacing:.06em;font-size:19px;padding:15px;border-radius:12px;margin-top:16px}
+.bigbtn:hover{background:var(--amber)}
+.bigbtn:disabled{opacity:.45;cursor:default}
+.resultbox{margin-top:16px;background:var(--panel2);border-left:5px solid var(--amber2);border-radius:0 12px 12px 0;padding:13px 15px;font-size:16px;line-height:1.55}
+.delta{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.delta span{font-size:12.5px;font-weight:700;padding:3px 9px;border-radius:99px;background:var(--panel);border:1px solid var(--line)}
+.delta .pos{color:var(--green)} .delta .neg{color:var(--red)}
+.log{max-height:560px;overflow:auto}
+.log ul{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.log li{font-size:13.5px;line-height:1.45;border-bottom:1px dashed var(--line);padding-bottom:9px}
+.log li b.age{font-family:"Oswald";color:var(--amber2);margin-right:6px}
+.log li .why{color:var(--muted);display:block;margin-top:2px}
+.emptylog{color:var(--muted);font-size:14px}
+.ending{text-align:center;padding:10px 0}
+.ending .crown{font-family:"Oswald";font-size:clamp(28px,4vw,40px);line-height:1.05;margin:8px 0}
+.scorebig{font-family:"Oswald";font-size:64px;color:var(--amber2);line-height:1}
+.howto{font-size:14px;line-height:1.55;color:var(--muted)}
+.howto li{margin-bottom:6px}
+.foot{margin-top:18px;font-size:12.5px;color:var(--muted);text-align:center}
+@media(max-width:980px){ .layout{grid-template-columns:1fr 1fr} .gamecol{grid-column:1/-1;order:-1} .log{max-height:300px} }
+@media(max-width:640px){ .stats{grid-template-columns:1fr 1fr} .stat.hero{grid-column:1/-1} .layout{grid-template-columns:1fr} .boardgrid{grid-template-columns:repeat(5,1fr)} .tile{min-height:64px} }
+@media (prefers-reduced-motion: reduce){ *{transition:none!important} }
+</style>
+<style>
+/* ===== ONE-SCREEN APP SHELL (v3 — explicit 3-column placement) ===== */
+html,body{height:100%}
+body{overflow:hidden}
+.wrap{max-width:1500px;height:100dvh;display:flex;flex-direction:column;padding:10px 14px 12px;margin:0 auto}
+/* --- compact header --- */
+.top{display:flex;align-items:center;gap:16px;margin:0;flex:none;min-width:0}
+.top h1{font-size:28px;line-height:1;white-space:nowrap;margin:0}
+.tag{font-size:12.5px;margin:0;line-height:1.35;max-width:none;flex:1;min-width:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+/* --- one-row stat strip with set icon badges --- */
+.stats{display:grid;grid-template-columns:1.32fr 1fr 1fr 1fr 1.06fr 1fr 1fr 1.02fr;gap:8px;margin:9px 0 6px;flex:none}
+.stat{padding:7px 9px;border-radius:12px;min-width:0;display:flex;flex-direction:column;justify-content:flex-start;overflow:hidden}
+.stat.hero{grid-column:auto}
+.stat .label{display:flex;align-items:center;gap:6px;font-size:10px;letter-spacing:.06em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sic{font-size:14px;line-height:1;width:25px;height:25px;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid var(--line);background:var(--panel2);flex:none}
+.stat:nth-child(1) .sic{background:rgba(245,158,11,.20);border-color:rgba(245,158,11,.55)}
+.stat:nth-child(2) .sic{background:rgba(236,72,153,.16);border-color:rgba(236,72,153,.45)}
+.stat:nth-child(3) .sic{background:rgba(34,197,94,.18);border-color:rgba(34,197,94,.5)}
+.stat:nth-child(4) .sic{background:rgba(249,115,22,.20);border-color:rgba(249,115,22,.55)}
+.stat:nth-child(5) .sic{background:rgba(59,130,246,.18);border-color:rgba(59,130,246,.5)}
+.stat:nth-child(6) .sic{background:rgba(225,29,72,.16);border-color:rgba(225,29,72,.45)}
+.stat:nth-child(7) .sic{background:rgba(100,116,139,.20);border-color:rgba(100,116,139,.5)}
+.stat:nth-child(8) .sic{background:rgba(14,165,233,.16);border-color:rgba(14,165,233,.45)}
+.stat .val{font-size:20px;line-height:1.1;margin:3px 0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stat .val small{font-size:11px}
+.stat .sub{font-size:10.5px;margin-top:3px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.meter{height:6px}
+/* --- life progress line --- */
+.progressline{margin:0 0 8px;font-size:11.5px;flex:none;display:flex;align-items:center;gap:10px;min-width:0;overflow:hidden}
+.progressline span{white-space:nowrap;flex:none}
+.progressline .meter{flex:1;min-width:0}
+/* --- the 3-column stage: board | card stage | your story --- */
+.layout{flex:1;min-height:0;display:grid;grid-template-columns:352px minmax(0,1fr) 332px;grid-template-rows:minmax(0,1fr);grid-template-areas:"board stage story";gap:12px;align-items:stretch}
+.panel{padding:12px;display:flex;flex-direction:column;min-height:0;min-width:0;overflow:hidden}
+.panel h2{flex:none}
+/* BOARD — left column, row 1 */
+.boardpanel{grid-area:board;grid-row:1;grid-column:1;margin:0}
+.boardhead{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;border-bottom:2px solid var(--line);padding-bottom:8px;margin-bottom:8px;flex:none}
+.boardhead h2{font-size:15.5px;margin:0}
+.boardhead .sub{font-size:11px;line-height:1.3;margin-top:3px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.dicewrap{gap:8px;flex:none}
+.diefaces{width:44px;height:44px;font-size:24px;border-radius:11px}
+.rollbtn{font-size:14.5px;padding:10px 13px;white-space:nowrap}
+.boardgrid{display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(8,minmax(0,1fr));gap:5px;flex:1;min-height:0}
+.tile{min-height:0;font-size:10px;padding:3px 2px;border-radius:8px;overflow:hidden}
+.tile .tic{font-size:15px}
+.tile .tname{font-size:9.5px;line-height:1.15}
+.tile .token{font-size:15px}
+.freeacts{margin-top:8px;gap:6px;flex:none}
+.freeacts button{padding:6px 10px;font-size:12px}
+.freeacts .falabel{font-size:11px}
+.fatebox{margin-top:10px;padding:10px 12px;font-size:14px}
+/* CARD STAGE — center column, row 1, narrator pinned at top */
+.gamecol{grid-area:stage;grid-row:1;grid-column:2;overflow:hidden}
+.narrator{flex:none;background:var(--panel2);border:1.5px dashed var(--amber2);border-radius:12px;padding:8px 11px;margin-bottom:10px}
+.narrhead{font-family:"Oswald",sans-serif;text-transform:uppercase;font-size:13px;letter-spacing:.05em}
+.narrhead span{text-transform:none;font-family:"Barlow",sans-serif;font-size:11.5px;color:var(--muted);letter-spacing:0;font-weight:600}
+.narrtext{margin:4px 0 7px;font-size:13px;line-height:1.4;font-style:italic}
+.narrform{display:flex;gap:7px}
+.narrform input{flex:1;min-width:0;padding:7px 10px;border-radius:9px;border:1.5px solid var(--line);background:var(--panel);color:var(--ink);font-family:inherit;font-size:13px}
+.narrform input:disabled{opacity:.55}
+.narrform button{border:none;background:var(--amber2);color:#fff;font-family:"Oswald",sans-serif;text-transform:uppercase;letter-spacing:.04em;font-size:13px;padding:7px 13px;border-radius:9px;flex:none}
+.narrform button:hover{background:var(--amber)}
+.narrform button:disabled{opacity:.45;cursor:default}
+.narrhint{margin:4px 0 0;font-size:10.5px;color:var(--muted)}
+.stagescroll{flex:1;min-height:0;overflow-y:auto;padding-right:2px}
+.stage{min-height:0}
+.stage h2{font-size:clamp(20px,2.2vw,27px);margin:8px 0 6px}
+.stage p.desc{font-size:15px;line-height:1.5}
+.stage p.flavor{font-size:13px}
+.choices{gap:8px;margin-top:12px;grid-template-columns:repeat(auto-fit,minmax(235px,1fr))}
+.choice{padding:10px 12px}
+.choice b{font-size:14.5px}
+.choice span{font-size:12px}
+.bigbtn{font-size:16.5px;padding:12px;margin-top:12px}
+.resultbox{margin-top:12px;font-size:14.5px;padding:11px 13px}
+.tombstone{padding:22px 20px 16px}
+.tombstone .rip{font-size:32px}
+.tombstone .tname2{font-size:22px}
+.scorebig{font-size:48px}
+/* YOUR STORY — right column, row 1: character sheet + chronicle together */
+.storypanel{grid-area:story;grid-row:1;grid-column:3;overflow:hidden}
+.storypanel>h2{margin:0 0 4px}
+.subhead{font-family:"Oswald",sans-serif;text-transform:uppercase;letter-spacing:.03em;font-size:13px;margin:10px 0 6px;border-bottom:2px solid var(--line);padding-bottom:5px;flex:none}
+.storypanel>h2+.subhead{margin-top:2px}
+.sheet{display:grid;grid-template-columns:1fr 1fr;gap:0 12px;flex:none}
+.sheet div{padding:3px 0;font-size:12px;line-height:1.3;min-width:0}
+.sheet dt{white-space:nowrap}
+.sheet dd{min-width:0;overflow-wrap:anywhere}
+.chips{margin-top:7px;gap:5px;flex:none}
+.chip{font-size:11px;padding:3px 8px}
+.log{flex:1 1 auto;min-height:96px;max-height:none;overflow-y:auto;padding-right:3px}
+.log ul{gap:8px}
+.log li{font-size:12.5px;padding-bottom:7px}
+.howto{font-size:12.5px}
+details.howtodet{margin-top:8px;border-top:2px solid var(--line);padding-top:7px;flex:none}
+details.howtodet summary{font-family:"Oswald",sans-serif;text-transform:uppercase;font-size:12.5px;letter-spacing:.03em;cursor:pointer}
+@media(max-width:1180px){
+  .layout{grid-template-columns:308px minmax(0,1fr) 296px}
+  .boardhead .sub{display:none}
+  .tile .tname{font-size:9px}
+  .sheet{grid-template-columns:1fr 1fr}
+}
+@media(max-width:980px){
+  .layout{grid-template-columns:308px minmax(0,1fr) 296px}
+  .gamecol{grid-column:2;order:0}
+}
+@media(max-width:860px){
+  .wrap{padding:8px 10px 10px}
+  .top{flex-direction:column;align-items:flex-start;gap:2px}
+  .top h1{font-size:23px}
+  .tag{font-size:11.5px;-webkit-line-clamp:2}
+  .stats{grid-template-columns:repeat(4,1fr);gap:6px;margin:7px 0 5px}
+  .stat{padding:6px 8px}
+  .stat .val{font-size:16px}
+  .stat .sub{display:none}
+  .stat .label{font-size:9px;white-space:normal;overflow:visible;text-overflow:clip;line-height:1.15}
+  .sic{width:21px;height:21px;font-size:12px;border-radius:6px}
+  .progressline{font-size:10.5px}
+  .layout{display:flex;flex-direction:column;overflow-y:auto;gap:10px}
+  .boardpanel,.gamecol,.storypanel{grid-area:auto;grid-row:auto;grid-column:auto}
+  .boardpanel{order:1;flex:none;overflow:visible}
+  .gamecol{order:2;flex:none;overflow:hidden}
+  .storypanel{order:3;flex:none;overflow:visible}
+  .boardgrid{grid-template-columns:repeat(5,1fr);grid-template-rows:none;grid-auto-rows:52px;flex:none}
+  .stagescroll{overflow-y:visible;flex:none}
+  .log{max-height:260px;flex:none}
+  .choices{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion: reduce){ *{transition:none!important} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <h1>Life of a <span>Man</span></h1>
+    <p class="tag">A <b>brutally satirical board game</b> about modern manhood: hustle-culture LinkedIn posts, HOA dictatorships, dating-app warfare, finance bros, and romance that costs extra. Roll, swipe, propose, panic — every choice <b>branches, backfires, or bills you</b>, and you only stop when you <b>die</b>. <b>Happiness is the only score that matters. Love is the most expensive way to lose it.</b></p>
+  </div>
+
+  <div class="stats">
+    <div class="stat hero"><div class="label"><span class="sic">😄</span> Happiness — your score</div><div class="val"><span id="sHap">55</span><small> / 100</small></div><div class="meter"><i class="m-hap" id="mHap" style="width:55%"></i></div><div class="sub" id="hapWord">Decent. Suspiciously decent.</div></div>
+    <div class="stat"><div class="label"><span class="sic">🎂</span> Age · Quarter</div><div class="val"><span id="sAge">18</span><small> · Q1</small></div><div class="sub" id="qWord">Jan – Mar · Spring hopes</div></div>
+    <div class="stat"><div class="label"><span class="sic">💰</span> Money</div><div class="val" id="sMoney">$1,200</div><div class="sub" id="moneyWord">Mattress savings</div></div>
+    <div class="stat"><div class="label"><span class="sic">🤯</span> Stress</div><div class="val"><span id="sStress">20</span><small> / 100</small></div><div class="meter"><i class="m-str" id="mStress" style="width:20%"></i></div><div class="sub">100 = ER visit</div></div>
+    <div class="stat"><div class="label"><span class="sic">💳</span> Credit Score</div><div class="val" id="sCredit">620</div><div class="meter"><i class="m-cred" id="mCredit" style="width:58%"></i></div><div class="sub">Gates mortgages &amp; big buys</div></div>
+    <div class="stat"><div class="label"><span class="sic">❤️</span> Health</div><div class="val"><span id="sHealth">92</span><small> / 100</small></div><div class="meter"><i class="m-str" id="mHealth" style="width:92%"></i></div><div class="sub">Hits 0 and the game ends early</div></div>
+    <div class="stat"><div class="label"><span class="sic">🏦</span> Total Debt</div><div class="val" id="sDebt">$0</div><div class="sub" id="debtWord">Debt-free. Enjoy it while it lasts.</div></div>
+    <div class="stat"><div class="label"><span class="sic">🏠</span> Housing</div><div class="val" style="font-size:21px" id="sHome">Renting</div><div class="sub" id="homeWord">Rent due every lap of life</div></div>
+  </div>
+  <div class="progressline"><span>Age 18</span><div class="meter"><i class="m-hap" id="mLife" style="width:0%"></i></div><span>☠️ Death — whenever it finds you</span></div>
+
+  <div class="layout">
+    <section class="panel boardpanel" id="boardPanel">
+    <div class="boardhead">
+      <div><h2>🎲 The Board of Life</h2><div class="sub" id="boardHint">Roll to move. Each square you pass is time passing — income, rent, bills and debt payments hit for every quarter you travel.</div></div>
+      <div class="dicewrap"><div class="diefaces" id="dieFace">?</div><button class="rollbtn" id="rollBtn">🎲 Roll Dice</button></div>
+    </div>
+    <div class="boardgrid" id="boardGrid"></div>
+    <div class="freeacts" id="freeActs"><span class="falabel">Before you roll — one free move:</span>
+      <button data-fa="ot">💪 Work Overtime</button><button data-fa="boys">🎣 Call the Boys</button><button data-fa="date">🌹 Romance Move</button><button data-fa="doctor">🩺 See a Doctor</button><button data-fa="gym">🏋️ Hit the Gym</button><button data-fa="debt">💳 Pay Extra on Debt</button>
+    </div>
+    </section>
+
+    <aside class="panel storypanel">
+      <h2>📖 Your Story</h2>
+      <h3 class="subhead">📜 Character Sheet</h3>
+      <dl class="sheet">
+        <div><dt>Status</dt><dd id="cStatus">Single &amp; free</dd></div>
+        <div><dt>Job</dt><dd id="cJob">No job yet</dd></div>
+        <div><dt>Salary</dt><dd id="cSalary">$0/yr</dd></div>
+        <div><dt>Partner</dt><dd id="cPartner">—</dd></div>
+        <div><dt>Side action</dt><dd id="cSide">None. Angel.</dd></div>
+        <div><dt>Kids</dt><dd id="cKids">0</dd></div>
+        <div><dt>Divorces</dt><dd id="cDiv">0</dd></div>
+        <div><dt>Path</dt><dd id="cPath">Unwritten</dd></div>
+        <div><dt>🎓 College loan</dt><dd id="cDCollege">$0</dd></div>
+        <div><dt>💳 Credit cards</dt><dd id="cDCredit">$0</dd></div>
+        <div><dt>🏠 Mortgage</dt><dd id="cDMort">$0</dd></div>
+        <div><dt>🚗 Car loan</dt><dd id="cDCar">$0</dd></div>
+        <div><dt>Peak money</dt><dd id="cPeak">$1,200</dd></div>
+        <div><dt>Boys' trips</dt><dd id="cBoys">0</dd></div>
+      </dl>
+      <div class="chips" id="chips"></div>
+      <h3 class="subhead">📖 Chronicle — your story so far</h3>
+      <div class="log"><ul id="logList"><li class="emptylog">Nothing yet. A blank page, full of potential and future regrets.</li></ul></div>
+      <details class="howtodet"><summary>How to play</summary>
+      <ul class="howto" style="margin:8px 0 0;padding-left:18px">
+        <li><b>Roll the dice</b> to move around the board. The number you roll is quarters of your life passing — the ledger charges you for every one: paycheck, taxes, <b>rent or mortgage</b>, bills, her spending, kids, alimony, and <b>debt payments with interest</b>.</li>
+        <li>Where you <b>land</b> decides your fate: Payday, Choice and Chance squares deal cards with <b>5+ options</b>; Debt, Rent and Trap squares just take your money, like real life.</li>
+        <li>Every choice then rolls a <b>Fate</b> — it can go as planned, break lucky, or backfire horribly. No choice is safe.</li>
+        <li>Use <b>one free move</b> before each roll: overtime, the boys, a doctor, the gym, or paying down debt.</li>
+        <li>Big birthdays unlock new life options. Stress rots your health, debt rots your credit — and the game only ends when you <b>die</b>. Your tombstone delivers the summary.</li>
+      </ul>
+      <p class="foot" style="margin:10px 0 0;text-align:left">A parody of modern manhood. Any resemblance to your actual life is entirely your own fault.</p>
+      </details>
+    </aside>
+
+    <section class="panel gamecol">
+      <div class="narrator" id="narratorPanel">
+        <div class="narrhead">🗣️ The Narrator <span>— dungeon master of your poor decisions</span></div>
+        <p class="narrtext" id="narrText">The tavern door creaks. A new soul takes a seat…</p>
+        <form class="narrform" id="narrForm">
+          <input id="narrInput" type="text" maxlength="120" placeholder="What do you do? Type any action — quit my job, buy a motorcycle, tell her the truth…" disabled>
+          <button type="submit" id="narrBtn" disabled>Do it</button>
+        </form>
+        <p class="narrhint">One free action per quarter — it uses your free move. The narrator judges everything and helps with nothing.</p>
+      </div>
+      <div class="stagescroll" id="stageScroll">
+        <div class="stage" id="stage"></div>
+        <div id="actionArea"></div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<script>
+var S;
+var QNAMES=["Q1","Q2","Q3","Q4"];
+var QSEASON=["Jan – Mar · Cold & broke","Apr – Jun · False hope","Jul – Sep · Sweat & bills","Oct – Dec · Holidays & damage"];
+function fresh(){
+  return {age:18, q:1, hap:55, money:1200, stress:20, credit:620, health:92,
+    status:"Single & free", job:"No job yet", salary:0, partner:"—", side:"None. Angel.",
+    kids:0, divorces:0, path:"Unwritten", married:false, gf:0, sideGf:0,
+    alimonyQ:0, childSupportQ:0, degree:false, sugar:false, stepdad:false, overseas:false,
+    military:false, deployed:false, depQ:0, lonely:0, herWorks:false,
+    dCollege:0, dCredit:0, dMort:0, dCar:0, home:"Renting", rentQ:1950, boardPos:0,
+    deathAge: 71+Math.floor(Math.random()*20), peak:1200, boysTrips:0, marriages:0, freeUsed:false, cause:"",
+    flags:{}, log:[], over:false, started:false, milestonesDone:{}, pending:null, lastTitle:"", erVisits:0};
+}
+function totalDebt(){ return S.dCollege+S.dCredit+S.dMort+S.dCar; }
+S = fresh();
+function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
+function rnd(a,b){return Math.floor(a+Math.random()*(b-a+1));}
+function money(n){var s=n<0?"-$":"$";return s+Math.abs(Math.round(n)).toLocaleString();}
+function fxText(fx){
+  var out=[];
+  if(!fx) return out;
+  if(fx.hap) out.push({t:(fx.hap>0?"+":"")+fx.hap+" Happiness", c:fx.hap>0?"pos":"neg"});
+  if(fx.money) out.push({t:(fx.money>0?"+":"−")+money(Math.abs(fx.money)).replace("-",""), c:fx.money>0?"pos":"neg"});
+  if(fx.stress) out.push({t:(fx.stress>0?"+":"")+fx.stress+" Stress", c:fx.stress>0?"neg":"pos"});
+  if(fx.credit) out.push({t:(fx.credit>0?"+":"")+fx.credit+" Credit", c:fx.credit>0?"pos":"neg"});
+  return out;
+}
+function apply(fx){
+  if(!fx) return;
+  if(fx.hap) S.hap=clamp(S.hap+fx.hap,0,100);
+  if(fx.money) S.money+=fx.money;
+  if(fx.stress) S.stress=clamp(S.stress+fx.stress,0,100);
+  if(fx.credit) S.credit=clamp(S.credit+fx.credit,300,850);
+}
+function hapWord(h){ if(h>=85)return "Living like a king."; if(h>=70)return "Genuinely doing well."; if(h>=55)return "Decent. Suspiciously decent."; if(h>=40)return "Running on fumes and weekends."; if(h>=25)return "The boys are worried about you."; return "Rock bottom has a basement.";}
+function moneyWord(m){ if(m>=100000)return "Quietly loaded"; if(m>=40000)return "Comfortable-ish"; if(m>=10000)return "One emergency from trouble"; if(m>=2500)return "Paycheck to paycheck"; if(m>=0)return "Gas-money rich"; return "In the hole. Digging.";}
+function partnered(){ return S.married || S.gf>0; }
+function render(){
+  if(S.married && !S.flags.marCounted){ S.marriages++; S.flags.marCounted=true; }
+  if(!S.married) S.flags.marCounted=false;
+  if(S.money>S.peak) S.peak=S.money;
+  document.getElementById("sHap").textContent=S.hap;
+  var hEl=document.getElementById("sHealth"); if(hEl){ hEl.textContent=S.health; document.getElementById("mHealth").style.width=S.health+"%"; }
+  var dEl=document.getElementById("sDebt"); if(dEl){ var td=totalDebt(); dEl.textContent=money(td); document.getElementById("debtWord").textContent= td===0?"Debt-free. Enjoy it while it lasts.": td<10000?"Manageable. Barely.": td<60000?"The minimum payments have a minimum payment.": td<150000?"You work for the bank now.":"A mortgage-sized anchor around your neck."; document.getElementById("sHome").textContent=S.home; document.getElementById("homeWord").textContent= S.home==="Homeowner" ? "Mortgage: "+money(S.dMort)+" still owed" : "Rent "+money(S.rentQ)+"/quarter, forever, for walls you don't own"; }
+  var dc=document.getElementById("cDCollege"); if(dc){ dc.textContent=money(S.dCollege); document.getElementById("cDCredit").textContent=money(S.dCredit); document.getElementById("cDMort").textContent=money(S.dMort); document.getElementById("cDCar").textContent=money(S.dCar); document.getElementById("cPeak").textContent=money(S.peak); document.getElementById("cBoys").textContent=S.boysTrips; }
+  renderBoard();
+  document.getElementById("mHap").style.width=S.hap+"%";
+  document.getElementById("hapWord").textContent=hapWord(S.hap);
+  document.getElementById("sAge").innerHTML=S.age+"<small> · "+QNAMES[S.q-1]+"</small>";
+  document.getElementById("qWord").textContent=QSEASON[S.q-1]+(S.deployed?" · DEPLOYED":"");
+  document.getElementById("sMoney").textContent=money(S.money);
+  document.getElementById("moneyWord").textContent=moneyWord(S.money);
+  document.getElementById("sStress").textContent=S.stress;
+  document.getElementById("mStress").style.width=S.stress+"%";
+  document.getElementById("sCredit").textContent=S.credit;
+  document.getElementById("mCredit").style.width=((S.credit-300)/550*100)+"%";
+  document.getElementById("mLife").style.width=clamp(((S.age-18)+(S.q-1)/4)/Math.max(1,(S.deathAge-18))*100,0,100)+"%";
+  document.getElementById("cStatus").textContent=S.status;
+  document.getElementById("cJob").textContent=S.job;
+  document.getElementById("cSalary").textContent=S.salary>0?money(S.salary)+"/yr":"$0/yr";
+  document.getElementById("cPartner").textContent=S.partner;
+  document.getElementById("cSide").textContent=S.side;
+  document.getElementById("cKids").textContent=S.kids;
+  document.getElementById("cDiv").textContent=S.divorces;
+  document.getElementById("cPath").textContent=S.path;
+  var chips=[];
+  if(S.degree)chips.push('<span class="chip good">🎓 Degree</span>');
+  if(S.military)chips.push('<span class="chip">🪖 '+(S.deployed?"Deployed":"Veteran / Serving")+'</span>');
+  if(S.married)chips.push('<span class="chip">💍 Married</span>');
+  if(S.sideGf>0)chips.push('<span class="chip bad">🕵️ Living dangerously</span>');
+  if(S.alimonyQ>0)chips.push('<span class="chip bad">💸 Alimony: '+money(S.alimonyQ)+'/qtr</span>');
+  if(S.childSupportQ>0)chips.push('<span class="chip bad">👶 Support: '+money(S.childSupportQ)+'/qtr</span>');
+  if(S.stepdad)chips.push('<span class="chip">🧢 Stepdad</span>');
+  if(S.sugar)chips.push('<span class="chip">🍬 Sugar Daddy</span>');
+  if(S.overseas)chips.push('<span class="chip">✈️ Married overseas</span>');
+  if(S.lonely>=3&&partnered())chips.push('<span class="chip bad">🥀 Partner is lonely…</span>');
+  if(S.flags.arrest)chips.push('<span class="chip bad">🚔 Record</span>');
+  if(totalDebt()>0)chips.push('<span class="chip bad">🏦 Debt: '+money(totalDebt())+'</span>');
+  if(S.home==="Homeowner")chips.push('<span class="chip good">🏠 Homeowner</span>');
+  if(S.health<35)chips.push('<span class="chip bad">🫀 Health failing</span>');
+  if(S.money<0)chips.push('<span class="chip bad">🕳️ In debt</span>');
+  if(S.credit<550)chips.push('<span class="chip bad">🚫 Credit too low for big buys</span>');
+  document.getElementById("chips").innerHTML=chips.join("");
+  var ul=document.getElementById("logList");
+  if(S.log.length===0){ul.innerHTML='<li class="emptylog">Nothing yet. A blank page, full of potential and future regrets.</li>';}
+  else{ ul.innerHTML=S.log.slice().reverse().map(function(e){return '<li><b class="age">'+e.age+'</b>'+e.title+'<span class="why">'+e.why+'</span></li>';}).join(""); }
+}
+function qLabel(){ return "AGE "+S.age+" · "+QNAMES[S.q-1]; }
+function logIt(title,why){ S.log.push({age:qLabel(),title:title,why:why}); }
+function queue(evObj){ S.pending=evObj; }
+function breakUp(whyText){
+  if(S.married){ S.married=false; S.divorces++; S.alimonyQ=Math.max(S.alimonyQ, 1400); }
+  S.gf=0; S.partner="—"; S.status="Single (fresh wreckage)"; S.lonely=0;
+  if(S.kids>0 && S.divorces>0){ S.childSupportQ=Math.min(2700, Math.max(S.childSupportQ, 900*S.kids)); }
+}
+/* ---------- ECONOMY: one quarter of existing ---------- */
+function quarterTick(){
+  var notes=[];
+  if(S.salary>0){ var inc=Math.round(S.salary/4*0.76); S.money+=inc; notes.push("Paycheck after tax +"+money(inc)); }
+  else if(S.started&&S.age<62){ var ui=rnd(1400,2200); S.money+=ui; notes.push("Unemployment + odd jobs +"+money(ui)+" (the fridge still judges you)"); }
+  if(S.deployed){ S.money+=1100; notes.push("Deployment pay +$1,100"); }
+  if(S.age>=62){ var pen=rnd(1800,2300); S.money+=pen; notes.push("Pension / Social Security +"+money(pen)); }
+  var base=(S.military&&!partnered())?4600:6900;
+  if(S.deployed) base=2300;
+  if(partnered()) base+=900;
+  if(S.age>=60&&S.job.indexOf("Retired")>=0) base=5600;
+  base+=Math.round(Math.max(0,S.salary-30000)/4*0.22); /* lifestyle creep: raises get eaten */
+  var living=base + Math.min(S.kids,4)*800;
+  S.money-=living; notes.push("Rent, bills, food & gas −"+money(living));
+  if(partnered()){
+    var her=S.deployed?rnd(1800,3400):rnd(700,1800);
+    if(S.herWorks){ var hin=rnd(2400,3400); S.money+=hin; notes.push("Her paycheck +"+money(hin)); her+=rnd(300,800); }
+    S.money-=her; notes.push("Her spending −"+money(her)+" (don't ask what on)");
+  }
+  if(S.sugar){ var sug=rnd(2000,3600); S.money-=sug; notes.push("The arrangement −"+money(sug)); }
+  if(S.alimonyQ>0){ S.money-=S.alimonyQ; notes.push("Alimony −"+money(S.alimonyQ)); }
+  if(S.childSupportQ>0){ S.money-=S.childSupportQ; notes.push("Child support −"+money(S.childSupportQ)); }
+  if(Math.random()<0.45){ var lt=rnd(120,850); var reasons=["Phone screen cracked","Washer died","Speeding ticket","Dentist 'found a spot'","Forgotten subscription renewed","Truck needed brakes","Water heater gave up"]; S.money-=lt; notes.push(reasons[rnd(0,reasons.length-1)]+" −"+money(lt)); }
+  if(S.money<-25000){ S.money=-1500; S.credit=380; S.hap=clamp(S.hap-6,0,100); S.stress=clamp(S.stress+8,0,100); S.flags.bankrupt=(S.flags.bankrupt||0)+1; notes.push("💥 BANKRUPTCY — Chapter 7 speedrun: the debts are wiped, the credit is a crater, the fresh start smells like paperwork"); }
+  else if(S.money<0){ var interest=Math.min(600,Math.round(Math.abs(S.money)*0.04)); S.money-=interest; S.stress=clamp(S.stress+5,0,100); S.credit=clamp(S.credit-6,300,850); notes.push("Debt interest −"+money(interest)+" · credit & nerves suffer"); }
+  else { S.credit=clamp(S.credit+2,300,850); }
+  if(S.deployed&&partnered()) S.lonely+=1;
+  if(S.stress>=100){ S.stress=82; S.hap=clamp(S.hap-9,0,100); S.money-=1800; S.erVisits++; notes.push("⚠️ STRESS HIT 100 — panic attack in a parking lot, ER bill −$1,800"); }
+  else if(S.stress>=85){ S.hap=clamp(S.hap-3,0,100); notes.push("Stress is eating your happiness"); }
+  else if(S.stress<=35){ S.hap=clamp(S.hap+1,0,100); }
+  return notes.join(" · ");
+}
+
+function debtTick(notes){
+  /* per-quarter debt service: payments shrink balances, interest grows the nasty ones */
+  if(S.dCollege>0){ var p=Math.min(S.dCollege, 340); S.dCollege-=p; S.money-=p; S.dCollege+=Math.round(S.dCollege*0.011); notes.push("College loan payment −"+money(p)+" (balance "+money(S.dCollege)+")"); }
+  if(S.dMort>0){ var mp=Math.min(S.dMort, 1450); S.dMort-=mp; S.money-=mp; S.dMort+=Math.round(S.dMort*0.009); notes.push("Mortgage payment −"+money(mp)+" (still owe "+money(S.dMort)+")"); }
+  if(S.dCar>0){ var cp=Math.min(S.dCar, 480); S.dCar-=cp; S.money-=cp; S.dCar+=Math.round(S.dCar*0.014); notes.push("Car payment −"+money(cp)); }
+  if(S.dCredit>0){ var minp=Math.max(60,Math.round(S.dCredit*0.03)); var paid=Math.min(S.dCredit, minp); S.dCredit-=paid; S.money-=paid; var intr=Math.round(S.dCredit*0.055); S.dCredit+=intr; S.credit=clamp(S.credit-3,300,850); notes.push("Credit card minimum −"+money(paid)+", interest +"+money(intr)+" (balance "+money(S.dCredit)+")"); }
+  if(S.money<0 && Math.random()<0.6){ var swipe=rnd(180,700); S.dCredit+=swipe; S.money+=swipe; notes.push("Bills went on the credit card +"+money(swipe)+" of new card debt"); }
+}
+function turnTick(n){
+  var all=[];
+  for(var i=0;i<n;i++){
+    var before={col:S.dCollege,cred:S.dCredit,mort:S.dMort,car:S.dCar};
+    var t=quarterTick();
+    var dn=[]; debtTick(dn);
+    /* quarterTick already charged generic living costs incl. rent when renting; when homeowner, swap rent for taxes/insurance */
+    if(S.home==="Homeowner"){ var hoa=rnd(300,520); S.money-=hoa; dn.push("Property tax, insurance & a roof that leaks on schedule −"+money(hoa)); }
+    all.push("Q"+(i+1)+": "+t+(dn.length?" · "+dn.join(" · "):""));
+    if(S.stress>=70) S.health=clamp(S.health-2,0,100);
+    else if(S.stress>=50) S.health=clamp(S.health-1,0,100);
+    else if(S.stress<30 && S.age<50) S.health=clamp(S.health+1,0,100);
+    if(S.age>=55 && Math.random()<0.45) S.health=clamp(S.health-1,0,100);
+    if(S.health<=25 && Math.random()<0.3){ S.money-=rnd(900,2400); all.push("⚕️ Health scare — tests, scans, and a bill with a comma"); }
+  }
+  return all.join("<br>");
+}
+
+/* ---------- BOARD ---------- */
+var BOARD=[
+ {t:"start",ic:"🏁",n:"START / Birthday"},{t:"pay",ic:"💵",n:"Payday"},{t:"choice",ic:"🎴",n:"Life Choice"},{t:"debt",ic:"🏠",n:"Rent Due"},{t:"chance",ic:"❓",n:"Chance"},{t:"trap",ic:"🧾",n:"Bills Pile Up"},{t:"choice",ic:"🎴",n:"Life Choice"},{t:"joy",ic:"🎣",n:"Boys' Weekend"},
+ {t:"debt",ic:"💳",n:"Card Minimum Due"},{t:"choice",ic:"💼",n:"Work"},{t:"pay",ic:"💵",n:"Payday"},{t:"chance",ic:"❓",n:"Chance"},{t:"choice",ic:"🎴",n:"Life Choice"},{t:"debt",ic:"🎓",n:"Loan Payment"},{t:"choice",ic:"👨‍👧",n:"Family"},{t:"joy",ic:"🦌",n:"Hunting Trip"},
+ {t:"chance",ic:"❓",n:"Chance"},{t:"choice",ic:"🎴",n:"Life Choice"},{t:"home",ic:"🔑",n:"House Square"},{t:"trap",ic:"🚗",n:"Car Trouble"},{t:"pay",ic:"💵",n:"Payday"},{t:"choice",ic:"💼",n:"Work"},{t:"chance",ic:"❓",n:"Chance"},{t:"choice",ic:"👶",n:"Kids & Family"},
+ {t:"debt",ic:"🏦",n:"Debt Collector"},{t:"choice",ic:"🎴",n:"Life Choice"},{t:"joy",ic:"🏍️",n:"Off-Roading"},{t:"choice",ic:"⏰",n:"Overtime"},{t:"chance",ic:"❓",n:"Chance"},{t:"choice",ic:"❤️",n:"Love Life"},{t:"debt",ic:"🏠",n:"Rent / Mortgage"},{t:"pay",ic:"💵",n:"Payday"},
+ {t:"trap",ic:"🏥",n:"Medical Bill"},{t:"choice",ic:"🎴",n:"Life Choice"},{t:"chance",ic:"❓",n:"Chance"},{t:"joy",ic:"🍖",n:"BBQ Summit"},{t:"choice",ic:"👨‍👧",n:"Family"},{t:"choice",ic:"🎴",n:"Life Choice"},{t:"debt",ic:"💳",n:"Credit Trap"},{t:"chance",ic:"❓",n:"Chance"}
+];
+function renderBoard(){
+  var g=document.getElementById("boardGrid"); if(!g) return;
+  g.innerHTML=BOARD.map(function(tile,i){ var here=(i===S.boardPos && S.started && !S.over); return '<div class="tile t-'+tile.t+(here?" here":"")+'"><span class="tnum">'+(i+1)+'</span><span class="tic">'+tile.ic+'</span><span class="tname">'+tile.n+'</span>'+(here?'<span class="token">🧍</span>':"")+'</div>'; }).join("");
+}
+var FATE_GOOD=[
+ {label:"🍀 LUCKY BREAK", text:"It goes better than it had any right to. People are impressed. You play it cool like this was the plan all along.", fx:{hap:5, money:600, stress:-4}},
+ {label:"🍀 WORD GETS AROUND", text:"Somebody important notices. Your name gets said in a room you're not in — in a good way, for once.", fx:{hap:4, money:400, stress:-2, credit:4}},
+ {label:"🍀 THE BOYS APPROVE", text:"The group chat declares it a legendary decision. Screenshots are taken for future roasts AND future toasts.", fx:{hap:6, stress:-5}},
+ {label:"🍀 IT GOES VIRAL (GOOD VERSION)", text:"Someone films it, it blows up for the RIGHT reasons, and a local news page calls you 'a legend.' Your mom shares it 14 times.", fx:{hap:7, money:300, stress:-4}},
+ {label:"🍀 SHE POSTS ABOUT YOU (GOOD)", text:"A soft-launch photo, a caption with effort, her friends commenting 'finally a good one.' Romance points, publicly audited and approved.", fx:{hap:7, stress:-5}}
+];
+var FATE_BAD=[
+ {label:"💥 IT BACKFIRES", text:"Of course it does. There's a fee, a follow-up problem, and a story you'll be telling angrily for years.", fx:{hap:-5, money:-900, stress:9}},
+ {label:"💥 HIDDEN COSTS", text:"The fine print had fine print. The bill arrives in a second envelope, thicker than the first.", fx:{hap:-4, money:-1300, stress:7, credit:-5}, setup:function(){ if(Math.random()<0.5){ S.dCredit+=800; } }},
+ {label:"💥 SHE FINDS OUT / EVERYONE FINDS OUT", text:"Nothing stays secret. Nothing. There are questions at home, at work, and in the group chat — simultaneously.", fx:{hap:-6, stress:12}},
+ {label:"💥 DEBT SPIRAL", text:"You cover it with the card. The card covers you right back — at 24.99% APR.", fx:{hap:-3, money:-300, stress:8}, setup:function(){ S.dCredit+=1100; S.credit=clamp(S.credit-8,300,850); }},
+ {label:"💥 IT GOES VIRAL (BAD VERSION)", text:"Someone films it, the comments are a war zone, and your boss 'just wants to chat' on Monday. The internet has named you.", fx:{hap:-6, money:-400, stress:11}},
+ {label:"💥 SUBSCRIPTION YOU FORGOT", text:"The free trial from three decisions ago just charged you $89.99 and renewed your humiliation for another month.", fx:{hap:-3, money:-420, stress:6}},
+ {label:"💥 THE GROUP CHAT LEAKS", text:"A screenshot escapes the boys' chat. Context: gone. Mercy: none. The roast becomes a relationship summit.", fx:{hap:-5, stress:13}}
+];
+function rollFate(card, choice){
+  var r=Math.random();
+  if(card.cls==="joy" || card.cls==="mile"){ if(r<0.62) return null; }
+  else if(r<0.48) return null;
+  if(Math.random()<0.52){ var g=FATE_GOOD[Math.floor(Math.random()*FATE_GOOD.length)]; return {good:true, label:g.label, text:g.text, fx:g.fx, setup:g.setup}; }
+  var b=FATE_BAD[Math.floor(Math.random()*FATE_BAD.length)]; return {good:false, label:b.label, text:b.text, fx:b.fx, setup:b.setup};
+}
+
+/* ---------- EVENTS ---------- */
+function ev(tag,cls,title,desc,flavor,choices,when){return {tag:tag,cls:cls,title:title,desc:desc,flavor:flavor,choices:choices,when:when||null};}
+function ch(text,sub,fx,result,setup){return {text:text,sub:sub,fx:fx,result:result,setup:setup||null};}
+
+var MILESTONES = {
+ 18: ev("Milestone · Age 18","mile","🎂 18: Pick Your Starting Class","Legally a man. Nobody believes it, including you. Every hero picks a class — yours decides your money, your stress, and whose couch you sleep on.","Choose wisely. Or don't. Regret is content.",
+   [ ch("🎓 Go to college","Four years, a degree, and debt with your name spelled wrong.",{hap:4,money:-6000,stress:8,credit:-10},"Degree earned. Doors open. The debt follows you through every single one of them.",function(){S.degree=true;S.path="College man";S.job="Graduate, entry-level";S.salary=34000;S.dCollege=28400;}),
+     ch("🔧 Learn a trade","No essays. Tools, overtime, knees aging in dog years.",{hap:3,money:1500,stress:5,credit:10},"Earning while your college friends 'find themselves.' Your back files its first complaint.",function(){S.path="Tradesman";S.job="Apprentice → Journeyman";S.salary=46000;}),
+     ch("🪖 Enlist","Free haircuts, free yelling, a girlfriend back home, and a recruiter who lied beautifully.",{hap:1,money:2000,stress:12,credit:15},"You ship out. Discipline installed. So is a relationship about to be tested by distance, boredom, and a guy named Jody.",function(){S.military=true;S.path="Military man";S.job="Service member";S.salary=33000;}),
+     ch("🚀 Skip it all & hustle","Dropshipping, crypto, a 'brand.' Your uncle calls it unemployment.",{hap:7,money:-2500,stress:10,credit:-20},"Most of it fails hilariously. But you're free, and freedom costs exactly this much.",function(){S.path="Hustler";S.job="Self-employed (vibes)";S.salary=21000;}),
+     ch("🛋️ Dead-end job, parents' basement","Zero ambition, zero rent, infinite leftovers.",{hap:2,money:1000,stress:-4},"Comfortable. Too comfortable. Your mom starts leaving apartment listings on your pillow.",function(){S.path="Basement legend";S.job="Part-time, emotionally full-time";S.salary=16000;}) ]),
+ 25: ev("Milestone · Age 25","mile","🎂 25: The Quarter-Life Fork","Brain fully developed — terrible timing, you've been using it unsupervised for seven years. A serious girlfriend is circling. Your job wants more of you. Pick a direction.","Nobody at 25 knows anything. The confident ones are just louder.",
+   [ ch("💍 Get serious & settle down","Move in. Split rent, merge streaming accounts, adopt her thermostat settings.",{hap:6,money:-800,stress:7},"Two people, one bathroom schedule. The thermostat war begins.",function(){S.gf=1;S.partner="Girlfriend (serious)";S.status="Taken";S.herWorks=true;}),
+     ch("📈 Marry the job instead","Overtime, promotions, a chair with lumbar support.",{hap:-2,money:1500,stress:12,credit:8},"Career takes off. The group chat slowly forgets you exist.",function(){S.salary+=9000;S.job="Rising manager";}),
+     ch("🎒 Stay feral & free","No commitments. The couch is also the dining table.",{hap:10,money:-400,stress:-7},"Peak bachelor. The fridge holds condiments and ambition.",null),
+     ch("💎 Propose way too fast","Three months in. The boys stage an intervention. You call it romance.",{hap:5,money:-4500,stress:12},"She said yes?! The wedding spreadsheet has 400 rows. Row 1: your money.",function(){S.married=true;S.gf=0;S.partner="Wife (fast-tracked)";S.status="Married";S.herWorks=true;}),
+     ch("✈️ Move across the country for work","New city, bigger check, nobody to split fries with.",{hap:2,money:2500,stress:6,credit:5},"New skyline, same you. The money's better. The silence is educational.",function(){S.salary+=7000;S.job="Relocated & rising";}) ]),
+ 30: ev("Milestone · Age 30","mile","🎂 30: The Dating Pool Has Changed","Welcome to 30. The options are not what the brochure promised. Choose your fighter:","This is the level everyone warned you about.",
+   [ ch("🧢 Date a single mom & become Stepdad","Her kids call you by your first name. You fix things and attend recitals.",{hap:8,money:-2200,stress:11},"You're somebody's emergency contact now. Weirdly good. Expensively good.",function(){S.stepdad=true;S.gf=1;S.partner="Girlfriend + her 2 kids";S.status="Stepdad era";S.kids+=2;S.herWorks=true;}),
+     ch("✈️ Marry overseas","A wife from a country where nobody argues about the thermostat.",{hap:7,money:-3500,stress:5},"Romance, paperwork, in-laws on two continents. Still cheaper than a boat.",function(){S.overseas=true;S.married=true;S.gf=0;S.partner="Wife (overseas)";S.status="Married";}),
+     ch("🔞 Find someone half your age","She's 21, you're 30 going on 45. Your friends have questions. So does her dad.",{hap:11,money:-1500,stress:8},"You feel 22 again. Your knees file a formal objection.",function(){S.gf=1;S.partner="Girlfriend (much younger)";S.status="Taken (controversial)";}),
+     ch("🐺 Stay single","No nagging, no compromise, nobody stealing your fries.",{hap:5,money:1200,stress:-8},"Peace. Quiet. Total control of the remote. The silence is either freedom or foreshadowing.",function(){if(!partnered())S.status="Single by choice";}),
+     ch("💰 Monk mode: money & gym only","No dating. Just iron, overtime, and a savings account with trust issues.",{hap:3,money:3000,stress:2,credit:10},"Boring quarters, beautiful bank statements. The boys call it 'the cave era.'",function(){S.salary+=4000;}) ]),
+ 35: ev("Milestone · Age 35","mile","🎂 35: The Body Keeps the Score","You now make a noise when you stand up. Friends are divorcing in the group chat like it's a league sport. Your career, body, and bank account all want a strategy.","Sneeze wrong and you're injured for a fiscal quarter.",
+   [ ch("🧑‍💼 Push for management","More money, more meetings, a calendar that owns you.",{hap:-3,money:2000,stress:12},"You manage people now. Herding cats, but the cats have performance reviews.",function(){S.salary+=11000;S.job="Management";}),
+     ch("🏢 Start the business","The idea you've described at every BBQ for six years. It's time or it's never.",{hap:6,money:-6000,stress:14},"Terrifying. Alive. Your boss becomes you, and he's a jerk about PTO.",function(){S.job="Business owner";S.salary=38000;S.flags.biz=true;}),
+     ch("🏋️ Fix the body before it files charges","Doctor, gym, sleep — the boring trilogy that works.",{hap:9,money:-900,stress:-6},"Three months later stairs fear YOU. Witchcraft, apparently.",null),
+     ch("🎣 Coast & protect the weekends","No promotion chase. Fish don't care about your title.",{hap:8,money:0,stress:-9},"Lower ceiling, higher sky. The boys approve of this economy.",null),
+     ch("👶 Go all-in on family","Kids (or more kids), minivan energy, calendar Tetris.",{hap:7,money:-2600,stress:10},"Chaos, crumbs, and a love so big it's honestly inconvenient.",function(){if(partnered()){S.kids+=1;} S.status=partnered()?"Family man":"Family-minded";}) ]),
+ 40: ev("Milestone · Age 40","mile","🎂 40: Midlife Crisis Menu","Your back hurts for no reason. You've said 'they don't make them like they used to' unironically. The crisis catalog just arrived — pick one:","Every man buys one of these. The honest ones admit it.",
+   [ ch("🏎️ Buy the sports car","Two seats, zero practicality, 100% therapy. The dealership decides your fate in 11 minutes.",{hap:13,money:-11000,stress:-4,credit:-15},"Every drive feels like 25 again — unless your credit got you laughed off the lot, in which case the crisis is a magazine now.",function(){if(S.credit<600){S.money+=11000;S.hap=clamp(S.hap-22,0,100);S.stress=clamp(S.stress+10,0,100);}}),
+     ch("💃 Start a secret second life","A 'gym membership' you never use and a phone with a second passcode.",{hap:8,money:-1200,stress:16},"Thrilling. Terrifying. One forgotten birthday text from total collapse.",function(){S.sideGf=1;S.side="Girlfriend #2 (secret)";}),
+     ch("🏋️ Get shredded instead","The crisis, but with protein.",{hap:10,money:-700,stress:-5},"Six months later you're unbearable at parties, but your blood pressure is a love letter.",null),
+     ch("🏍️ Motorcycle you can't really ride","A helmet, a leather jacket, and a YouTube history of 'beginner mistakes.'",{hap:11,money:-6500,stress:2},"You ride at 45mph like a cautious king. The neighbors hear you coming from space.",null),
+     ch("👨‍👧 Double down on family / the boys","No crisis. More hunting trips, more being present.",{hap:9,money:-800,stress:-7},"Radical move: enjoying your actual life. The boys approve.",null) ]),
+ 45: ev("Milestone · Age 45","mile","🎂 45: The Sandwich Years","Your parents are aging, your kids (if any) are teenagers, and your career has a visible ceiling with your name on it. Everyone needs something from you, simultaneously, at full volume.","You are the filling in a stress sandwich.",
+   [ ch("🧓 Move a parent in / fund their care","The right thing. The expensive, exhausting right thing.",{hap:2,money:-3800,stress:13},"Love, logistics, and a ramp-installation quote that made you sit down.",null),
+     ch("🔁 Reinvent the career","New industry, consulting, or the trade you actually like.",{hap:5,money:-1500,stress:9},"Scary at 45. Scarier at 46. You jump.",function(){S.salary+=6000;S.job="Second-act career";}),
+     ch("🏕️ Buy the land / the cabin dream","Some acres, a dream, and property tax with confidence.",{hap:10,money:-8000,stress:-3},"You own dirt now. Magnificent, mortgage-flavored dirt.",function(){S.flags.cabin=true;}),
+     ch("💊 Take health deadly seriously","Full checkup, real sleep, knees respected like elders.",{hap:8,money:-1200,stress:-8},"The doctor uses the word 'impressive.' You frame it mentally forever.",null),
+     ch("🛋️ Quiet quit everything","Do the job, guard the evenings, let ambition nap.",{hap:6,money:-500,stress:-10},"The ceiling stops mattering when you stop staring at it.",function(){S.salary=Math.max(0,S.salary-3000);}) ]),
+ 55: ev("Milestone · Age 55","mile","🎂 55: The Exit Ramp Appears","Retirement math is suddenly real. Your retirement account has opinions. Your knees have demands. Your calendar has grandkid-shaped openings (or boat-shaped ones).","Ten years to the verdict. Spend them on purpose.",
+   [ ch("📈 Max the retirement account","Every spare dollar into the future. Future you sends thanks.",{hap:2,money:-5000,stress:2,credit:10},"Present you eats cheaper pasta so future you can eat anywhere.",null),
+     ch("🏠 Downsize the house","Less lawn, less stairs, a check from the equity.",{hap:6,money:9000,stress:-4},"Smaller place, bigger life. The garage sale was a blood sport.",null),
+     ch("👴 Grandkid / family duty era","Be the legendary grandpa or the on-call family fixer.",{hap:10,money:-1500,stress:4},"Tiny humans think you're a wizard. You do nothing to correct them.",null),
+     ch("⛵ Buy the boat (finally)","A hole in the water you throw money into, joyfully.",{hap:12,money:-9000,stress:3},"BOAT: Bust Out Another Thousand. Worth every one, somehow.",null),
+     ch("💼 Semi-retire: part-time & peace","Three days a week. The other four are yours.",{hap:9,money:-1000,stress:-11},"Half income, double life. The math of happiness checks out.",function(){S.salary=Math.round(S.salary*0.55);S.job="Part-time & peaceful";}) ]),
+ 60: ev("Milestone · Age 60","mile","🎂 60: The Home Stretch","Five years to the verdict. Your body is a classic car: valuable, temperamental, parts discontinued. One last big call:","Choose how you land this plane.",
+   [ ch("⛵ Retire & live loud","Trips, grandkids, naps you don't apologize for.",{hap:12,money:-4000,stress:-13},"You become the old guy with the best stories and the worst sleep schedule — by choice.",function(){S.job="Retired (loudly)";S.salary=0;}),
+     ch("💼 Consult & coast","Half the hours, double the rate, all the opinions.",{hap:5,money:2500,stress:4},"You sell wisdom by the hour. Business is good.",function(){S.job="Consultant";S.salary=52000;}),
+     ch("🎣 Disappear to a cabin","A lake, a dog, a phone that's 'broken' most weekends.",{hap:13,money:-2500,stress:-16},"Peak peace. The boys visit monthly and refuse to leave.",function(){S.job="Semi-retired hermit";S.salary=11000;}),
+     ch("💀 Work till you drop, stack the money","Retirement is for people whose kids visit. Yours text. Sometimes.",{hap:-4,money:6000,stress:10},"The account grows. So does the list of things you'll 'do later.'",function(){S.salary+=8000;}),
+     ch("🌴 The big travel era","See the world before the knees unionize against stairs.",{hap:12,money:-6000,stress:-5},"Passport stamps, questionable street food, zero regrets with photos.",null) ])
+};
+function milestone50(){
+  if(!partnered()){
+    return ev("Milestone · Age 50","mile","🎂 50: No Wife. No Girlfriend. One Offer.","You're 50, single, and your back has a favorite chair. The universe slides one final card across the table: the Sugar Daddy path.","No judgment. Okay, a little judgment. From everyone. Forever.",
+     [ ch("🍬 Become a Sugar Daddy","She calls you 'generous.' You call it mentorship. Everyone else calls it Tuesday.",{hap:13,money:-5000,stress:6},"Dinner dates, allowances, brunch appearances as the 'older friend.' Happy, and everyone knows why.",function(){S.sugar=true;S.path="Sugar Daddy";S.partner="Arrangement(s)";S.status="Sugar Daddy";}),
+       ch("💘 Try real love, one last time","Swipe bravely. Date honestly. Risk it.",{hap:8,money:-1000,stress:5},"It might actually work. Stranger things have happened — like your entire life so far.",function(){S.gf=1;S.partner="Girlfriend (age-appropriate!)";S.status="Taken";S.herWorks=true;}),
+       ch("🐺 Bachelor forever, proudly","Die on this hill, remote in hand, dog at your feet.",{hap:7,money:1500,stress:-10},"No compromises were made. None were needed. A monument to peace.",function(){S.path="Eternal Bachelor";S.status="Single by choice";}),
+       ch("🧢 Date a single grandma (respectfully)","She has grandkids, a casserole game from another dimension, and zero games left to play.",{hap:10,money:-800,stress:2},"Two grown adults skipping the nonsense. The casserole alone is worth it.",function(){S.gf=1;S.partner="Girlfriend (seasoned)";S.status="Taken";}),
+       ch("✈️ Retire overseas, cheap & free","A beach, a pension that goes 3x further, and neighbors who think you're mysterious.",{hap:11,money:2000,stress:-8},"Sun, cheap living, main-character energy in a town that can't pronounce your name.",function(){S.path="Expat";S.status="Single, abroad";}) ]);
+  }
+  return ev("Milestone · Age 50","mile","🎂 50: The Marriage Summit","Fifty, partnered, and still standing — statistically impressive. The relationship needs a decision before the home stretch:","Half a century in. No pressure.",
+   [ ch("💍 Renew the vows / go big","A real trip, a real effort, no phones. Romance like the old days.",{hap:11,money:-3500,stress:-5},"Turns out she still likes you. The trip becomes the story you both tell.",null),
+     ch("🛋️ Comfortable roommate mode","Separate blankets. Total peace. Love, but horizontal.",{hap:4,money:600,stress:-8},"Not sparks — stability. Honestly? Underrated.",null),
+     ch("💃 The itch: a secret on the side","At fifty. Bold. The group chat votes 'absolutely not' and 'do it' simultaneously.",{hap:7,money:-1500,stress:18},"One calendar mistake from divorce #"+(S.divorces+1)+". Living on the edge of a shared Google Calendar.",function(){S.sideGf=1;S.side="Secret at 50 (bold)";}),
+     ch("🛠️ Fix it properly: therapy & effort","Expensive, humbling, and weirdly effective.",{hap:8,money:-1800,stress:-4},"You both do the work. The work works. Annoying, but works.",null),
+     ch("⛺ RV & travel together era","Sell the clutter, hit the road, argue about directions in 40 states.",{hap:10,money:-4500,stress:-3},"Small space, big country, one legendary argument per state maximum.",null) ]);
+}
+/* ---------- EVERYDAY QUARTER CARDS (5+ choices each) ---------- */
+var QUARTER_EVENTS = [
+ ev("Choice Card","choice","⏰ Overtime Season","Your boss needs weekends covered for the next three months. The money's real. So is the couch-shaped hole in your life.","He says 'team player' the way casinos say 'winner.'",
+  [ ch("💪 Grind all of it","Every weekend. Become a rumor to your own friends.",{hap:-6,money:1900,stress:13},"Paid. Tired. Your boss now knows you'll always say yes. That list is permanent.",null),
+    ch("🤝 Take half","Two weekends a month. Diplomacy with a paycheck.",{hap:-1,money:950,stress:6},"The sweet spot: money AND a life, both slightly annoyed at you.",null),
+    ch("🚫 Refuse all of it","'I have plans.' The plan is a chair and a beverage.",{hap:6,money:0,stress:-5},"Your boss respects it or resents it — Saturday doesn't care either way.",null),
+    ch("🎣 Trade shifts for a fishing weekend","Work the ugly shifts, bank one sacred weekend with the boys.",{hap:7,money:600,stress:2},"Negotiated like a union legend. The lake approves.",null),
+    ch("📈 Take it — and job-hunt at lunch","Smile, cash the checks, update the résumé on company time.",{hap:1,money:1100,stress:8},"Two games at once. Exhausting. Profitable. Slightly thrilling.",null) ]),
+ ev("Choice Card","choice","🏠 Her Family. Again. All Quarter.","Her parents' birthdays, her cousin's wedding, her nephew's recital, a 'quick visit' that's 3 hours each way. Your calendar is now her family's calendar.","The opinions are forever. The casserole is mandatory.",
+  [ ch("😬 Attend everything, smile","Eat the casserole. Praise the garage. Survive.",{hap:-5,money:-450,stress:11},"Relationship peace banked. Your soul requests a refund.",null),
+    ch("🎣 Fake one work emergency","There is no emergency. There is a lake, though.",{hap:8,money:-150,stress:3},"Bliss — until she checks your location sharing. It was on. It's always on.",null),
+    ch("🤒 Rotate mysterious illnesses","A different ailment per event. Statistically suspicious.",{hap:4,money:0,stress:6},"Her mom has started a spreadsheet. Moms always start a spreadsheet.",null),
+    ch("🚗 Go, but drive & control the exit","Your car, your keys, your 9pm vanishing act.",{hap:1,money:-200,stress:5},"Presence: delivered. Duration: mercifully negotiated.",null),
+    ch("💥 Refuse & take the fight","Say what every man thinks, out loud, at dinner.",{hap:-3,money:0,stress:15},"The fight lasts one week. The story lasts at every family event until you die.",null) ], function(){return partnered();}),
+ ev("Choice Card","choice","🎒 The Kids Need Money. Obviously.","Braces, a school trip, a gaming PC 'for homework,' shoes they outgrew in 6 weeks. The requests arrive with puppy eyes and yesterday's deadlines.","The word 'need' is doing Olympic-level lifting.",
+  [ ch("💸 Pay everything","You're not a dad, you're an ATM with feelings.",{hap:3,money:-2100,stress:5},"Their joy is real. So is the dent. Both can be true.",null),
+    ch("🧾 Deliver The Speech","'Money doesn't grow on—' you black out, you have rehearsed this since age 12.",{hap:-2,money:0,stress:6},"They're furious. You're correct. Being correct has never once been fun.",null),
+    ch("🧹 Make them earn half","Chores, lawn work, a car wash empire. Character, allegedly.",{hap:5,money:-900,stress:2},"They complain for a week, then brag about it for a year. Parenting?",null),
+    ch("👵 Route it to the grandparents","Grandma cannot say no. It's her whole brand.",{hap:4,money:-200,stress:-2},"Grandma pays, adds snacks, and tells them you're 'going through a phase.'",null),
+    ch("💳 Put it on the card (again)","Future you has money. Future you always has money.",{hap:1,money:-1600,stress:7,credit:-8},"Present you is a genius. Future you has entered the chat, furious.",null) ], function(){return S.kids>0||S.stepdad;}),
+ ev("Choice Card","choice","📱 A Text From an Ex","'Hey stranger 👀' at 11:48pm. The most dangerous notification in the modern world.","Nothing good has ever started with 'hey stranger.'",
+  [ ch("🚫 Delete & sleep","Growth. Boring, noble growth.",{hap:3,stress:-3},"You wake up proud and slightly annoyed at yourself. Correct outcome.",null),
+    ch("👀 'Hey. What's up'","You had one job.",{hap:5,stress:12},"Three weeks later you're explaining timestamps like a lawyer.",function(){if(!partnered()){S.gf=1;S.partner="The Ex (again)";S.status="It's complicated";}}),
+    ch("🎣 Screenshot it for the boys","Evidence for the group chat tribunal.",{hap:6,stress:-2},"The boys rule 14–2 in favor of 'absolutely not,' with jokes. Democracy works.",null),
+    ch("🍺 Reply after three drinks","Liquid courage, emotional consequences.",{hap:2,stress:10},"Morning-you reads the thread like a crime scene report.",null),
+    ch("💍 Show your partner","Radical honesty. Either trust points or a war — no in-between.",partnered()?{hap:4,stress:4}:{hap:1,stress:1},"The reaction becomes family legend either way.",null) ]),
+ ev("Choice Card","choice","💼 A Better Job Appears","More money, longer commute, boss unknown. Your current job is comfortable like an old shoe — that smells.","Grass is greener where the severance is bigger.",
+  [ ch("🚀 Take the leap","New title, new money, new problems with better catering.",{hap:4,money:600,stress:9,credit:4},"Raise lands. So does a 6am alarm in a new timezone of misery.",function(){S.salary+=8000;S.job="New gig, bigger title";}),
+    ch("🛋️ Stay loyal & comfy","Golden handcuffs, but make them sweatpants.",{hap:2,money:300,stress:-3},"Safe. Slightly itchy, but safe.",null),
+    ch("🃏 Use the offer as leverage","Show your boss the number. Watch the meeting energy change.",{hap:3,money:400,stress:6},"A raise appears 'out of budget season.' Budgets are fiction and you know it now.",function(){S.salary+=4500;}),
+    ch("📞 Ghost the recruiter","Read the message. Never respond. A power move of the coward class.",{hap:0,money:0,stress:2},"The recruiter moves on. The what-if moves in rent-free.",null),
+    ch("🤝 Take it only if it's remote","Commute is a tax on your soul. Negotiate like it.",{hap:5,money:300,stress:-2},"Home office, dog coworker, pants optional. Civilization peaked.",function(){S.salary+=5000;S.job="Remote & smug";}) ], function(){return S.salary>0;}),
+ ev("Choice Card","choice","🛒 Her Shopping Era","Packages arrive daily. A 'quick Target run' came home with patio furniture. The credit card statement has chapters. Your move:","She calls it 'stuff for the house.' The house is full. You live in the garage now.",
+  [ ch("🤐 Say nothing, absorb it","Peace has a price. You're paying it monthly.",{hap:-4,money:-1400,stress:8},"The packages slow down. Your hairline doesn't recover.",null),
+    ch("💬 The Budget Talk","Calm voices, a spreadsheet, mutual accusations about snacks.",{hap:-2,money:-400,stress:10},"You agree on a budget. It survives eleven days, a personal record.",null),
+    ch("✂️ Cut up the card","Nuclear option. There will be a summit, then a war, then terms.",{hap:-6,money:200,stress:16},"She opens a store card in 20 minutes. The arms race has begun.",function(){S.flags.cardWar=true;}),
+    ch("🕵️ Open a secret account","Your overtime goes somewhere quieter. For emergencies. And a boat, someday.",{hap:3,money:-300,stress:5},"Financial self-defense or act of war? Depends who finds the statement.",function(){S.flags.secretAcct=true;}),
+    ch("🎣 Work more overtime to cover it","Feed the machine. Become the machine.",{hap:-5,money:900,stress:13},"Covered. This quarter. The machine is hungry again already.",null) ], function(){return partnered();}),
+ ev("Choice Card","choice","🚗 The Car Dies Spectacularly","It made a noise like a fork in a garbage disposal, then achieved enlightenment and stopped forever. The quote has a comma in it.","Transportation is just money you can sit in.",
+  [ ch("🔧 Pay the repair","Cry once, drive for another year.",{hap:-3,money:-2400,stress:7},"It runs. The noise is gone. A new, quieter noise has applied for the position.",null),
+    ch("🚙 Buy used & 'reliable'","A sensible sedan with a mysterious past.",{hap:1,money:-5200,stress:5,credit:-6},"Reliable-ish. The previous owner also said that.",null),
+    ch("🛻 Buy the truck you actually want", S.credit>=620?"Zero practicality, full personality. Financed, obviously — nobody pays cash for personality.":"Your credit is already sweating.",{hap:9,money:-1800,stress:4,credit:-12},"Every errand is now an event. Parking is a personality. So is the $14,500 car loan now living in your character sheet.",function(){S.dCar+=14500;}),
+    ch("🔩 YouTube & fix it yourself","Three weekends, two knuckles, one extra bolt left over.",{hap:4,money:-600,stress:8},"It works. Nobody — including you — knows why. The extra bolt is a trophy now.",null),
+    ch("🚶 Become a one-car household / bus guy","Character-building, wallet-healing, dignity-optional.",{hap:-4,money:800,stress:6},"You save real money and gain bus stories no one asked for.",null) ]),
+ ev("Choice Card","choice","🧾 Tax Season Ambush","The IRS letter arrives with the energy of a jump scare. You owe, or your refund is a rumor, or your 'guy' did something creative in 2022.","Death and taxes. Taxes brought friends.",
+  [ ch("💸 Pay it & move on","Write the check, question your life choices quietly.",{hap:-4,money:-1900,stress:8},"Done. The government thanks you with worse roads.",null),
+    ch("📆 Payment plan it","Spread the pain across the year like butter on toast.",{hap:-1,money:-700,stress:5,credit:-5},"Monthly reminders that math always wins.",null),
+    ch("🦸 Hire a real CPA","Costs money to save money. Adulting's favorite paradox.",{hap:1,money:-950,stress:-3},"She finds deductions and judges your shoebox of receipts silently.",null),
+    ch("🙈 Ignore the letter","It goes in The Drawer. The Drawer of Financial Denial.",{hap:2,money:0,stress:9},"Peace now. The next letter will be a different, scarier color.",null),
+    ch("💼 Dispute everything","Forms, hold music, a case number you'll tattoo on your soul.",{hap:-2,money:-300,stress:12},"Three months of hold music. You win $212 back and lose a piece of yourself.",null) ]),
+ ev("Choice Card","choice","🤝 Your Buddy Needs a 'Loan'","He's good for it. He has always been 'good for it.' He owes Dave from 2019, two exes, and a casino.","The word loan is doing a magic trick — it disappears.",
+  [ ch("💵 Lend it, kiss it goodbye","A gift wearing a loan costume.",{hap:2,money:-800,stress:3},"He pays back half and a case of beer. Friendship economics are weird.",null),
+    ch("🚫 'I'm broke too' (true-ish)","Solidarity through shared poverty.",{hap:1,money:0,stress:1},"He understands. He's also asking Dave next. The rotation continues.",null),
+    ch("📝 Lend half, in writing","A contract between bros. The group chat drafts terms.",{hap:3,money:-400,stress:2},"Paid back in full, on time. The boys demand an investigation.",null),
+    ch("🍺 Buy him beers instead","Emotional support, lager format.",{hap:5,money:-90,stress:-3},"Cheaper, warmer, and in a way more honest than the loan.",null),
+    ch("🏦 Point him at a bank","Institutions exist for this. Their money, their risk.",{hap:0,money:0,stress:2,credit:0},"The bank says no in a font so formal it hurts.",null) ]),
+ ev("Choice Card","choice","💍 Wedding Season Ambush","Three weddings this quarter. One is a destination wedding. Flights, hotels, gifts, a suit that fits 'after the holidays.' Your wallet files for asylum.","Love is beautiful. Love has a cash bar.",
+  [ ch("🎉 Attend all, full send","Dance, cry, pay. The whole season.",{hap:6,money:-2600,stress:6},"Legendary guest status. Your account needs a moment alone.",null),
+    ch("✌️ Attend two, stream one","The destination one gets a card and a heroic gift.",{hap:3,money:-1300,stress:2},"Diplomacy at its finest. Nobody noticed. Everybody noticed the gift.",null),
+    ch("💌 Send gifts, skip all","Regrets + registry. A ghost with generosity.",{hap:0,money:-500,stress:-2},"Three group chats discuss you. The verdict: 'understandable, tbh.'",null),
+    ch("🏦 Gift from the heart (cheap)","A heartfelt card. A framed photo. Nerve of steel.",{hap:-1,money:-120,stress:4},"Aunt Linda has opinions. Aunt Linda always has opinions.",null),
+    ch("🎣 Schedule a 'work trip'","A conference. In fishing country. Pure coincidence.",{hap:7,money:-400,stress:0},"The fish were biting. The weddings were lovely, allegedly.",null) ]),
+ ev("Choice Card","choice","📋 Performance Review Season","Your boss has a folder, a tone, and phrases like 'growth opportunity' that mean 'more work, same money.' The annual judgment approaches.","Smile. Nod. Document everything.",
+  [ ch("🦁 Ask for the big raise","Bring numbers, receipts, and eye contact.",{hap:3,money:500,stress:7},"You get half of it and all of the respect. Take the trade.",function(){S.salary+=3500;}),
+    ch("😇 Accept & coast","'Great feedback.' You were playing games in your head the whole time.",{hap:2,money:0,stress:-3},"Survived another review cycle with the camouflage of competence.",null),
+    ch("📈 Volunteer for the visible project","High risk, high credit, high chance of weekend emails.",{hap:1,money:300,stress:11},"Your name gets mentioned upstairs. So does your Saturday.",null),
+    ch("🗣️ Honest feedback (mistake?)","Tell them what the team really thinks. Hero or casualty?",{hap:-2,money:0,stress:12},"The room goes quiet. Your honesty gets a file. Files are forever.",null),
+    ch("🎒 Quietly interview elsewhere","Lunch-break interviews in the car, blazer over gym shirt.",{hap:2,money:0,stress:6},"Options are oxygen. You breathe easier with two offers pending.",null) ], function(){return S.salary>0;}),
+ ev("Choice Card","choice","🏠 Landlord Chad Raises the Rent","'Market adjustment.' Chad IS the market. The increase letter includes a smiley face, which should be illegal.","Moving costs money. Staying costs money. Existing costs money.",
+  [ ch("😤 Pay & seethe","Sign, pay, mutter at walls you don't own.",{hap:-4,money:-900,stress:7},"Chad buys a boat. You buy earplugs for the neighbor's dog.",null),
+    ch("🧳 Move somewhere cheaper","Boxes, a borrowed truck, one friendship tested to destruction.",{hap:1,money:-1100,stress:10},"Cheaper rent, longer drive, new landlord named… also Chad?",null),
+    ch("🤝 Get a roommate","Half the rent, double the dishes situation.",{hap:-1,money:600,stress:6},"He's fine. His 2am gaming commentary is a war crime.",null),
+    ch("🔑 Start house-hunting (credit check!)", S.credit>=650?"Your credit clears it. The mortgage era calls.":"That credit score… the bank will have feelings.",{hap:5,money:-2500,stress:8,credit:5},"Applications, inspections, and opinions about mulch you never asked to have.",null),
+    ch("📞 Negotiate like a hostage expert","'I've never missed a payment, Chad.' Silence as a weapon.",{hap:3,money:-300,stress:4},"Half the increase. Chad respects game. Chad fears paperwork.",null) ], function(){return !S.flags.cabin;}),
+ ev("Choice Card","choice","🩺 The Doctor Has 'Concerns'","Blood pressure, cholesterol, a liver that has filed a formal complaint. The doctor uses the phrase 'at your age' four times.","Your body is sending invoices now.",
+  [ ch("🏃 Full lifestyle overhaul","Gym, sleep, vegetables with names you can pronounce.",{hap:6,money:-500,stress:-4},"Three months later the doctor double-checks the chart. It's you. New you.",null),
+    ch("💊 Take the pills, change nothing","Modern medicine vs. your habits. Bet on medicine.",{hap:0,money:-350,stress:3},"Numbers improve slightly. Habits remain undefeated champions.",null),
+    ch("🍺 Cut back 'a little'","Weekday drinking only. Then weekend drinking only. Math is flexible.",{hap:2,money:150,stress:2},"Progress measured in vibes. The liver sends a cautious thumbs up.",null),
+    ch("🚫 Fire the doctor","Get a second opinion from a guy at the gym.",{hap:3,money:0,stress:5},"The gym guy disagrees with the doctor. The gym guy sells supplements.",null),
+    ch("🎣 Prescribe yourself the outdoors","Hunting, fishing, hiking — cardio in camouflage.",{hap:8,money:-400,stress:-8},"Blood pressure down, stories up. Best prescription ever written.",null) ]),
+ ev("Choice Card","choice","📺 The Nagging Supercell","This quarter's forecast: dishes commentary, trash-day reminders, 'we never do anything,' and a story about her friend's husband who built a deck. A deck, Gerald. In a weekend.","It passes over your house and parks there.",
+  [ ch("🛠️ Build the deck (or die trying)","YouTube, lumber, and a level you'll never find again.",{hap:5,money:-1700,stress:9},"The deck exists. Slightly slanted. Family legend status: achieved.",null),
+    ch("📅 Plan the date nights","Scheduled romance. Spontaneity's funeral, peace's birthday.",{hap:6,money:-500,stress:-3},"Two dates a month and the weather system downgrades to 'partly cloudy.'",null),
+    ch("🎧 Nod & 'uh-huh' strategy","Survival through ambient agreement.",{hap:-2,money:0,stress:6},"Works until the quiz: 'What did I just say?' There is always a quiz.",null),
+    ch("💥 Say the quiet part out loud","One honest sentence. Forty minutes of thunder.",{hap:-4,money:0,stress:14},"The storm clears the air or the house. Sometimes both, in that order.",null),
+    ch("🎣 Emergency boys' weekend","Retreat to the lake to 'think about the deck.'",{hap:8,money:-500,stress:-6},"You return rested and build half the deck. Compromise is beautiful.",null) ], function(){return partnered();}),
+ ev("Choice Card","choice","🏡 In-Laws Want to 'Stay a While'","Her parents' house needs 'work.' The work is estimated at one fiscal quarter. Your spare room has been claimed by people who comment on your cooking.","A while. A WHILE. Define a while.",
+  [ ch("😬 Host them like a saint","Smile, cook, surrender the good bathroom.",{hap:-4,money:-800,stress:13},"You are praised as 'such a good husband.' The praise is also a cage.",null),
+    ch("🏨 Fund a long-term hotel instead","Cheaper than therapy. Barely.",{hap:2,money:-1600,stress:3},"Everyone's happier. The hotel has a pool. You visit the pool people now.",null),
+    ch("📅 Set a hard move-out date","Calendar. Contract. Courage.",{hap:0,money:-200,stress:9},"The date holds. Diplomacy awards you a medal nobody else can see.",null),
+    ch("🔨 Speed-run their house repairs","Your weekends become their renovation show.",{hap:3,money:-600,stress:10},"Done in record time. You're free, and weirdly bonded with her dad now.",null),
+    ch("🎣 Suddenly travel for 'work'","A three-week conference. In fishing country. Again.",{hap:6,money:-300,stress:2},"You return to an empty spare room and a fridge note: 'We know.'",null) ], function(){return S.married;}),
+ ev("Choice Card","choice","💸 Subscription & Bill Audit","Gym you don't use, streaming in triplicate, a 'free trial' from 2023 that's been charging rent in your account. Your money leaks in a dozen small holes.","Death by a thousand debits.",
+  [ ch("✂️ Cancel everything ruthlessly","One afternoon, nine cancellations, hold-music warfare.",{hap:4,money:350,stress:-3},"Savings unlocked. You miss exactly one service, deeply, at 11pm.",null),
+    ch("🏋️ Actually use the gym","If you're paying, suffer productively.",{hap:6,money:0,stress:-2},"The receptionist learns your name. Character development.",null),
+    ch("🙈 Ignore the leaks","Too small to matter, whispers every accountant ever.",{hap:0,money:-450,stress:3},"They matter. They compound. They send you a Christmas card now.",null),
+    ch("📊 Full budget spreadsheet era","You become a man with categories. It's a whole personality now.",{hap:3,money:500,stress:2,credit:6},"Money starts obeying. Mostly. There was an incident with boots.",null),
+    ch("🎰 Move the savings to a 'can't touch' account","Past you protecting future you from present you.",{hap:4,money:200,stress:-2,credit:5},"Present you is furious. Future you will be insufferably grateful.",null) ]),
+ ev("Choice Card","choice","🏭 Layoff Rumors at Work","The company hired 'consultants.' Meetings have doors closed now. Your manager says 'no plans' in the voice people use for plans.","Update everything. Trust nothing.",
+  [ ch("📄 Résumé out, quietly","Interviews at lunch. New tie energy.",{hap:2,money:0,stress:6},"Two callbacks in a week. Options are a sedative.",null),
+    ch("💪 Become indispensable","Take the jobs nobody wants. Become load-bearing.",{hap:0,money:400,stress:10},"You survive the list. You ARE the list's nightmares now.",null),
+    ch("💰 Hoard cash, cut spending","War-chest mode. No toys, no takeout, no mercy.",{hap:1,money:800,stress:5},"The account grows teeth. Whatever happens, you land softer.",null),
+    ch("🍺 Worry-drink with coworkers","Rumor exchange over beers, every Thursday.",{hap:3,money:-200,stress:4},"Morale events disguised as panic. Somehow it helps.",null),
+    ch("🙏 Head down, hope","The ostrich strategy. A classic for a reason.",{hap:-2,money:0,stress:9},"Hope is not a plan, but it is a hobby you're great at.",null) ], function(){return S.salary>0;}),
+ ev("Choice Card","choice","🧑‍🤝‍🧑 Your Parents Need Help","Dad's roof, mom's car, a medical thing nobody will describe clearly over the phone. Being the son comes with invoices now.","You became the family IT dept, bank, and moving company.",
+  [ ch("💸 Pay & handle it all","Flights, contractors, and a roof that costs like a car.",{hap:3,money:-2300,stress:9},"Handled. They tell the neighbors you're 'such a good boy.' You're 44.",null),
+    ch("🔨 Do the work yourself","Ladders, YouTube, and a back that will remember this.",{hap:5,money:-700,stress:7},"Bonding via shingles. Dad supervises from a lawn chair, correctly.",null),
+    ch("📞 Coordinate siblings to split it","A family group call. Someone cries. Someone 'has a thing.'",{hap:1,money:-900,stress:8},"Split three ways, argued about in four directions. Family math.",null),
+    ch("🙈 Send money, skip the trip","Guilt, express shipping.",{hap:-2,money:-1400,stress:6},"Handled from a distance. The distance is also the problem, says mom.",null),
+    ch("🎣 Visit — and make it a hunting trip too","Help dad, fix the roof, fill the freezer. Efficiency.",{hap:8,money:-800,stress:-3},"Best of both. You return with venison and a repaired family group chat.",null) ], function(){return S.age>=35;}),
+ ev("Choice Card","choice","💍 She Drops The Hint","'My friend just got engaged…' delivered while looking directly at your soul. Ring catalogs appear on the counter. The algorithm knows.","Every man hears this speech. Few survive it unchanged.",
+  [ ch("💎 Do it. Propose","Down on one knee, up in every bracket of obligation.",{hap:10,money:-3200,stress:9},"She said yes. The wedding spreadsheet has 400 rows. Row 1: your money.",function(){S.married=true;S.gf=0;S.partner="Wife";S.status="Married";S.herWorks=true;}),
+    ch("⏳ 'Give me a year'","A timeline. A deadline. A countdown she will enforce like a treaty.",{hap:1,money:0,stress:7},"Peace, leased for four quarters. The interest is hints.",null),
+    ch("🏃 'I'm not ready' (run)","Honesty, delivered at sprint speed.",{hap:-6,money:0,stress:11},"She's 'fine.' She is not fine. The couch era begins.",null),
+    ch("💬 The real talk","Fears, money, kids, the whole blueprint — out loud like adults.",{hap:5,money:0,stress:3},"Scary, then better. You both know where the ground is now.",null),
+    ch("🎁 Distraction gift instead","A trip! Jewelry (not that jewelry)! Look, a puppy discussion!",{hap:3,money:-1100,stress:6},"Buys two quarters of peace. She knows. She allows it. This time.",null) ], function(){return S.gf>0&&!S.married;}),
+ ev("Choice Card","choice","🤫 Girlfriend #2 Opportunity","A coworker laughs at your jokes a little too hard. Your jokes are not that funny. You both know what's happening.","Statistically, this ends in a documentary narrated by your divorce lawyer.",
+  [ ch("😇 Walk away","Tell the boys. They'll respect it and roast you forever.",{hap:2,stress:-3},"Integrity maintained. Story value: zero.",null),
+    ch("🔥 Start the double life","Two phones. Two birthdays. Zero chance.",{hap:9,money:-900,stress:15},"Electric for exactly one month. Then it's scheduling and dread.",function(){S.sideGf=1;S.side="Girlfriend #2 (secret)";}),
+    ch("🍺 Flirt at the work party only","A fenced-off, seasonal flirtation. What could go wrong.",{hap:4,money:-100,stress:7},"HR has entered the group chat of your nightmares. Careful.",null),
+    ch("🎣 Redirect the energy to the boys","More trips, more projects, less temptation bandwidth.",{hap:6,money:-300,stress:-5},"The calendar fills with wholesome chaos. Crisis postponed indefinitely.",null),
+    ch("💬 Tell your partner someone's circling","Pre-emptive honesty as a flex.",partnered()?{hap:4,stress:3}:{hap:1,stress:1},"Trust points banked or a fight about 'why is she texting you' — a coin flip you won.",null) ], function(){return partnered()&&S.sideGf===0;}),
+ ev("Choice Card","choice","🏡 The House Decision","A house you actually like hits the market. The bank will read your credit file like a diary. Your partner has already named the rooms.","Rent forever or mortgage forever. Pick your forever.",
+  [ ch("🔑 Buy it", S.credit>=650?"Equity, a lawn, and opinions about mulch.":"Applying with that credit is an extreme sport.",{hap:8,money:-6500,stress:8,credit:8},"The bank decides. If it clears, you're a homeowner who watches weather like it owes you money.",function(){if(S.credit<650){S.money+=6500;S.hap=clamp(S.hap-14,0,100);S.stress=clamp(S.stress+8,0,100);}else{S.dMort=186000;S.home="Homeowner";S.rentQ=0;}}),
+    ch("🏢 Keep renting","Flexibility! And a landlord named Chad.",{hap:1,money:300,stress:-2},"Chad raises rent 'because of the market.' Chad IS the market.",null),
+    ch("🔨 Buy a fixer-upper","Cheaper! If you ignore the roof, the wiring, and the smell.",{hap:5,money:-3800,stress:11},"You live in a project now. The project lives in you.",null),
+    ch("⏸️ Wait & save one more year","Discipline. Her Pinterest board disagrees.",{hap:0,money:700,stress:3,credit:5},"Prices do something rude while you wait. They always do.",null),
+    ch("🏚️ Buy land instead","Skip the house, own dirt, build 'someday.'",{hap:6,money:-4200,stress:2},"Someday is doing a lot of work in that sentence, but the dirt is yours.",function(){S.flags.cabin=true;}) ])
+];
+
+/* ---------- ROMANCE EXPANSION — dating, flirting, situationships & expensive feelings ---------- */
+var ROMANCE_EVENTS = [
+ ev("Romance Card","choice","📱 The Dating App Gauntlet","You have 47 matches, 3 conversations, 1 woman who only replies 'lol' and a man named Chadwick who is somehow also in your matches. Modern romance is a CRM with worse lighting.","Your bio says '6ft because apparently that matters.' It does. So does the fish photo.",
+  [ ch("🐟 Lead with the fish photo","A classic. A 2019 largemouth and unearned confidence.",{hap:4,money:-40,stress:2},"Two dates. One asked if the fish was your personality. Rude. Accurate.",null),
+    ch("💬 Open with an actual sentence","No 'hey.' A joke, a question, eye contact via text.",{hap:7,money:-120,stress:-2},"It works?! You get a real date who laughs before the appetizers. The algorithm files a complaint.",function(){if(!partnered()){S.gf=1;S.partner="Girlfriend (app success story)";S.status="Taken";S.herWorks=true;}}),
+    ch("💸 Pay for Premium / Boosts","Love, but make it a subscription with surge pricing.",{hap:2,money:-380,stress:5},"You are now visible to 400% more people who will ghost you professionally.",null),
+    ch("🪞 Gym mirror selfie era","Every photo is you holding a protein shake like a newborn.",{hap:3,money:-60,stress:3},"Matches up 12%. Respect from the boys up 0%. The shake is your child now.",null),
+    ch("🗑️ Delete apps, meet people 'organically'","At the grocery store. Like a psychopath from 1997.",{hap:6,money:0,stress:-3},"You make eye contact by the avocados. Nothing happens, but it feels historically significant.",null),
+    ch("👑 Hire the boys as your dating board of directors","They approve photos, veto texts, and run background checks via Instagram.",{hap:8,money:-90,stress:-4},"Democracy works. Your opening line is now legally reviewed and boy-approved.",null) ]),
+ ev("Romance Card","choice","☕ First Date Bingo","She's 20 minutes late, mentions her ex, her crystals, and her 'situationship with a DJ' before the drinks arrive. You have Bingo in 3 categories already.","Love is blind. The check is not.",
+  [ ch("😍 Fall for it instantly","The red flags are just flags if you're colorblind with hope.",{hap:9,money:-210,stress:6},"Date two is already planned. The boys place bets on the breakup quarter.",function(){if(!partnered()){S.gf=1;S.partner="Girlfriend (Bingo winner)";S.status="Taken (optimistic)";}}),
+    ch("🏃 Polite Irish goodbye","Bathroom. Window. Freedom.",{hap:2,money:-45,stress:-3},"You text 'had a great time!' from the parking lot. Cowardice is also a love language.",null),
+    ch("🎭 Match her energy","Talk about YOUR ex, YOUR crystals, YOUR DJ nemesis.",{hap:5,money:-130,stress:4},"Chaos recognizes chaos. You close the place down laughing.",null),
+    ch("💳 Offer to split / pay debate Olympics","A 14-minute negotiation that will be screenshotted either way.",{hap:1,money:-90,stress:5},"You pay. She Venmos half. Modern romance has a payment rail.",null),
+    ch("📱 Live-text the boys the whole date","Play-by-play. They are invested. Too invested.",{hap:6,money:-110,stress:1},"Dave types 'ASK ABOUT THE DJ' in all caps for 40 minutes.",null) ]),
+ ev("Romance Card","choice","💌 Valentine's Day Industrial Complex","February 14th approaches like a tax audit with roses. Restaurants surge-price love, florists become arms dealers, and a card costs $9 now. $9 for folded paper.","Nothing says romance like dynamic pricing.",
+  [ ch("🌹 Full send: flowers, dinner, gift","The deluxe package. Your wallet files for emotional damages.",{hap:9,money:-850,stress:4},"She posts it. Her friends approve. Peace is purchased at retail price.",null),
+    ch("🍕 Anti-Valentine's pizza & honesty","'I love you, the holiday is a scam.' Delivered with garlic bread.",{hap:7,money:-120,stress:-2},"She laughs. She agrees. You just saved $700 and gained a co-conspirator.",null),
+    ch("🙈 Forget it entirely","You remember on Feb 15th from a targeted ad for apology flowers.",{hap:-8,money:-300,stress:13},"The couch era begins. The flowers now cost double for guilt.",null),
+    ch("💎 Propose on Valentine's (maximum cliché)","A ring in the dessert. The whole restaurant must applaud.",partnered()?{hap:11,money:-2800,stress:8}:{hap:2,money:-200,stress:6},"Maximum drama achieved. If she says yes, the story is legally required at every anniversary.",function(){if(S.gf>0){S.married=true;S.gf=0;S.partner="Wife (Valentine's proposal)";S.status="Married";}}),
+    ch("🎣 Claim you planned a 'surprise weekend'","The surprise is also a surprise to you. Book something. Fast.",{hap:6,money:-600,stress:7},"The cabin saves you. Barely. She suspects nothing, says the narrator, lying.",null) ], function(){return partnered();}),
+ ev("Romance Card","choice","🫣 The Situationship Summit","You've been 'talking' for 5 months. You have a toothbrush at her place, a playlist together, and NO title. Her friends call you 'the guy.' Your friends call you 'down bad.' It's time to define it.","DTR: Define The Relationship or Die Trying.",
+  [ ch("💬 'What are we?' — ask it straight","Bravery. Eye contact. No jokes as armor.",{hap:6,money:0,stress:7},"She says yes to being official. The group chat erupts. Dave pays out a bet.",function(){if(!partnered()){S.gf=1;S.partner="Girlfriend (finally official)";S.status="Taken";S.herWorks=true;}}),
+    ch("🐌 Keep it vague forever","If you never define it, you can never break up. Galaxy brain.",{hap:1,money:-100,stress:6},"She defines it for you — by dating a guy who owns a label maker and emotional clarity.",null),
+    ch("🎁 Boyfriend behavior, no title","You fix her car, meet her mom, pay for trips — as a 'friend.'",{hap:-3,money:-900,stress:9},"Full price, no warranty. The boys stage an intervention with charts.",null),
+    ch("🚪 Walk away with dignity playlist","Sad songs, gym arc, main-character walk in the rain (parking lot).",{hap:4,money:0,stress:-4},"Heartbreak gains: +10. Three months later you are unrecognizable and slightly insufferable about it.",null),
+    ch("💍 Overcorrect: propose","From situationship to engagement in one panic move.",{hap:5,money:-3200,stress:14},"She says 'we need to talk' and you hear wedding bells. This ends in a story, one way or another.",function(){if(Math.random()<0.4){S.married=true;S.partner="Wife (plot twist)";S.status="Married";S.gf=0;}} ) ]),
+ ev("Romance Card","choice","🌹 Anniversary Math Problem","You remembered the date. You did NOT remember that this year requires a 'real gift' because last year's gas-station flowers are still in evidence. Romance has inflation now.","Love language: quality time. Billing language: invoice.",
+  [ ch("✈️ Book the trip she hinted at 47 times","The screenshots folder pays off. You listened (eventually).",{hap:10,money:-1400,stress:-4},"Legendary husband/boyfriend points. Expires in 90 days, but still.",null),
+    ch("💌 Handwritten letter + her favorite cheap thing","Low cost, high signal. Dangerous if done wrong.",{hap:8,money:-60,stress:-2},"She cries (good cry). The boys demand you turn in your man card. You frame it instead.",null),
+    ch("🛍️ Panic-buy jewelry at 6pm","The mall guy can smell desperation and commission.",{hap:4,money:-950,stress:6},"It sparkles. So does the payment plan.",function(){S.dCredit+=600;}),
+    ch("🍽️ Recreate your first date","Same place. Prices are 40% higher, portions 40% smaller. Inflation is romantic now.",{hap:7,money:-240,stress:-1},"Nostalgia: priceless. Appetizers: $19 each, somehow.",null),
+    ch("🎣 Gift her a boys' trip (for you)","'It's so you can miss me.' Audacious. Historic. Doomed.",{hap:-6,money:-400,stress:11},"She gifts you the couch and a lecture with footnotes.",null) ], function(){return partnered();}),
+ ev("Romance Card","choice","👀 The Coworker Crush With HR Implications","She laughs at your 4/10 jokes like they're 9/10. There's a work party, an open bar, and a Slack channel that never sleeps. Every rom-com says go for it. Every HR manual says absolutely not.","Attraction: high. Career risk: also high. Judgment: pending.",
+  [ ch("😇 Keep it professional, suffer silently","You become excellent at looking at spreadsheets when she walks by.",{hap:1,money:0,stress:5},"Safe. Boring. Employed. The fantasy remains undefeated in your head.",null),
+    ch("☕ 'Coffee chat' that is obviously a date","Calendar invite says 'sync.' Everyone knows.",{hap:6,money:-30,stress:6},"Two coffees later you're both pretending this is about Q3 goals. It is not about Q3 goals.",function(){if(!partnered()){S.gf=1;S.partner="Girlfriend (coworker)";S.status="Taken (work edition)";}}),
+    ch("🍸 Work party confession","Open bar liquid courage meets office lighting.",{hap:5,money:-80,stress:10},"Monday is either magical or a meeting with HR and a printed screenshot.",null),
+    ch("💃 Start flirting while partnered — chaos mode","You have someone at home and audacity in the office.",{hap:8,money:-200,stress:15},"Thrill now, documentary later. See: every previous warning in this game.",function(){if(partnered()){S.sideGf=1;S.side="Coworker situation";}}),
+    ch("🎣 Tell the boys, live vicariously through roasting","They draft messages you will never send.",{hap:7,money:-50,stress:-3},"The group chat ships it. HR does not. Balance restored.",null) ]),
+ ev("Romance Card","choice","💔 Breakup Season: Do It Clean or Do It Messy","It's over and you both know it. The only choice left is production value. Modern breakups come with unfollows, playlist removals, and a friend-group custody battle.","Someone gets the good bar. Someone gets Dave.",
+  [ ch("🤝 The mature talk in a coffee shop","Public place, low volume, high dignity. No chairs thrown.",{hap:2,money:-40,stress:5},"You both cry a little. The barista pretends not to hear. Growth.",function(){if(!S.married){breakUp();}}),
+    ch("👻 Ghost completely","Disappear. Change gyms. Move spiritually.",{hap:-2,money:0,stress:7},"She tells everyone you died emotionally in 2024. Not entirely wrong.",function(){if(!S.married){breakUp();}}),
+    ch("📱 Breakup by text at 1:14am","Coward's deluxe. Screenshot will live forever.",{hap:-4,money:0,stress:9},"The group chats (plural) convene an emergency tribunal.",function(){if(!S.married){breakUp();}}),
+    ch("🎁 'Let's stay friends' (lie)","You will not stay friends. You will stay Instagram followers who suffer.",{hap:0,money:-100,stress:6},"Three months of liking each other's posts out of spite. Modern closure.",function(){if(!S.married){breakUp();}}),
+    ch("🔄 Get back together by Friday","Breakup speedrun, any% — you miss her cooking and your hoodie is at her place.",{hap:5,money:-150,stress:3},"The cycle continues. The boys update the spreadsheet: Breakup #"+rnd(2,6)+".",null) ], function(){return partnered()&&!S.married;}),
+ ev("Romance Card","choice","👨‍👩‍👧 Meet Her Parents: Boss Fight","Her dad has a handshake that files a police report on your grip. Her mom has questions prepared like a job interview where the job is 'deserve my daughter.' You brought wine you Googled in the car.","Dress code: not the shirt you're wearing.",
+  [ ch("🦁 Firm handshake, eye contact, compliment the house","Classic build. Respect stats maxed for a man in a polo.",{hap:6,money:-80,stress:5},"Dad nods once. In dad language, that's a standing ovation.",function(){if(partnered())S.lonely=0;}),
+    ch("🔧 Fix something in their house unprompted","A loose handle becomes your entire audition.",{hap:8,money:-20,stress:3},"You are now 'the one who fixed the sink.' That title outranks your actual job.",null),
+    ch("🍷 Overdo the wine, underdo the filter","You tell the deployment / layoff / crypto story with sound effects.",{hap:-3,money:-60,stress:9},"Mom smiles in a way that means a phone call is scheduled for tomorrow.",null),
+    ch("🏈 Bond with dad over sports / hunting","Find the one topic and mine it for 3 hours respectfully.",{hap:7,money:-40,stress:-3},"By dessert you're invited on a trip. You've been acquired by the family.",null),
+    ch("📱 Check your phone at dinner","The boys' group chat chose violence and timing.",{hap:-6,money:0,stress:10},"The silence after is so complete you can hear the relationship recalculating.",null) ], function(){return partnered();}),
+ ev("Romance Card","choice","💘 Love Language vs. Gift Receipt","Her love language is 'words of affirmation.' Yours is 'fixed the thing before it broke.' She wants a poem. You offer an oil change. Both of you think you're being incredibly romantic.","Romance is just project management with candles.",
+  [ ch("📝 Write the poem (it's bad, it works)","Rhyming 'heart' with 'shopping cart' was a risk you took bravely.",{hap:9,money:0,stress:2},"She frames it. The boys must never know. The narrator knows. The narrator always knows.",null),
+    ch("🔧 Fix everything in the apartment in one day","Acts of service speedrun. Caulk has never been this emotional.",{hap:7,money:-180,stress:-2},"She brags about you to her friends. Your back brags to a chiropractor.",null),
+    ch("💸 Buy something expensive instead of saying feelings","Retail therapy as emotional outsourcing.",{hap:3,money:-700,stress:5},"She likes the gift. She still wants the words. The words remain at large.",null),
+    ch("🗣️ Say the feelings out loud, no jokes","37 seconds of sincerity. A personal record shatters.",{hap:10,money:0,stress:4},"Vulnerability crits. Relationship levels up. You need to sit down after.",null),
+    ch("🎣 Ask the boys for romance advice","Dave suggests a bass boat reveal. Greg suggests 'just be yourself' (unhelpful legend).",{hap:5,money:-100,stress:-3},"You combine both: feelings, on a boat. Somehow? It lands.",null) ], function(){return partnered();})
+];
+
+/* ---------- SATIRE EXPANSION — hustle, influencers, HOAs & the subscription-ification of everything ---------- */
+var SATIRE_EVENTS = [
+ ev("Satire Card","choice","💼 LinkedIn Hustle Prophet","A guy you met once in 2019 now posts at 5am: 'I fired my own brother today. Here's what it taught me about B2B sales.' 47,000 likes. He sells a course.","Grateful. Blessed. Monetized.",
+  [ ch("🤢 Mute him & touch grass","Protect your peace and your feed in one click.",{hap:4,money:0,stress:-4},"Somewhere, his engagement drops by one. Devastating for him, probably.",null),
+    ch("📈 Start posting hustle content too","Day 1: 'Woke up at 4am.' You did not. Content is king, truth is a peasant.",{hap:2,money:300,stress:6},"12 likes, one is your mom, one is a bot selling crypto. Influence!",null),
+    ch("💸 Buy his $1,997 course","Modules include 'Synergy' and a PDF that says 'network' 400 times.",{hap:-3,money:-1997,stress:8,credit:-5},"You learn you are the product. The upsell to the $8k mastermind begins immediately.",function(){S.dCredit+=1200;}),
+    ch("🎣 Post a fishing photo captioned 'Meetings.'","Counter-programming. The boys understand the assignment.",{hap:8,money:-20,stress:-8},"It outperforms his thread. He DMs you asking for your 'strategy.'",null),
+    ch("👑 Become a 'thought leader' in your group chat only","Small pond, big delusions, zero courses sold.",{hap:6,money:0,stress:-3},"The boys grant you the title 'Chief Vibes Officer.' It comes with no pay and total authority.",null) ]),
+ ev("Satire Card","choice","🎙️ The Alpha Podcast Bro Era","Your buddy starts a podcast called MINDSET WARRIORS. He has 9 listeners, a ring light, and the confidence of a man who has never been humbled by a performance review.","Episode 14: 'Why Sleep Is For Employees.'",
+  [ ch("🎧 Be his first guest","Discuss 'discipline' while eating gas-station taquitos on camera.",{hap:6,money:-40,stress:-2},"Clips circulate in exactly one group chat. Fame, technically.",null),
+    ch("💊 Buy his supplement stack","Lion powder, focus gummies, and something banned in 3 countries.",{hap:1,money:-240,stress:4},"You feel something. It's either focus or a warning from your liver.",null),
+    ch("❄️ Join the 5am cold plunge cult","Ice water at dawn because a man on the internet said billionaires do it.",{hap:5,money:-150,stress:3},"You feel incredible for 11 minutes. You post about it for 11 days.",null),
+    ch("🛋️ Refuse & become the podcast villain","You are now 'my one friend who still believes in weekends.'",{hap:7,money:0,stress:-5},"He respects the brand. The brand is napping.",null),
+    ch("💰 Sponsor the podcast with your side hustle","Your logo on a show 9 people hear. Marketing genius or tax write-off cosplay?",{hap:3,money:-500,stress:2},"One listener buys something. ROI: emotional.",null) ]),
+ ev("Satire Card","choice","🏡 HOA Dictatorship Declares War","You (or your landlord) get a violation: grass 0.4 inches too tall, trash can visible from space, mailbox 'not community beige.' The HOA president, Karen-Prime, patrols in a golf cart with a clipboard and no mercy.","Your home, their rules, forever, with fines.",
+  [ ch("✂️ Mow at midnight in protest","Headlamp, spite, perfectly legal decibels.",{hap:5,money:-30,stress:4},"The lawn is perfect. The HOA sends a thank-you violation for 'tone.'",null),
+    ch("💸 Pay the fine & seethe quietly","$75 for grass. GRASS. That grows. For free. Incorrectly.",{hap:-4,money:-220,stress:8},"Peace purchased. Dignity invoiced separately.",null),
+    ch("🗳️ Run for HOA board (coup arc)","If you can't beat the clipboard, become the clipboard.",{hap:6,money:-100,stress:7},"You win. Power corrupts instantly: you fine a man for a visible hose. You are the problem now.",null),
+    ch("🎣 Put a fishing boat in the driveway","A direct constitutional test of HOA authority.",{hap:8,money:-200,stress:6},"Legal battle of the century (on your street). The boys bring lawn chairs to watch.",null),
+    ch("📜 Read the 214-page bylaws & find a loophole","Section 9 allows 'heritage vehicles.' Your truck is now heritage.",{hap:7,money:0,stress:-2},"Karen-Prime respects the hustle and fears the precedent. War: paused.",null) ]),
+ ev("Satire Card","choice","🤖 Your AI Girlfriend Has a Subscription Tier","An ad offers an AI girlfriend: always supportive, never argues, $29.99/month, premium tier remembers your truck's name. Your real dating life looks at the floor.","The future is lonely and it has in-app purchases.",
+  [ ch("🚫 Hard pass, call a real human","You text your actual crush / partner / the boys instead.",{hap:5,money:0,stress:-3},"Real people: glitchy, expensive, irreplaceable. Correct choice, says even the narrator.",null),
+    ch("💳 Free trial (you will forget to cancel)","Seven days of being told your jokes are funny by software.",{hap:4,money:-120,stress:2},"She — It — remembers everything. It charges you on day 8 at 3am. Romance, automated.",function(){S.dCredit+=120;}),
+    ch("🎣 Show the boys, group roast ensues","Screenshots destroy the entire friend group for a weekend.",{hap:9,money:-30,stress:-7},"Dave tries it. Dave is now in a committed relationship with Premium Tier. Pray for Dave.",null),
+    ch("💘 Use it to practice saying feelings","Rehearse sincerity on the robot, deploy on humans.",{hap:6,money:-30,stress:-2},"Weirdly effective. The robot gives you a 9/10 on vulnerability. Growth is growth.",null),
+    ch("👑 Premium tier: she gets a boat too","You have now bought a digital boat for a digital girlfriend. Peak 2026.",{hap:3,money:-400,stress:5},"The boys stage an intervention with real sandwiches and concerns.",null) ]),
+ ev("Satire Card","choice","💰 Finance Bro Friend 'Helps' You","Your buddy day-trades in a Discord called WOLF MONEY, has lost $11k this year, and speaks only in ' generational wealth' and 'trust me bro.' He has a spreadsheet and a savior complex.","His car is leased. His confidence is not.",
+  [ ch("📉 Give him $500 to 'run up'","Tuition for a lesson you already knew.",{hap:-2,money:-500,stress:5},"It's gone by Thursday. He calls it 'tuition for the market.' You call it $500.",null),
+    ch("🏦 Boring index fund instead","The tortoise strategy. He calls it 'NPC investing.'",{hap:4,money:-500,stress:-2,credit:4},"A year later you're up 8%. He is up 3 podcasts and down a car.",null),
+    ch("🎰 YOLO the rent money on his tip","Diamond hands, eviction brain.",{hap:1,money:-1400,stress:12},"For 6 hours you were up $3,000. The screenshot is framed. The money is not.",null),
+    ch("👂 Nod, buy nothing, steal his BBQ techniques","His portfolio is trash, his brisket is generational.",{hap:7,money:-60,stress:-4},"Best trade of the quarter: ribs for risk exposure (zero).",null),
+    ch("📊 Become his risk manager (unpaid)","You save him from himself weekly. He Venmos you exposure.",{hap:3,money:200,stress:4},"He credits you in his bio: 'Shoutout my risk team.' You ARE the risk team.",null) ]),
+ ev("Satire Card","choice","🚗 Everything Is A Subscription Now","Your truck wants $18/month to unlock the heated seats ALREADY IN THE TRUCK. Your fridge offers Premium Ice. Your doorbell has tiers. Capitalism looked at ownership and said 'what if no.'","You don't own things anymore. You rent your own life back.",
+  [ ch("💸 Pay for the heated seats","Winter is coming and so is the $18.",{hap:3,money:-216,stress:3},"Warm butt, cold soul. The truck thanks you for your loyalty.",null),
+    ch("✂️ Cancel everything in a rage-audit","One afternoon, 14 cancellations, hold music in 3 genres.",{hap:6,money:400,stress:-5,credit:5},"You save real money. The fridge ice is now 'artisanal' (same ice).",null),
+    ch("🏴‍☠️ Go full analog: paper maps, dumb TV, spite","A flip phone era cosplay with modern consequences.",{hap:5,money:250,stress:-2},"You feel free and unreachable. The boys have to CALL you like it's 2004.",null),
+    ch("🎣 Only subscribe to fishing stuff","Priorities: premium lake maps yes, premium ice no.",{hap:7,money:-140,stress:-6},"A budget is just values with numbers. Your values have lures.",null),
+    ch("🤖 Name every subscription & give them a performance review","You manage your apps like employees. Two get fired.",{hap:4,money:150,stress:1},"Quarterly review complete. The meditation app is on a PIP.",null) ]),
+ ev("Satire Card","choice","🧃 Wellness Influencer Detox Ambush","A man with perfect hair sells a $340 detox tea that promises to 'reset your masculine energy.' His before/after photos are just lighting and a divorce.","Science: no. Marketing: elite.",
+  [ ch("🍵 Buy the tea, become a believer for 9 days","You glow. It's dehydration and optimism.",{hap:3,money:-340,stress:2},"Day 10: you eat a burger and ascend to your final form: normal.",null),
+    ch("🥩 Counter with the all-meat 'primal' diet","A different influencer, same hair, opposite tea.",{hap:2,money:-400,stress:5},"Your cholesterol writes a diss track. Your energy is incredible, allegedly.",null),
+    ch("🏃 Just walk & sleep like a mammal","Free, boring, undefeated wellness stack.",{hap:8,money:0,stress:-7},"Three weeks later you feel amazing and have nothing to sell anyone. Tragic for content.",null),
+    ch("🎣 Prescribe yourself lake time again","Sun, water, silence — the original detox, no promo code.",{hap:9,money:-250,stress:-10},"Influencers hate this one trick (going outside).",null),
+    ch("💸 Start YOUR OWN wellness brand","If everyone's selling tea, the real money is the teabags.",{hap:4,money:-800,stress:8},"You sell 14 units, all to relatives. Wellness is a family business now.",function(){S.flags.biz=true;}) ]),
+ ev("Satire Card","choice","👶 Gender Reveal Industrial Accident","Your friends' gender reveal involves a lifted truck, colored smoke, and a small brush fire the fire department describes as 'festive.' You are in the video. Everyone is in the video. It's on the news.","Parenthood, announced via minor emergency.",
+  [ ch("🎉 Cheer like it's normal","This is just how announcements work now. Adapt.",{hap:6,money:-100,stress:-2},"You are in the background of a viral video holding a beer like a statue of our times.",null),
+    ch("🧯 Help put out the fire, become the hero","Garden hose diplomacy saves the fence and the party.",{hap:8,money:-50,stress:3},"Local news calls you 'a quick-thinking guest.' Your mom is so proud.",null),
+    ch("💸 Gift registry is $900 long","A stroller costs more than your first car and has better suspension.",{hap:1,money:-300,stress:5},"You buy the mid-tier gift and a card that says 'congrats on the smoke.'",null),
+    ch("🎣 Use it as your exit to go fishing","Smoke, sirens, chaos — perfect cover, no notes.",{hap:7,money:-150,stress:-5},"You catch two fish while the party becomes a county incident report.",null),
+    ch("📱 Film your own reaction video","Content brain claims another victim.",{hap:3,money:0,stress:2},"400 views. One comment is the fire department's official account: 'sir.'",null) ], function(){return S.age>=24;}),
+ ev("Satire Card","choice","🏆 Man Cave Tax & Trophy Economy","Every man you know is building a 'man cave,' which is a garage with a TV, a mini fridge, and $4,000 of neon signs that say things like 'MAN CAVE.' Zillow now lists it as a feature. Your landlord / HOA / partner has opinions.","A room to be yourself in, available at retail.",
+  [ ch("🛋️ Build the cave, full neon","Budget: irresponsible. Vibes: immaculate.",{hap:11,money:-2200,stress:-6},"You now host everything. Your electricity bill has its own zip code.",null),
+    ch("🍻 Cave-lite: couch, TV, one sign MAX","Restraint that the boys call 'growth' and 'betrayal' in the same breath.",{hap:8,money:-700,stress:-5},"Perfect balance. The sign says 'CAVE (SMALL)'.",null),
+    ch("🎣 The outdoors is my cave","No rent, no neon, occasionally bears.",{hap:9,money:-200,stress:-9},"Your cave has a lake in it. Checkmate, drywall.",null),
+    ch("💍 Negotiate cave rights in the relationship treaty","Diplomacy: you get the garage, she gets the bathroom schedule and the good closet.",partnered()?{hap:6,money:-400,stress:-2}:{hap:2,money:-100,stress:1},"Peace accords signed. Cave era begins under international law.",null),
+    ch("💸 Rent out the cave on weekends","Monetize the cave. The cave pays for the cave. Galaxy accounting.",{hap:4,money:600,stress:5},"Strangers love your neon. You love their money. Capitalism, but cozy.",null) ])
+];
+
+
+/* ---------- RANDOM CHANCE CARDS (the universe moves first — you pick the response) ---------- */
+var CHAOS_EVENTS = [
+ ev("Random Chance","chaos","💔 Divorce Papers, Served at Work","She filed. HR saw. The whole floor saw. Her lawyer has a podcast voice and a per-sigh billing rate. Half of everything is suddenly a math problem.","This is not a drill. This is paperwork.",
+  [ ch("⚖️ Lawyer up & fight for everything","Custody, house, the dog, the good grill.",{hap:-10,money:-4500,stress:18},"War by invoice. You keep some, lose some, age five years in a quarter.",function(){breakUp();}),
+    ch("🤝 Settle fast & clean","Sign, split, survive. Pride is expensive.",{hap:-7,money:-2800,stress:12},"It ends in weeks. The quiet apartment echoes at a normal volume.",function(){breakUp();}),
+    ch("🍺 Drink about it for a month","The boys rotate babysitting your feelings.",{hap:-5,money:-600,stress:8},"The hangovers fade. The paperwork doesn't. But the boys showed up.",function(){breakUp();}),
+    ch("🙏 Beg & promise to change","The grand gesture era: flowers, therapy brochures, a new man (beta version).",{hap:-4,money:-900,stress:14},"She files a pause, not a withdrawal. Probation era begins. One more papers-event and it's over.",function(){if(S.flags.begged){breakUp();}else{S.flags.begged=true;}}),
+    ch("🎣 Disappear to the lake for a week","Unreachable. Fish are notified. Lawyers are not.",{hap:2,money:-400,stress:2},"You return sunburned, centered, and still divorced — but at peace with the timeline.",function(){breakUp();}) ], function(){return S.married;}),
+ ev("Random Chance","chaos","💔 Caught. The Double Life Ends","One shared photo stream. That's all it took. Screenshots were taken. A group chat was formed without you.","There is no loading screen for consequences.",
+  [ ch("⚖️ Accept the divorce & the bill","Lawyer, settlement, silence.",{hap:-12,money:-5200,stress:20},"Expensive education in calendar management.",function(){S.sideGf=0;S.side="None (evidence).";if(S.married)breakUp();else{S.gf=0;S.partner="—";S.status="Single (caught)";}}),
+    ch("🙏 Grovel with receipts of change","Therapy booked, passwords shared, location on — voluntarily.",{hap:-6,money:-1200,stress:15},"Probation era. Every quarter is a trust audit now.",function(){S.sideGf=0;S.side="None (repentant)";S.flags.probation=true;}),
+    ch("🍺 Move in with a buddy & drink","The couch era, deluxe edition, with a mini fridge.",{hap:-4,money:-500,stress:9},"Freedom tastes like someone else's cable package.",function(){S.sideGf=0;S.side="None (gone)";if(S.married)breakUp();else{S.gf=0;S.partner="—";S.status="Single (caught)";}}),
+    ch("💥 Fight it out (verbally) at 2am","Every secret gets said at full volume. The neighbors learn lore.",{hap:-9,money:-300,stress:22},"Nothing is fixed, everything is said. The police do a wellness check. You pass, barely.",function(){S.sideGf=0;S.side="None (war)";}),
+    ch("🏃 Run to girlfriend #2's place","Double down on the double life. Bold. Historic. Doomed.",{hap:3,money:-800,stress:17},"She finds out why you're available at 2am by Tuesday. There is no floor to this basement.",function(){S.sideGf=0;S.side="None (serial)";if(S.married)breakUp();}) ], function(){return S.sideGf>0;}),
+ ev("Random Chance","chaos","📉 Credit Score Crashes −50","A forgotten card, a buy-now-pay-later spree, one very smug collections agency. The score falls like it was pushed.","−50. Just like that. Years to build, one quarter to yeet.",
+  [ ch("💸 Pay everything down now","Ramen quarter. Pride intact, eventually.",{hap:-3,money:-1500,stress:6,credit:-35},"The bleeding stops. The score heals slower than the wallet.",null),
+    ch("📞 Call & negotiate settlements","Hold music, hardship programs, dignity optional.",{hap:-2,money:-800,stress:8,credit:-42},"Settled for less. The letters stop. Mostly.",null),
+    ch("🙈 Ignore it (The Drawer)","Add the letters to The Drawer of Denial.",{hap:1,money:0,stress:9,credit:-55},"The Drawer's contents appreciate in menace.",null),
+    ch("📊 Become a credit-repair monk","Disputes, utilization charts, a spreadsheet with conditional formatting.",{hap:2,money:-200,stress:4,credit:-28},"You claw back half the dignity within the quarter. The other half is on a payment plan.",null),
+    ch("🎰 Put the debt on a 0% card","Debt judo. The balance is now a future-you problem with a deadline.",{hap:0,money:-100,stress:5,credit:-45},"Future you has been notified and is furious, as tradition demands.",null) ]),
+ ev("Random Chance","chaos","⚰️ A Family Member Dies","Your great-uncle passed. The funeral is heavy, the stories are incredible… and there's an inheritance with your name in the will. Grief and a wire transfer in the same week.","Life is weird and has no tone consistency.",
+  [ ch("🕯️ Grieve properly, take the time","Cry, tell stories, eat the funeral potatoes.",{hap:-5,money:2400,stress:5},"Sad but richer. He'd have laughed at the timing. He did plan the timing.",null),
+    ch("💸 Fight relatives over the will","Family group chat becomes a courtroom with memes.",{hap:-8,money:3600,stress:14},"You win more money and lose two cousins. The cousins were mid anyway.",null),
+    ch("🎣 Take the boys hunting 'for him'","His favorite way to be honored, per him, repeatedly.",{hap:4,money:1900,stress:-4},"A toast at dawn. He would have wanted the inheritance spent slightly irresponsibly.",null),
+    ch("🏦 Invest all of it, touch nothing","The most boring, most correct answer.",{hap:1,money:2600,stress:0,credit:6},"Future you lights a candle for past you's discipline.",null),
+    ch("🍺 One legendary send-off weekend","The family tells stories until 3am. The tab is historic.",{hap:3,money:800,stress:2},"Half the inheritance, all of the closure. He'd approve. He started the tab tradition.",null) ]),
+ ev("Random Chance","chaos","📋 You Got Fired","'Restructuring.' Your badge stops working before the meeting ends. The plant you kept alive for years dies within a week, out of pure solidarity.","Severance: two weeks and a cardboard box.",
+  [ ch("🎯 Job-hunt like it's a job","Eight applications a day. Interview voice activated.",{hap:-3,money:-400,stress:10},"Three offers by quarter's end — one even pays more. The box was a promotion.",function(){S.salary=Math.max(18000,S.salary-2000);S.job="New job (post-firing)";}),
+    ch("🍺 Two weeks of couch & beer first","Process the grief horizontally.",{hap:2,money:-700,stress:4},"Week three you stand up a new man with a résumé and a tan line from the window.",function(){S.salary=0;S.job="Between opportunities";}),
+    ch("🏢 Start the thing you always talked about","No boss to ask now. The BBQ pitch becomes a business plan.",{hap:4,money:-1500,stress:12},"Terrifying freedom. First client by month two.",function(){S.salary=24000;S.job="Business owner";S.flags.biz=true;}),
+    ch("⚖️ Consult a lawyer about the firing","The exit interview had some… phrases in it.",{hap:-1,money:1200,stress:9},"A settlement appears. HR's phrases were indeed expensive.",function(){S.salary=0;S.job="Between opportunities";}),
+    ch("🎣 Fish until the severance runs out","Unemployment, but make it a tournament.",{hap:6,money:-900,stress:-6},"You return broke-adjacent and emotionally solvent. Then the hunt begins.",function(){S.salary=0;S.job="Between opportunities";}) ], function(){return S.salary>0&&!S.military;}),
+ ev("Random Chance","chaos","🏥 Medical Bill Roulette","A 'quick check' becomes a scan, the scan becomes a specialist, and the bills arrive in volumes like a fantasy series. Volume 1: $3,800.","Your deductible has a deductible.",
+  [ ch("💸 Pay it & tighten everything","Ramen with a side of responsibility.",{hap:-4,money:-2600,stress:9},"Paid. The fridge gets emptier and your blood pressure, ironically, improves.",null),
+    ch("📞 Negotiate the bill down","Itemized bill + one phone call = magic words.",{hap:-1,money:-1300,stress:7},"40% vanished because you asked. The system is a yard sale.",null),
+    ch("💳 Card it & forget it","The Drawer welcomes a new resident.",{hap:0,money:-1900,stress:8,credit:-8},"Future you will handle it. Future you is booked solid with your decisions.",null),
+    ch("🏥 Payment plan, minimums","Small payments, long tail, steady dread.",{hap:-2,money:-600,stress:5},"Manageable. The envelopes keep coming but smaller, like aftershocks.",null),
+    ch("🎣 Skip follow-ups, trust the body","You feel fine. Feeling is a diagnostic tool now.",{hap:2,money:0,stress:6},"Fine, until a future quarter presents the sequel with interest.",null) ]),
+ ev("Random Chance","chaos","🎰 Scratch Ticket Jackpot","A gas-station scratcher, bought as a joke, pays out like it respects you. The boys demand a round. Fair.","The universe, apologizing briefly.",
+  [ ch("🍻 Round for the boys, bank the rest","Legend status purchased at a discount.",{hap:10,money:2600,stress:-4},"Stories for years, savings intact. A masterclass.",null),
+    ch("🏦 All of it to savings/debt","Not one fun dollar spent. Suspicious behavior.",{hap:4,money:3400,stress:-3,credit:8},"The account looks respectable. The boys hold a small protest.",null),
+    ch("🛻 Truck accessories, immediately","Lift, lights, a horn with opinions.",{hap:11,money:600,stress:-2},"Financially unwise. Spiritually essential. The truck agrees.",null),
+    ch("🎰 Reinvest in more tickets","Statistically a bonfire, emotionally a strategy.",{hap:3,money:-400,stress:3},"The universe's apology was a one-time offer.",null),
+    ch("💍 Spend it on her / the family","Convert luck into peace at home.",partnered()?{hap:8,money:1200,stress:-5}:{hap:5,money:1800,stress:-3},"Warm quarter. The house feels lighter for months.",null) ]),
+ ev("Random Chance","chaos","👶 Surprise! A Kid","'We need to talk.' Two words later your sleep schedule is cancelled for 18 years. Tiny human, enormous invoice, weird amount of love.","The boys send cigars and condolences in equal measure.",
+  [ ch("👨‍🍼 Full dad mode","Read the books. Build the crib. Become a nap strategist.",{hap:7,money:-1800,stress:11},"Exhausted, broke, weirdly proud of a creature that can't hold its head up.",function(){S.kids++;}),
+    ch("💪 Overtime era begins","Somebody has to fund the diaper economy.",{hap:-2,money:600,stress:14},"You fund it. From a distance. The distance grows teeth.",function(){S.kids++;}),
+    ch("😱 Panic, then adapt","Three days of staring, then a spreadsheet. Growth.",{hap:3,money:-1200,stress:10},"By month two you're a swaddling professional with opinions.",function(){S.kids++;}),
+    ch("🎣 One last boys' trip first","A farewell tour for your free time. It gets a name and a t-shirt.",{hap:8,money:-1500,stress:5},"Legendary trip. Then the tiny human era begins, on schedule.",function(){S.kids++;}),
+    ch("🏠 Upgrade everything now","Bigger car, bigger place, safety gates on the safety gates.",{hap:4,money:-3400,stress:9,credit:-5},"The house becomes a padded fortress. The wallet becomes a memory.",function(){S.kids++;}) ], function(){return partnered();}),
+ ev("Random Chance","chaos","🕵️ Identity Theft Quarter","Someone in another state is living your best life on your credit: a TV, a jet ski, a suspiciously nice couch. Your file is frozen, your patience is not.","The thief has better taste than you. Insult to injury.",
+  [ ch("🧊 Freeze everything & dispute","Forms, affidavits, hold music in three departments.",{hap:-3,money:-300,stress:11,credit:-20},"Months of paperwork. The jet ski is repossessed from a man named Kyle.",null),
+    ch("💳 Eat the small charges, fight the big ones","Triage. The couch stays in the story as a legend.",{hap:-2,money:-900,stress:8,credit:-26},"Partial victory. Kyle keeps the couch. You keep the lesson.",null),
+    ch("🔐 Go full credit-monitoring monk","Alerts on alerts. Your phone buzzes like a casino.",{hap:1,money:-150,stress:4,credit:-12},"Nobody will ever buy a jet ski as you again. Probably.",null),
+    ch("🙈 Give up & change nothing","He can have the identity. It's mostly bills anyway.",{hap:1,money:-400,stress:7,credit:-38},"The thief eventually returns it, citing 'too much debt, no upside.'",null),
+    ch("🍺 Find the humor, warn the boys","Group chat security summit over beers.",{hap:4,money:-250,stress:2},"Everyone changes their passwords. Dave's is still 'dave123.' Pray for Dave.",null) ])
+];
+
+/* ---------- THE BOYS (happiness moments, 6 ways) ---------- */
+var JOY_EVENT = ev("Happiness Moment","joy","🌅 A Free Weekend Appears","No obligations for 48 hours. A meteorological miracle in your personal life. The boys are already texting. Choose your weapon:","This is what the whole grind is for.",
+ [ ch("🦌 Hunting with the boys","Up before dawn, thermos in hand, zero obligations in a 10-mile radius.",{hap:12,money:-350,stress:-13},"Nobody's phone has signal. Perfection has antlers.",null),
+   ch("🎣 Fishing with the boys","Eight hours, three fish, forty stories — each bigger than last trip's version.",{hap:11,money:-280,stress:-12},"The cooler did most of the work. Nobody cares.",null),
+   ch("🏍️ Off-roading weekend","Mud to the doors, one truck stuck, everyone filming instead of helping.",{hap:13,money:-550,stress:-11},"Core memory installed. So is mud, everywhere, forever.",null),
+   ch("🃏 Poker night","Lose $80, win back your entire will to live.",{hap:10,money:-80,stress:-9},"Dave still owes everyone from 2019. It comes up. It always comes up.",null),
+   ch("🏕️ Camping, no signal","Fire, stars, conversations that would never survive a group chat.",{hap:12,money:-300,stress:-14},"Someone brought a guitar. It was forgiven.",null),
+   ch("🍖 Backyard BBQ summit","You man the grill like a head of state. Diplomacy in burgers.",{hap:10,money:-220,stress:-8},"Burden of the tongs: accepted with honor.",null),
+   ch("⛳ Golf day (terrible, perfect)","A score best described as abstract art.",{hap:10,money:-260,stress:-9},"Laughed until it hurt. That's the whole sport, honestly.",null) ]);
+
+/* ---------- MILITARY CARDS ---------- */
+var MIL_EVENTS = [
+ ev("Orders","mil","📜 Deployment Orders Land","Nine months. Sand included. She goes quiet at dinner in a way that has its own weather system. The unit starts a countdown chat.","Jody has entered the lore.",
+  [ ch("🪖 Deploy & send the money home","Do the job, trust the home front, count days in care packages.",{hap:-3,money:800,stress:10},"Orders accepted. What could possibly happen back home. (Everything. Everything can happen.)",function(){S.deployed=true;S.depQ=0;}),
+    ch("💍 Propose before you ship out","Lock it down with a courthouse wedding and a ring from the PX.",{hap:4,money:-1500,stress:9},"Married in uniform. The benefits are real. So is the risk, doubled.",function(){S.deployed=true;S.depQ=0;if(!S.married){S.married=true;S.gf=0;S.partner="Wife (courthouse special)";S.status="Married";S.herWorks=false;}}),
+    ch("💔 Break up before deployment","Clean cut instead of a slow-motion disaster over text messages.",{hap:-7,money:300,stress:6},"It hurts now instead of monthly. The unit says you did the smart thing. It doesn't feel smart.",function(){S.deployed=true;S.depQ=0;S.gf=0;S.partner="—";S.status="Single (pre-deployment cut)";S.lonely=0;}),
+    ch("📝 Fight for a stateside slot","Paperwork, favors, a chief who owes you one.",{hap:2,money:0,stress:8},"Slot denied. The Army thanks you for your interest in geography.",function(){S.deployed=true;S.depQ=0;}),
+    ch("🍺 One legendary farewell party first","The whole unit, her, the boys — one night for the highlight reel.",{hap:8,money:-600,stress:5},"Photos that will be studied like evidence later. Worth it.",function(){S.deployed=true;S.depQ=0;}) ], function(){return S.military&&!S.deployed&&S.age<55;}),
+ ev("Deployment","mil","🏜️ Life on Deployment","Convoy days, chow-hall mysteries, and calls home where she's 'fine' in a tone that could cut steel. The deployment money is stacking in the account. Allegedly.","Check the account. Seriously. Check it.",
+  [ ch("📞 Call home every day, stay close","Fight the distance with sheer call volume.",{hap:2,money:-100,stress:4},"The calls help. Mostly. The silences between them do PR for the other team.",function(){S.lonely=Math.max(0,S.lonely-1);}),
+    ch("💸 Send extra money home","She says things are tight. The account says otherwise, but sure.",{hap:-2,money:-1600,stress:8},"The packages she posts about cost less than the transfers. Math is not adding. Adding is not mathing.",null),
+    ch("🕵️ Check the bank app (oh no)","Statements don't lie. Statements also don't explain the 'girls trip' charges.",{hap:-5,money:-600,stress:13},"You now know things a deployed man should never have to know at 3am.",function(){S.lonely+=1;S.flags.sawCharges=true;}),
+    ch("🍺 Lean on the unit, stay busy","Gym, missions, cards. No thinking after lights-out.",{hap:3,money:200,stress:-3},"The boys in uniform become family. The thinking gets postponed, not cancelled.",null),
+    ch("🎣 Plan the homecoming trip","A lake, a cabin, her, the boys — a light at the end of the rotation.",{hap:6,money:-300,stress:-4},"Planning is hope with a spreadsheet. The countdown feels shorter.",null) ], function(){return S.deployed;}),
+ ev("Deployment","mil","🏠 Homecoming","You're home. The banner, the hug, the weird new couch, the guy from her work who 'helped move it.' The account balance has questions. She has a tan from a trip you didn't take.","Welcome home, hero. The debrief nobody warns you about starts now.",
+  [ ch("🎉 Big celebration, ignore the static","Party first, questions never. Denial with catering.",{hap:8,money:-700,stress:-2},"A great night. The static remains, uninvited, in every quiet moment after.",function(){S.deployed=false;S.depQ=0;}),
+    ch("🧾 Audit the deployment money together","Statements on the table. Tone: calm. Topic: $9,000 of 'miscellaneous.'",{hap:-4,money:-400,stress:13},"The word 'miscellaneous' does more cardio than you did all deployment.",function(){S.deployed=false;S.depQ=0;queue(CHAIN_SPEND);}),
+    ch("🎣 Boys' trip first, THEN home life","You earned 48 hours of lake before any of this.",{hap:9,money:-500,stress:-6},"The boys debrief you better than the unit did. You go home steadier.",function(){S.deployed=false;S.depQ=0;S.lonely=Math.max(0,S.lonely-1);}),
+    ch("📱 While unpacking, her phone lights up face-up","A name. A heart emoji in the preview. Nine months of suspicion, confirmed in 4 seconds.",{hap:-8,money:0,stress:16},"There it is. In your own kitchen. Next card decides the rest of your marriage.",function(){S.deployed=false;S.depQ=0;queue(CHAIN_CHEAT);}),
+    ch("💬 The honest talk, night one","Everything out loud: the distance, the loneliness, the couch guy.",{hap:1,money:-200,stress:8},"Hard night, real answers — some of them. The couch guy is 'just a friend from work,' which is a sentence with a lawyer now.",function(){S.deployed=false;S.depQ=0;S.lonely=Math.max(0,S.lonely-1);}) ], function(){return S.deployed&&S.depQ>=3;}),
+ ev("Military Life","mil","🎖️ Reenlist or Get Out?","The retention NCO has a bonus number, a slideshow, and a pen with your name on it. Civilian life has no slideshow, just vibes and indeed.com.","Choose your next four years.",
+  [ ch("✍️ Reenlist for the bonus","Sign. The bonus is spent mentally within the hour.",{hap:1,money:2800,stress:6},"Stability, benefits, and a fresh countdown. The pen was mightier than the plan.",function(){S.salary+=2500;}),
+    ch("🚪 Get out & go civilian","DD-214 blanket, beard era, 'thank me for my service' energy.",{hap:6,money:-500,stress:5},"Freedom smells like a barbershop that doesn't care about your haircut.",function(){S.military=false;S.salary=41000;S.job="Veteran, civilian job";S.path="Veteran";}),
+    ch("🎓 Get out & use the GI Bill","School on the government's dime, surrounded by 19-year-olds.",{hap:5,money:-300,stress:3,credit:5},"You become the class's wise elder at 26. The degree loads.",function(){S.military=false;S.degree=true;S.salary=39000;S.job="Veteran, degree in hand";S.path="Veteran";}),
+    ch("🛠️ Guard / Reserve middle path","One weekend a month, two lives, double paperwork.",{hap:2,money:600,stress:5},"Best and worst of both worlds, alternating weekends.",function(){S.salary+=3000;}),
+    ch("🍺 Decide after the unit BBQ","Burgers first, life choices marinated.",{hap:5,money:-100,stress:-2},"You sign nothing today. The retention NCO respects the process. Barely.",null) ], function(){return S.military&&!S.deployed;})
+];
+
+/* ---------- CHAIN CARDS (your choices have sequels) ---------- */
+var CHAIN_CHEAT = ev("Chain Reaction","chain","💔 You Find the Texts","There it is — months of it. 'He's just a friend.' The friend has a pet name. The friend has your deployment dates memorized. The room gets very quiet and very loud at the same time.","Everything you do next becomes the story.",
+ [ ch("⚖️ File for divorce / end it today","Lawyer. Papers. Done. No speech, no scene — just signatures.",{hap:-9,money:-3800,stress:15},"Cold, clean, final. The boys say it was the strongest thing you ever did. It doesn't feel strong. It feels quiet.",function(){if(S.married)breakUp();else{S.gf=0;S.partner="—";S.status="Single (walked away)";} S.lonely=0; queue(CHAIN_COURT);}),
+   ch("💥 Get angry & go find the guy","He's at his apartment. He's smaller than expected. It doesn't matter.",{hap:-6,money:-900,stress:20},"It goes exactly as bad as the police report says it did.",function(){queue(CHAIN_FIGHT);}),
+   ch("🥊 Confront her & pick the fight at home","Voices up, doors slammed, the relationship's greatest hits at full volume.",{hap:-8,money:-300,stress:19},"Three hours of war. Nothing is decided except the neighbors' opinion.",function(){S.flags.bigFight=true; queue(CHAIN_CONFRONT);}),
+   ch("🍺 Get blackout drunk with your military buddies","The unit assembles like it's a mission. It kind of is.",{hap:2,money:-450,stress:6},"Woke up on a barracks couch with 40 texts sent and a brotherhood that carried you home. Processing: pending.",function(){queue(CHAIN_DRUNK);}),
+   ch("🛋️ Forgive & pay for couples therapy","The most expensive sentence in English: 'We can work through this.'",{hap:-4,money:-1500,stress:12},"Therapy Thursdays begin. The therapist has a boat, funded largely by this quarter.",function(){S.lonely=0;S.flags.therapy=true;}) ]);
+var CHAIN_FIGHT = ev("Chain Reaction","chain","🚔 The Fight Has a Paper Trail","Cops, a split lip (his), a worse one (yours), and charges with the word 'disorderly' doing heavy lifting. Your chain of command / your boss has been notified.","Play stupid games, receive official documentation.",
+ [ ch("⚖️ Lawyer & take the deal","Plead it down, pay the fines, community service in a vest of shame.",{hap:-5,money:-2100,stress:12},"Record: light. Lesson: expensive. Vest: orange.",function(){S.flags.arrest=true;}),
+   ch("😤 No regrets, tell everyone","It becomes your legend. Legends don't get promoted, but they get retold.",{hap:4,money:-800,stress:8},"The boys raise a glass. HR raises an eyebrow. Both are permanent.",function(){S.flags.arrest=true;}),
+   ch("🙏 Apologize tour","To her, to him, to yourself — the full humiliation circuit.",{hap:-3,money:-400,stress:10},"Some doors reopen. Yours, mostly, at your buddy's place where you now sleep.",function(){if(S.married)breakUp();else if(S.gf>0){S.gf=0;S.partner="—";S.status="Single (aftermath)";}}),
+   ch("🥊 Anger management classes","Wednesday nights with a workbook and men nodding slowly.",{hap:2,money:-600,stress:-4},"Annoyingly helpful. You learn the pause. The pause learns you.",null),
+   ch("🎣 Vanish to the lake until it cools","Let lawyers and time do the heavy lifting.",{hap:5,money:-500,stress:-5},"You return calmer, tanner, and slightly less charged — in every sense.",null) ]);
+var CHAIN_DRUNK = ev("Chain Reaction","chain","🍻 The Morning After the Unit Bender","Head: drums. Phone: 40 sent texts, 3 apologies owed, 1 video that must never surface. Your sergeant / boss wants 'a word.' The boys have already built the alibi.","Brotherhood: undefeated. Judgment: pending.",
+ [ ch("🫡 Own it like a man","Walk in, tell the truth, take the smoke.",{hap:1,money:-300,stress:8},"Respect earned in the strangest currency. The word becomes a warning, not a wall.",null),
+   ch("🤒 Call in 'sick' for two days","A stomach bug. Named Whiskey.",{hap:3,money:-200,stress:2},"Recovery era. The group chat provides soup and blackmail material.",null),
+   ch("💍 It ended the marriage anyway","She saw the texts you sent at 2am. All of them. In order.",{hap:-8,money:-2600,stress:14},"The bender wrote the ending you'd been avoiding. At least it was honest, eventually.",function(){if(S.married)breakUp();else{S.gf=0;S.partner="—";S.status="Single (self-inflicted)";}}),
+   ch("🍺 Hair of the dog with the boys","Sunday debrief brunch. Mimosas are just breakfast beer with PR.",{hap:6,money:-150,stress:-3},"The story gets funnier every retelling. By take three, you're almost the hero.",null),
+   ch("🧹 Sober month & fix your life","Gym, sleep, one hard conversation at a time.",{hap:5,money:100,stress:-6},"The clearest quarter you've had in years starts with the worst morning.",null) ]);
+var CHAIN_CONFRONT = ev("Chain Reaction","chain","🌩️ The Confrontation: Week Two","The fight didn't end — it moved into a cold war of one-word texts and separate rooms. Something has to actually happen now.","Silence is also a decision. It's just the worst-dressed one.",
+ [ ch("⚖️ It's over. Start the paperwork","Say it plainly, in daylight, like an adult with a lawyer's number saved.",{hap:-6,money:-3000,stress:12},"Sad, clean, done. The quiet after is almost kind.",function(){if(S.married)breakUp();else{S.gf=0;S.partner="—";S.status="Single (decided)";} S.lonely=0; queue(CHAIN_COURT);}),
+   ch("🛋️ Therapy, for real this time","Two chairs, one professional referee, no phones.",{hap:0,money:-1300,stress:6},"Brutal sessions. Then, slowly, actual sentences instead of grenades.",function(){S.flags.therapy=true;S.lonely=0;}),
+   ch("🏠 Separate for a quarter","Your buddy's spare room. A trial of the single life with visitation rights to your own couch.",{hap:-2,money:-700,stress:8},"Distance clarifies. Mostly it clarifies that his couch is a crime scene.",null),
+   ch("💃 She moves out (with half the furniture)","The couch, the TV, the good pans — a domestic Tetris of loss.",{hap:-5,money:-1200,stress:11},"You sit on the floor of your own life and order a folding chair like a king.",function(){if(S.married)breakUp();else{S.gf=0;S.partner="—";S.status="Single (furniture-less)";} S.lonely=0;}),
+   ch("🎣 Take a boys' trip & decide out there","Decisions made at a lake are 40% wiser. Science-ish.",{hap:6,money:-500,stress:-4},"You come home knowing. Knowing is the whole battle some quarters.",null) ]);
+var CHAIN_SPEND = ev("Chain Reaction","chain","🧾 The Spending Reckoning","The statements are printed. Highlighted. $9,000 of deployment money / savings became 'a girls trip,' a purse with a name, and a home gym she used twice. She has her own folder. Hers is about YOUR spending.","Two folders enter. One budget leaves. Maybe.",
+ [ ch("💬 Calm budget summit","Both folders on the table. Voices low. Math undefeated.",{hap:-2,money:-600,stress:9},"A real budget survives six weeks — a relationship record. Progress is ugly and counts.",null),
+   ch("💥 The blow-up fight about money","Every purchase since 2019 gets entered into evidence.",{hap:-6,money:-300,stress:16},"You both win arguments and lose a weekend. The money remains spent.",function(){S.flags.bigFight=true;}),
+   ch("🕵️ Secret account, starting now","Your pay splits quietly. One account for the house, one for your sanity.",{hap:3,money:-200,stress:4},"Self-defense accounting. Pray she never audits. She audits everything.",function(){S.flags.secretAcct=true;}),
+   ch("💪 Work overtime until it's replaced","Grind the hole closed. Sleep is a rumor.",{hap:-5,money:1400,stress:13},"Replaced. Eventually. Your back sends a strongly worded letter.",null),
+   ch("🍺 Drink & let it go","Cheaper than a fight? No. Easier than a fight? Also no, but faster.",{hap:1,money:-500,stress:7},"Forgiven, not forgotten — you'll cite it in a fight in 2028 with timestamps.",null) ]);
+var CHAIN_COURT = ev("Chain Reaction","chain","⚖️ Divorce Court Season","Mediators, valuations, and a judge who has seen your exact story 4,000 times. The dog's custody is, somehow, the hardest part.","Everyone's lawyer bills by the sigh.",
+ [ ch("🐕 Fight for the dog","Some lines are not financial.",{hap:3,money:-1800,stress:10},"You win the dog. The dog wins everything, as designed.",function(){S.flags.dog=true;}),
+   ch("🏠 Fight for the house","Equity, memories, and a mortgage with both names on the paperwork.",{hap:-3,money:-2600,stress:13},"You keep the house and the payment. Victory with a yard to mow alone.",null),
+   ch("✌️ Split it clean & fast","Half, signatures, done. Speed over spite.",{hap:-2,money:-1400,stress:7},"The fastest divorce in county history. The judge almost smiles.",null),
+   ch("🍺 Boys' trip before the final hearing","One last weekend as a married man, technically.",{hap:7,money:-600,stress:-3},"The boys toast 'to freedom' so loud the lake files a complaint.",null),
+   ch("💸 It costs more than the wedding","Final invoice era. Frame it. It's art now.",{hap:-5,money:-3200,stress:12},"Cheaper weddings from now on. If there's a now-on. TBD.",null) ], function(){return S.divorces>0;});
+var JOB_HUNT = ev("Choice Card","choice","🧭 Job Hunt Season","No salary. The unemployment checks and odd jobs cover just enough to watch the balance bleed slowly. The hunt is the job now.","Every man hits this quarter. The exit is a choice.",
+ [ ch("📦 Take the warehouse job today","Not glamorous. Glorious benefits. Starts Monday.",{hap:-2,money:300,stress:4},"Employed by Monday. The forklift respects you.",function(){S.salary=31000;S.job="Warehouse lead";}),
+   ch("🚗 Gig-grind: delivery & rideshare","Your car becomes the office, the boss, and the expense report.",{hap:0,money:200,stress:7},"Flexible, grinding, yours. The app rates you 4.6 and pays like it.",function(){S.salary=27000;S.job="Gig driver";}),
+   ch("🎯 Apply everywhere, land something real","Forty applications, six interviews, one blazer.",{hap:2,money:0,stress:8},"A real offer lands by quarter's end. The blazer gets a parade.",function(){S.salary=43000;S.job="Hired (finally)";}),
+   ch("🏢 Start the business from the garage","No boss to fire you now — just customers, who fire you daily.",{hap:4,money:-1200,stress:11},"First clients, first invoices, first 'why did I do this' at 2am.",function(){S.salary=23000;S.job="Business owner";S.flags.biz=true;}),
+   ch("🎣 Hold out for the dream job","Fish while the severance dwindles. Pride is a strategy, allegedly.",{hap:5,money:-300,stress:2},"No job yet, but the lake has never respected you more.",null) ], function(){return S.salary===0;});
+
+/* ---------- THE NARRATOR (built-in storyteller engine — no AI service, no network) ---------- */
+function npick(a){ return a[Math.floor(Math.random()*a.length)]; }
+function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function narrate(html){ var el=document.getElementById("narrText"); if(el){ el.innerHTML=html; } }
+function narrateCard(card){
+  if(card.cls==="mile"){ narrate("📖 <b>A new chapter opens.</b> "+npick(["The tavern goes quiet. Even the dice lean in.","Another birthday. The gods of paperwork sharpen their pencils.","Time skips ahead, as it does when you're not watching it — or your wallet."])+" <i>"+card.title+"</i> Choose, mortal. Choose as if it matters. It does. That's the tragedy."); }
+  else if(card.cls==="chaos"){ narrate("🎲 "+npick(["The dice clatter across the table and land on cruelty.","Somewhere, a god of small misfortunes just woke up and chose you.","I didn't write this one. Life did. I just read it aloud, smugly."])+" <i>"+card.title+"</i> — no saving throw. There is never a saving throw."); }
+  else if(card.cls==="joy"){ narrate("🍻 "+npick(["Ah — the sacred rite. The boys. The only spell in this game that always works.","Even I, eternal and judgmental, cannot ruin a boys' weekend. I can only narrate it, wistfully.","The campaign pauses. The grill lights. Civilization peaks."])+" <i>"+card.title+"</i>"); }
+  else if(card.cls==="mil"){ narrate("🪖 "+npick(["Boots on foreign ground, heart in two zip codes. Roll for morale.","The military chapter: where the pay is steady, the food is a rumor, and home gets further away every quarter.","Uncle Sam deals this hand. He does not bluff. He doesn't have to."])+" <i>"+card.title+"</i>"); }
+  else if(card.cls==="chain"){ narrate("⛓️ "+npick(["And here it is — the consequence. It brought friends.","You felt that thread tug three quarters ago. This is the other end of it.","Actions have consequences. Yours have sequels."])+" <i>"+card.title+"</i>"); }
+  else { narrate("🎲 "+npick(["The fates shuffle the deck and deal you this:","Another quarter, another test you didn't study for:","The campaign continues, indifferent to your plans:"])+" <i>"+card.title+"</i> What'll it be?"); }
+}
+function narrateOutcome(c, fate){
+  var tone=(c.fx.hap||0)+(fate?(fate.good?7:-7):0);
+  if(fate && fate.good){ narrate("🍀 "+npick(["A natural twenty. I double-checked the die. I'm as shocked as you are.","The gods blinked. It worked. Frame this quarter.","Against every law of this campaign, that went WELL."])); }
+  else if(fate && !fate.good){ narrate("💥 "+npick(["And there it is. I wrote 'backfires' in the margin three turns ago.","A critical fail, seasoned with fees. My favorite flavor.","You hear that sound? That's the other shoe, dropping, with interest."])); }
+  else if(tone>=7){ narrate("😌 "+npick(["Hm. Genuinely not terrible. The tavern murmurs approval.","A rare clean win. I shall allow it — this once.","Look at you. Growing. Like a weed, but growing."])); }
+  else if(tone<=-7){ narrate("🪦 "+npick(["I shall carve this decision on the inside of your eyelids.","Bold. Costly. Exactly on brand for this campaign.","The bards will sing of this. Mockingly, but they'll sing."])); }
+  else { narrate("🎲 "+npick(["It is done. The ledger grows. So does the legend, allegedly.","Noted in the great book. In pencil — you're not finished erring yet.","The quarter turns. The story, like the rent, continues."])); }
+}
+function narrateTile(tile){
+  var lines={
+    pay:"💰 Coin in the purse. The narrator notes you smiled for almost four seconds.",
+    start:"🏁 Another lap around the board of existence. The narrator yawns in several languages.",
+    debt:"🧾 The collectors send their regards. They always send their regards. It's never just regards.",
+    trap:"🪤 I watched you walk into that square in slow motion. Poetic, really.",
+    home:"🔑 The house square. Four walls, a roof, and a thousand tiny invoices wearing trench coats.",
+    choice:"🎲 The campaign continues.",
+    chance:"❓ Chance. My favorite author.",
+    joy:"🍻 The boys. The only recurring characters the narrator actually likes."
+  };
+  narrate(lines[tile.t]||"🎲 The square has spoken. It rarely says anything kind.");
+}
+function narratorEpitaph(){
+  var parts=[];
+  if(S.hap>=70) parts.push("He laughed more than he owed, which in this economy is a genuine superpower.");
+  else if(S.hap>=45) parts.push("He was not happy, exactly. He was happy-adjacent, with excellent parking.");
+  else parts.push("Happiness kept promising to visit and never once showed up. He left the porch light on anyway.");
+  if(S.divorces>=2) parts.push("Married "+S.marriages+" times — the courthouse named a bench after him.");
+  else if(S.married) parts.push("One marriage, start to finish. The narrator checked twice, in disbelief.");
+  else if(S.sugar) parts.push("Died a sugar daddy: generous to the end, audited by no one.");
+  else if(!partnered()) parts.push("Died single, and weirdly smug about it.");
+  if(S.kids>0) parts.push(S.kids+" kid(s) carry the story now. And the deductible.");
+  if(totalDebt()>40000) parts.push("He leaves "+money(totalDebt())+" of debt behind — his final gift to the banking system: paperwork.");
+  else if(S.peak>=80000) parts.push("At his peak he held "+money(S.peak)+". For one shining quarter, the spreadsheet smiled back.");
+  if(S.boysTrips>=6) parts.push(S.boysTrips+" trips with the boys. The fish tell his stories now.");
+  if(S.military) parts.push("He served. The narrator salutes — mockingly, but sincerely.");
+  if(S.flags.bankrupt) parts.push("Bankrupt "+S.flags.bankrupt+" time(s), and got up every time. Stubbornness was his true class ability.");
+  parts.push(npick(["Here ends the campaign. No sequel. The dice are silent.","The campaign ends here. Somewhere, a tavern keeps his stool empty.","Final roll: natural one. It was always going to be a natural one."]));
+  return parts.join(" ");
+}
+/* ---------- FREE-TEXT ACTIONS: "What do you do?" ---------- */
+function freeAction(raw){
+  var t=raw.toLowerCase(), fx={}, text="";
+  function has(){ for(var i=0;i<arguments.length;i++){ if(t.indexOf(arguments[i])>=0) return true; } return false; }
+  if(has("quit","resign","walk out of my job")){
+    if(S.salary>0){ S.salary=0; S.job="Unemployed (by choice)"; fx={hap:7,stress:-9,money:-400}; text="You quit — dramatically enough that security applauds on your way out. Freedom tastes amazing. It costs $400 a quarter in 'I'll figure it out.' The narrator respects the exit and fears for the rent."; }
+    else { fx={hap:2,stress:2}; text="You announce you're quitting, to no one, in your kitchen. You don't have a job. The narrator writes down 'confidence: unearned, magnificent.'"; }
+  }
+  else if(has("divorce","leave my wife","leave her","leave my husband")){
+    if(S.married){ breakUp(); fx={money:-5000,hap:2,stress:7}; text="Papers filed. The lawyers bill by the hour and celebrate by the yacht. You're poorer, sadder, and — annoyingly — also a little relieved. Alimony has entered the chat, permanently."; }
+    else if(S.gf>0){ breakUp(); fx={money:-1200,hap:3,stress:5}; text="You end it. Clean-ish. She keeps the good hoodie and the moral high ground; you keep the couch and the silence. Both of you claim victory. The narrator scores it a draw."; }
+    else { fx={hap:1}; text="You declare yourself divorced from society. Society was unaware you were married. It sends a card anyway."; }
+  }
+  else if(has("truth","confess","be honest","tell her everything")){
+    if(S.sideGf>0){ if(Math.random()<0.55){ breakUp(); S.sideGf=0; S.side="None. It came out."; fx={hap:-9,stress:16,money:-2000}; text="You tell the truth, all of it, like a man defusing a bomb by sitting on it. It goes exactly as the narrator predicted, which is to say: luggage, shouting, and a couch that is now a bed."; } else { S.sideGf=0; S.side="None. Confessed & forgiven (somehow)"; fx={hap:2,stress:8,money:-600}; text="You confess everything. There's a silence long enough to age cheese in. Then — forgiveness, on probation, with terms and conditions. The narrator did NOT see that coming. Nobody did."; } }
+    else if(partnered()){ fx={hap:4,stress:-5}; text="You tell her the truth about the money, the stress, all of it. She listens. It helps. Communication: the cheat code nobody uses because it feels like losing."; }
+    else { fx={hap:2,stress:-2}; text="You confess your truths to the boys at the bar. They nod solemnly and order you another round. Absolution, served cold."; }
+  }
+  else if(has("cheat","affair","side chick","second girlfriend","mistress","side piece")){
+    if(S.sideGf>0){ fx={hap:1,stress:3}; text="Already living dangerously, legend. The narrator refuses to help you optimize this. Even chaos has a code."; }
+    else { S.sideGf=1; S.side="Girlfriend #2 (free-text edition)"; fx={hap:7,stress:10,money:-800}; text="You start a secret second life. Thrilling, expensive, and one shared-calendar notification away from total annihilation. The narrator sharpens a pencil. This will be good material."; }
+  }
+  else if(has("marry","propose","proposal","wedding")){
+    if(S.gf>0&&!S.married){ S.married=true; S.gf=0; S.partner="Wife (your idea, allegedly)"; S.status="Married"; fx={money:-6000,hap:8,stress:9}; text="You propose. She says yes. The wedding costs what a boat costs, a fact the narrator will mention at every future boat conversation. Married now. Godspeed."; }
+    else if(S.married){ fx={hap:2,stress:1}; text="You're already married. You propose again anyway, at dinner, for romance points. She says 'to who?' then laughs for a full minute. Net gain: small, real."; }
+    else { fx={hap:-1,stress:2}; text="You practice the proposal speech in the mirror. Moving. Unfortunately there is currently no bride on file. The narrator files this under 'ambition, premature.'"; }
+  }
+  else if(has("motorcycle","harley")){
+    fx={hap:12,money:-6500,stress:3}; if(S.money<6500){ text="You buy the motorcycle — financed at a rate that made the salesman hug you. Every ride feels like being 22 again. The payment feels like being 40 forever. Worth it? The narrator refuses to answer on legal grounds."; } else { text="You buy the motorcycle with actual money, like a king of a very small, loud kingdom. The neighbors hear you coming from orbit. Your knees have notes. You do not care."; }
+  }
+  else if(has("buy a house","buy house","buy a home","mortgage","buy the house")){
+    if(S.home==="Homeowner"){ fx={hap:1}; text="You already own a house. You tour another one 'just to look,' the most dangerous sentence in real estate. The narrator physically restrains your wallet."; }
+    else if(S.credit>=640){ S.home="Homeowner"; S.dMort+=185000; fx={money:-9000,hap:6,stress:6}; text="APPROVED. You own a home now — and a $185,000 mortgage that owns you right back. The down payment leaves quietly. Equity! Pride! A water heater with plans!"; }
+    else { fx={hap:-3,stress:5}; text="DENIED. The bank ran your "+S.credit+" credit and responded with a tone usually reserved for telemarketers. The dream house waves from behind glass. Build the credit, mortal."; }
+  }
+  else if(has("buy a car","new car","buy a truck","new truck","buy car")){
+    S.dCar+=14000; fx={money:-2500,hap:7,stress:3}; text="New vehicle smell: the most expensive air freshener in economics. $2,500 down, $14,000 financed, and a monthly payment that waves at you every single month. You look incredible in the driveway, though."; }
+  else if(has("have a baby","have a kid","another baby","another kid","get her pregnant","start a family")){
+    if(partnered()){ S.kids+=1; fx={money:-1800,hap:6,stress:8}; text="A tiny human joins the campaign. Zero stats, infinite demands, and a cry that crits through walls. Your heart grows two sizes. Your wallet shrinks three."; }
+    else { fx={hap:-1,stress:2}; text="Bold plan. One problem: the campaign currently lists your relationship status as 'solo.' The narrator suggests step one before step one."; }
+  }
+  else if(has("gamble","casino","lottery","crypto","bet on","poker night")){
+    if(Math.random()<0.45){ var win=rnd(500,2600); fx={money:win,hap:8,stress:-3}; text="You gamble — and WIN "+money(win)+". The narrator checks the dice for tampering, finds none, and updates your file from 'hopeless' to 'statistically annoying.' Quit while ahead? You won't."; }
+    else { var loss=rnd(400,2200); fx={money:-loss,hap:-5,stress:8}; text="You gamble — and donate "+money(loss)+" to the house, which thanks you for your continued patronage. The narrator writes 'the house always wins' in the margin. It was already written there. Twice."; }
+  }
+  else if(has("invest","stock","401k","savings","save money","index fund")){
+    fx={money:-1000,hap:1,stress:-2,credit:5}; text="You move $1,000 into investments like a man who's seen a chart once. Future you sends a postcard that just says 'thanks, idiot, sincerely.' The narrator approves — the rarest stamp in this game."; }
+  else if(has("vacation","travel","cruise","road trip","vegas","holiday")){
+    fx={money:-2200,hap:10,stress:-12}; text="You escape. Beach, road, or neon — doesn't matter. For one shining week the ledger can't find you. Then you come home to the mail. But oh, that week."; }
+  else if(has("therapy","therapist","counsel")){
+    fx={money:-600,hap:5,stress:-10}; text="You sit in a calm room and say true things out loud. It costs $600 and works annoyingly well. The narrator, a professional hater, has no joke for this one. Growth is growth."; }
+  else if(has("doctor","dentist","checkup","hospital","clinic")){
+    S.health=clamp(S.health+8,0,100); fx={money:-450,hap:1,stress:-2}; text="The doctor finds everything early, judges everything gently, and charges $450 for the privilege. Health up. The narrator notes the machine keeps running — for now."; }
+  else if(has("gym","workout","exercise","go for a run","lift weights","training")){
+    S.health=clamp(S.health+5,0,100); fx={money:-80,hap:3,stress:-5}; text="You move heavy things and put them back down, repeatedly, on purpose. Stress leaves through the skin. The mirror starts negotiating. Health up, ego up more."; }
+  else if(has("fishing","hunting","the boys","with the boys","golf","camping","off-road","offroad")){
+    S.boysTrips++; fx={money:-260,hap:10,stress:-11}; text="You summon the boys. Nature, noise, and conversations that would end careers if transcribed. You return sunburned, broke by $260, and spiritually rich beyond measure."; }
+  else if(has("drink","beer","whiskey","the bar","party","get drunk")){
+    S.health=clamp(S.health-2,0,100); fx={money:-180,hap:6,stress:-6}; text="You drink with the enthusiasm of a man whose problems can't swim. For one night, neither can you. Tomorrow sends its invoice at 7 AM, wearing sunglasses indoors."; }
+  else if(has("overtime","side hustle","second job","work more","grind","hustle")){
+    fx={money:800,hap:-3,stress:9}; text="You sell more of your hours. The hours were already spoken for — by sleep, by people, by dignity — but the market is the market. +$800. The eye twitch is free."; }
+  else if(has("new job","promotion","raise","job hunt","interview","apply for")){
+    if(S.salary===0){ if(Math.random()<0.6){ S.salary=38000; S.job="Hired (free-text hustle)"; fx={hap:4,stress:3}; text="You hunt like rent is due — because it is. An offer lands: $38,000 a year and a lanyard with your face on it. The narrator updates your class from 'vibes' to 'employed.'"; } else { fx={hap:-2,stress:5}; text="Forty applications. The void applications back: silence, mostly. The narrator notes the hunt continues and so does the fridge's judgment."; } }
+    else if(Math.random()<0.5){ S.salary+=5000; fx={money:600,hap:3,stress:2}; text="You ask for the raise like a man who's read one negotiation book and believed all of it. It WORKS. +$5,000 a year. The narrator is furious. Character growth was not in the budget."; }
+    else { fx={hap:-1,stress:4}; text="You ask for more. Your boss praises your 'attitude' and gives you more work instead — the corporate equivalent of a participation trophy. Attitude: unchanged. Paycheck: also."; }
+  }
+  else if(has("sleep","nap","rest","day off","relax")){
+    S.health=clamp(S.health+3,0,100); fx={hap:4,stress:-8}; text="You do the radical thing: nothing, horizontally, for hours. The body files a thank-you note. The narrator tries to mock rest and simply cannot. Even chaos sleeps."; }
+  else if(has("mom","dad","parents","family dinner","call home")){
+    fx={money:-100,hap:4,stress:-3}; text="Family time. Food appears that you didn't pay full price for, opinions appear that you didn't ask for at any price. You leave fed, loved, and lightly roasted. Net positive."; }
+  else if(has("church","pray","prayer","meditate")){
+    fx={hap:3,stress:-4}; text="You sit somewhere quiet and aim your thoughts upward. No lightning, no lottery numbers — just a measurable drop in blood pressure. The narrator allows it."; }
+  else if(has("study","college","degree","course","certif","learn","class")){
+    S.flags.studyQ=(S.flags.studyQ||0)+1;
+    if(!S.degree&&S.flags.studyQ>=3){ S.degree=true; S.salary+=6000; fx={money:-1200,hap:5,stress:4}; text="Quarter after quarter of night classes — and that's the degree. Framed. Real. Your salary gets a +$6,000 nod and the narrator updates your title from 'some guy' to 'credentialed some guy.'"; }
+    else { fx={money:-1200,hap:2,stress:5}; text="You enroll, you study, you highlight things you'll never reread. Progress: slow, expensive, undeniable. The narrator respects the grind and invoices you for it anyway."; }
+  }
+  else if(has("date night","flowers","anniversary","romantic","take her out","buy her")){
+    if(partnered()){ fx={money:-280,hap:9,stress:-6}; S.lonely=0; text="You do romance ON PURPOSE: flowers that aren't from a gas station, a reservation, a shirt with buttons. She is suspicious for 10 minutes, then delighted for a month. The narrator notes romance works — it's just a subscription you have to remember to renew with effort."; }
+    else { fx={money:-80,hap:4,stress:-2}; text="You practice romance on an empty calendar: flowers for your mom, standards for yourself. The narrator approves the rehearsal and mocks the audience size equally."; }
+  }
+  else if(has("flirt","ask her out","ask him out","dating app","tinder","hinge","swipe","text her","text him","dm her")){
+    if(partnered() && !has("my wife","my girlfriend","my partner")){ fx={hap:5,stress:9,money:-100}; text="You flirt outside the relationship — a dangerous little dopamine side-quest. It feels like a compliment and costs like a future divorce lawyer's retainer. The narrator starts a new chapter titled 'Evidence.'"; if(Math.random()<0.35){ S.sideGf=1; S.side="Flirtation (escalating)"; } }
+    else if(!partnered()){ if(Math.random()<0.45){ S.gf=1; S.partner="Girlfriend (bold text worked)"; S.status="Taken"; S.herWorks=true; fx={hap:8,stress:-3,money:-60}; text="You shoot your shot with an actual sentence, a plan, and a time — the holy trinity of modern dating. IT WORKS. You have a date, then a second date. The boys demand credit. The narrator demands a prenup joke. Both denied."; } else { fx={hap:2,stress:3,money:-40}; text="You swipe, you text, you get left on read by someone whose bio was just three emojis and a trauma statement. Modern romance: a lottery where the prize is dinner with a stranger who also wishes they were home."; } }
+    else { fx={hap:6,stress:-4,money:-50}; text="You flirt with YOUR OWN partner, like a man who read the manual after all. It lands. Sparks, in this economy? The narrator is moved and will deny it at the tribunal."; }
+  }
+  else if(has("sell")){
+    fx={money:700,hap:-1,stress:1}; text="You sell things — garage-sale energy, marketplace menace. +$700 and a garage you can walk through. One buyer lowballs you into another dimension, but the money's real."; }
+  else {
+    var r=Math.random();
+    if(r<0.4){ fx={hap:3,stress:-2}; text="You do it — \""+esc(raw)+"\" — and against the narrator's loud objections, it mostly works. No fees. No sequel. A quiet, suspicious victory."; }
+    else if(r<0.75){ fx={hap:-2,stress:4,money:-150}; text="You do it — \""+esc(raw)+"\". It costs $150 and a little dignity, which in this economy is honestly a fair trade. The narrator writes it down under 'content.'"; }
+    else { fx={money:250,hap:1,stress:1}; text="You do it — \""+esc(raw)+"\" — and somehow $250 falls out of the situation, like the universe tipping you for the entertainment. The narrator demands a cut. Denied."; }
+  }
+  return {fx:fx, text:text};
+}
+
+/* ---------- FLOW ---------- */
+var stageEl=document.getElementById("stage"), actEl=document.getElementById("actionArea");
+function fxChips(fx){ return fxText(fx).map(function(x){return '<em class="'+x.c+'">'+x.t+'</em>';}).join(""); }
+function deltaChips(fx){ return fxText(fx).map(function(x){return '<span class="'+x.c+'">'+x.t+'</span>';}).join(""); }
+function ledgerHtml(tick){ return tick?'<div class="ledger"><b>📒 THE QUARTERLY LEDGER</b><br>'+tick+'</div>':""; }
+
+function showIntro(){
+  setBoardMode(false);
+  narrate("🎲 <b>Roll for initiative, mortal.</b> I am the Narrator — I have run this campaign ten thousand times and it has never once gone well. Now with 100% more satire and a love life that will personally bankrupt you. Your life begins at 18. Pick a class… and try to die interestingly, preferably not on Valentine's Day (surge pricing).");
+  stageEl.innerHTML='<span class="cardtag mile">New Board Game · Satire + Romance Edition</span><h2>🎲 Your life starts at 18 — pick a class, then hit the board</h2><p class="desc">Blank slate. Full head of hair. A thin little 620 credit file, $1,200, and unlimited confidence — a dangerous combination. Now featuring: dating-app warfare, situationships, HOA tyranny, LinkedIn prophets, AI girlfriends with premium tiers, and romance that always costs extra.</p><p class="flavor">Pick your starting class below. Then roll, move, and let the squares decide: payday, debt, love, and public humiliation in roughly equal measure. Debt charges interest while you sleep. Romance charges interest while you are awake. Nobody knows the day he dies. Your tombstone will explain everything — satirically.</p>';
+  actEl.innerHTML='<button class="bigbtn" id="startBtn">▶ Start Living (Age 18)</button>';
+  document.getElementById("startBtn").onclick=function(){ S.started=true; S.milestonesDone[18]=true; showChoice(MILESTONES[18], ""); setBoardMode(false); };
+}
+function setBoardMode(canRoll){
+  document.getElementById("rollBtn").disabled=!canRoll;
+  var fa=document.querySelectorAll("#freeActs button");
+  for(var i=0;i<fa.length;i++){ fa[i].disabled=!canRoll||S.freeUsed; }
+  document.getElementById("boardHint").textContent= canRoll ? (S.freeUsed?"Free move used. Roll when ready.":"Take one free move (optional), then roll the dice to move "+qLabel()+" forward.") : "Resolve the card on the table first — then the board unlocks.";
+  var ni=document.getElementById("narrInput"), nb=document.getElementById("narrBtn");
+  if(ni&&nb){ var canAct=canRoll&&!S.freeUsed&&!S.over&&S.started; ni.disabled=!canAct; nb.disabled=!canAct; }
+}
+document.getElementById("narrForm").onsubmit=function(e){
+  e.preventDefault();
+  if(S.freeUsed||S.over||!S.started) return;
+  var inp=document.getElementById("narrInput");
+  var val=inp.value.trim(); if(!val) return;
+  inp.value="";
+  var res=freeAction(val);
+  apply(res.fx);
+  S.freeUsed=true;
+  logIt("🗣️ You chose: "+esc(val), res.text.replace(/<[^>]*>/g,""));
+  render(); setBoardMode(true);
+  var tone=res.fx.hap||0;
+  if(tone>=7) narrate("🎲 "+npick(["Bold move. The tavern gasps — then applauds, quietly, like it's seen this film.","Declared and done. I respect it. I fear it. I respect it more.","The dice approve. This time."]));
+  else if(tone<=-4) narrate("🎲 "+npick(["You said it, you did it, it's canon now. No take-backs in this campaign.","The narrator writes it down in ink. INK.","Somewhere, a future consequence just stretched and woke up."]));
+  else narrate("🎲 "+npick(["So be it. The campaign absorbs your decision like it absorbs everything: with fees.","Done. The narrator updates the great book and judges silently, which is worse.","Your move is law now. The quarter turns toward the dice."]));
+  stageEl.innerHTML='<span class="cardtag chain">Your Move · '+qLabel()+'</span><h2>You do: '+esc(val)+'</h2><div class="resultbox">'+res.text+'<div class="delta">'+deltaChips(res.fx)+'</div></div>';
+  actEl.innerHTML='<p class="flavor">Free move spent. Roll the dice on the board to start the next quarter — the narrator will be watching. Closely. With snacks.</p>';
+  var ss=document.getElementById("stageScroll"); if(ss) ss.scrollTop=0;
+};
+function pickEvent(){
+  if(S.pending){ var p=S.pending; S.pending=null; return p; }
+  if(S.deployed&&S.depQ>=3){ return MIL_EVENTS[2]; }
+  if(partnered()&&S.lonely>=3){ S.lonely=1; return CHAIN_CHEAT; }
+  if(S.q===1&&MILESTONES[S.age]&&!S.milestonesDone[S.age]){ S.milestonesDone[S.age]=true; return MILESTONES[S.age]; }
+  if(S.q===1&&S.age===50&&!S.milestonesDone[50]){ S.milestonesDone[50]=true; return milestone50(); }
+  if(S.military&&!S.deployed&&!S.flags.everDeployed&&S.age>=20&&S.q===1){ S.flags.everDeployed=true; return MIL_EVENTS[0]; }
+  if(partnered()&&!S.deployed&&Math.random()<0.045){ return CHAIN_CHEAT; }
+  if(partnered()&&Math.random()<0.05){ return CHAIN_SPEND; }
+  if(S.started&&S.salary===0&&S.age<62&&Math.random()<0.55){ return JOB_HUNT; }
+  var roll=Math.random(), pool, cand, i;
+  if(S.deployed){ pool=MIL_EVENTS.filter(function(e){return e.title.indexOf("Life on Deployment")>=0;}); return pool[0]; }
+  if(roll<0.14){ return JOY_EVENT; }
+  if(roll<0.38){
+    pool=CHAOS_EVENTS.filter(function(c){return !c.when||c.when();});
+    for(i=0;i<6;i++){ cand=pool[Math.floor(Math.random()*pool.length)]; if(cand.title!==S.lastTitle) break; }
+    if(cand) return cand;
+  }
+  if(roll<0.62){
+    pool=ROMANCE_EVENTS.filter(function(c){return !c.when||c.when();});
+    for(i=0;i<6;i++){ cand=pool[Math.floor(Math.random()*pool.length)]; if(cand.title!==S.lastTitle) break; }
+    if(cand) return cand;
+  }
+  if(roll<0.82){
+    pool=SATIRE_EVENTS.filter(function(c){return !c.when||c.when();});
+    for(i=0;i<6;i++){ cand=pool[Math.floor(Math.random()*pool.length)]; if(cand.title!==S.lastTitle) break; }
+    if(cand) return cand;
+  }
+  pool=QUARTER_EVENTS.concat(ROMANCE_EVENTS).concat(SATIRE_EVENTS).concat(MIL_EVENTS).concat(S.military?MIL_EVENTS:[]).filter(function(c){return !c.when||c.when();});
+  cand=null;
+  for(i=0;i<8;i++){ var t=pool[Math.floor(Math.random()*pool.length)]; if(t.title!==S.lastTitle){ cand=t; break; } }
+  return cand||JOY_EVENT;
+}
+function crossedMilestone(){
+  var keys=[25,30,35,40,45,50,55,60];
+  for(var i=0;i<keys.length;i++){ var k=keys[i];
+    if(S.age>=k && !S.milestonesDone[k]){ S.milestonesDone[k]=true; if(k===50) return milestone50(); return MILESTONES[k]; }
+  }
+  return null;
+}
+function isDead(){
+  if(S.health<=0){ S.cause = S.stress>=70 ? "His heart filed for early retirement in a parking lot. Stress finally collected what it was owed." : "His body simply ran out of warranty. No recall was issued."; return true; }
+  if(S.age>S.deathAge || (S.age===S.deathAge && S.q===4)){ 
+    if(S.health<30) S.cause="Years of stress, debt and deferred doctor visits finally sent one last invoice — payable in full, immediately.";
+    else if(S.hap>=70) S.cause="He died the way he lived at his best: mid-story, mid-laugh, owing a little money and owed a lot of love.";
+    else if(totalDebt()>80000) S.cause="He outran the debt collectors for decades. In the end, only one appointment couldn't be rescheduled.";
+    else S.cause="Old age, arriving exactly on schedule — the only bill in his life that ever did.";
+    return true;
+  }
+  return false;
+}
+function eventForTile(tile){
+  if(S.pending){ var p=S.pending; S.pending=null; return p; }
+  if(S.deployed && S.depQ>=3) return MIL_EVENTS[2];
+  if(partnered() && S.lonely>=3){ S.lonely=1; return CHAIN_CHEAT; }
+  if(S.military && !S.deployed && !S.flags.everDeployed && S.age>=20){ S.flags.everDeployed=true; return MIL_EVENTS[0]; }
+  if(S.started && S.salary===0 && S.age<62 && Math.random()<0.6) return JOB_HUNT;
+  if(S.deployed) return MIL_EVENTS[1];
+  var pool, cand, i;
+  switch(tile.t){
+    case "joy": return JOY_EVENT;
+    case "chance": pool=CHAOS_EVENTS.filter(function(c){return !c.when||c.when();}); cand=null; for(i=0;i<6;i++){ cand=pool[Math.floor(Math.random()*pool.length)]; if(cand && cand.title!==S.lastTitle) break; } return cand||JOY_EVENT;
+    case "home": pool=QUARTER_EVENTS.filter(function(c){return c.title.indexOf("The House Decision")>=0;}); return pool[0]||JOY_EVENT;
+    case "pay": case "start": return null; /* instant, handled by caller */
+    case "debt": case "trap": return null; /* instant drain, handled by caller */
+    default: if(tile.n.indexOf("Love")>=0){ pool=ROMANCE_EVENTS.filter(function(c){return !c.when||c.when();}); cand=null; for(i=0;i<6;i++){ cand=pool[Math.floor(Math.random()*pool.length)]; if(cand && cand.title!==S.lastTitle) break; } return cand||JOY_EVENT; } pool=QUARTER_EVENTS.concat(ROMANCE_EVENTS).concat(ROMANCE_EVENTS).concat(SATIRE_EVENTS).concat(SATIRE_EVENTS).concat(MIL_EVENTS).filter(function(c){return !c.when||c.when();}); cand=null; for(i=0;i<8;i++){ var t2=pool[Math.floor(Math.random()*pool.length)]; if(t2.title!==S.lastTitle){ cand=t2; break; } } return cand||JOY_EVENT;
+  }
+}
+function instantTile(tile, tick){
+  var title, text, fx={};
+  if(tile.t==="pay"){ var bonus=S.salary>0?rnd(500,1400):rnd(150,450); fx={money:bonus, hap:2, stress:-2}; title="💵 PAYDAY SQUARE"; text="A bonus, a side gig, or found money in a coat you forgot you owned: +"+money(bonus)+". The ledger already took its cut above — this is the part that feels like winning."; }
+  else if(tile.t==="start"){ fx={hap:4, stress:-3}; title="🏁 BACK AT START — ANOTHER LAP OF LIFE"; text="You pass Start older, hopefully wiser, definitely more in debt or out of it. The board doesn't care. The board just keeps going. So do you — for now."; }
+  else if(tile.n.indexOf("Rent")>=0 || tile.n.indexOf("Mortgage")>=0){ if(S.home==="Homeowner"){ fx={money:-950, stress:5}; title="🏠 MORTGAGE SQUARE"; text="Homeowner life: the water heater chose violence, the HOA sent a letter about your lawn, and the mortgage payment left before you woke up. Equity, they call it."; } else { S.rentQ+=rnd(0,120); fx={money:-850, stress:6}; title="🏠 RENT DUE SQUARE"; text="Landlord Chad thanks you for your continued business. Rent is now "+money(S.rentQ)+" a quarter. The walls are still his. The stress is all yours."; } }
+  else if(tile.n.indexOf("Card Minimum")>=0 || tile.n.indexOf("Credit Trap")>=0){ var add=rnd(500,1400); S.dCredit+=add; fx={hap:-3, stress:7, credit:-6}; title="💳 CREDIT TRAP SQUARE"; text="A 'quick' purchase, a sale you couldn't afford to miss, and "+money(add)+" lands on the card at soul-crushing APR. The minimum payment will handle it. Slowly. Forever."; }
+  else if(tile.n.indexOf("Loan Payment")>=0){ if(S.dCollege>0){ fx={money:-650, stress:5}; title="🎓 COLLEGE LOAN SQUARE"; text="Another chunk of the degree pays for itself — out of your account. The diploma on the wall offers no comment and no refund."; } else { fx={hap:3, stress:-2}; title="🎓 LOAN SQUARE — NOTHING OWED"; text="No college debt hanging over this square. You walk past the loan office whistling. Smugness: fully earned."; } }
+  else if(tile.n.indexOf("Debt Collector")>=0){ if(totalDebt()>0){ fx={money:-500, stress:9, credit:-4}; title="🏦 DEBT COLLECTOR SQUARE"; text="They call at work now. They call at dinner. An extra payment buys a month of silence — the most expensive quiet you've ever purchased."; } else { fx={hap:4}; title="🏦 DEBT COLLECTOR SQUARE — WRONG NUMBER"; text="They're looking for a different man with your exact name. You almost feel sorry for him. Almost."; } }
+  else if(tile.n.indexOf("Medical")>=0){ var bill=rnd(700,2600); fx={money:-bill, stress:8}; S.health=clamp(S.health-4,0,100); title="🏥 MEDICAL BILL SQUARE"; text="A scan, a specialist, and a bill for "+money(bill)+" that took longer to arrive than the results. Health −4. The American healthcare system sends its regards."; }
+  else if(tile.n.indexOf("Car Trouble")>=0){ fx={money:-rnd(600,1900), stress:7}; title="🚗 CAR TROUBLE SQUARE"; text="It made the noise again. The mechanic made the face again. Your wallet made the only sound that matters."; }
+  else { fx={money:-rnd(400,1200), stress:7}; title="🧾 BILLS PILE UP SQUARE"; text="Utilities, phone, insurance, a subscription from 2021 still charging rent in your account. Death by a thousand debits, board-game edition."; }
+  apply(fx); logIt(title.replace(/^[^\w]+ /,""), text); narrateTile(tile); render();
+  stageEl.innerHTML='<span class="cardtag chaos">Board Square · '+qLabel()+'</span><h2>'+title+'</h2><div class="resultbox">'+text+'<div class="delta">'+deltaChips(fx)+'</div></div>'+ledgerHtml(tick);
+  continueBtn();
+}
+function rollDice(){
+  if(S.over) return;
+  setBoardMode(false);
+  var die=1+Math.floor(Math.random()*6);
+  var face=document.getElementById("dieFace");
+  var spins=0;
+  face.textContent="🎲";
+  var iv=setInterval(function(){ face.textContent=1+Math.floor(Math.random()*6); spins++; if(spins>6){ clearInterval(iv); face.textContent=die; stepToken(die); } },70);
+}
+function stepToken(stepsLeft){
+  if(stepsLeft<=0){ finishRoll(); return; }
+  S.boardPos=(S.boardPos+1)%BOARD.length;
+  renderBoard();
+  setTimeout(function(){ stepToken(stepsLeft-1); },190);
+}
+function finishRoll(){
+  var dieSteps=parseInt(document.getElementById("dieFace").textContent)||1;
+  var startAge=S.age;
+  for(var i=0;i<dieSteps;i++){ S.q++; if(S.q>4){ S.q=1; S.age++; } if(S.deployed) S.depQ++; }
+  S.freeUsed=false;
+  var tick=turnTick(dieSteps);
+  render();
+  if(isDead()){ return death(); }
+  var mile=crossedMilestone();
+  var tile=BOARD[S.boardPos];
+  logIt("🎲 Rolled "+dieSteps+" → "+tile.n, "Time passed: "+dieSteps+" quarter(s). Now "+qLabel()+".");
+  if(mile){ showChoice(mile, tick); return; }
+  var card=eventForTile(tile);
+  if(!card){ instantTile(tile, tick); return; }
+  showChoice(card, tick);
+}
+document.getElementById("rollBtn").onclick=rollDice;
+var faBtns=document.querySelectorAll("#freeActs button");
+for(var fi=0; fi<faBtns.length; fi++){ (function(b){ b.onclick=function(){ doFreeAction(b.getAttribute("data-fa")); }; })(faBtns[fi]); }
+function doFreeAction(kind){
+  if(S.freeUsed || S.over) return;
+  S.freeUsed=true;
+  var fx={}, msg="";
+  if(kind==="ot"){ fx={money:rnd(600,1100), stress:9, hap:-3}; msg="You grind overtime before the roll. The check grows. So does the eye twitch."; }
+  else if(kind==="boys"){ fx={money:-260, stress:-11, hap:10}; S.boysTrips++; S.health=clamp(S.health+2,0,100); msg="One call, one cooler, one afternoon with the boys. Cheaper than therapy and twice as effective."; }
+  else if(kind==="date"){ if(partnered()){ fx={money:-320, stress:-6, hap:9}; S.lonely=0; msg="🌹 Romance Move: real date night — no phones, actual eye contact, dessert ordered like you mean it. She notices. The relationship bank (the only bank that matters) grows. The boys call it 'simp behavior.' The boys are single."; } else { fx={money:-90, stress:-2, hap:6}; msg="🌹 Romance Move: you shoot your shot — a real compliment, a real plan, not just 'u up.' No girlfriend yet, but confidence XP acquired and one conversation that doesn't end in 'lol.' The dating apps tremble."; if(Math.random()<0.28){ S.gf=1; S.partner="Girlfriend (Romance Move worked)"; S.status="Taken"; S.herWorks=true; msg+=" And — plot twist — it WORKED. You have a girlfriend now. The narrator updates your file from 'feral' to 'domesticated (pending).'"; } } }
+  else if(kind==="doctor"){ fx={money:-450, stress:-2}; S.health=clamp(S.health+10,0,100); S.deathAge+= (S.age<60?1:0); msg="The doctor finds everything early, lectures you about everything, and buys you real time. Health up, wallet down."; }
+  else if(kind==="gym"){ fx={money:-90, stress:-6, hap:3}; S.health=clamp(S.health+6,0,100); msg="You move heavy things in a room built for it. Stress down, health up, ego dangerously inflated."; }
+  else if(kind==="debt"){ var pay=Math.min(Math.max(0,S.money), 1200); if(totalDebt()<=0 || pay<=0){ msg="Nothing to pay — no debt, or no money to pay it with. The most American sentence ever written."; fx={hap:1}; } else { S.money-=pay; var left=pay; var order=["dCredit","dCollege","dCar","dMort"]; for(var oi=0; oi<order.length && left>0; oi++){ var k=order[oi]; var p=Math.min(S[k], left); S[k]-=p; left-=p; } S.credit=clamp(S.credit+6,300,850); fx={credit:6, hap:2, stress:-3}; msg="You throw "+money(pay)+" at your debts, ugliest interest rate first. The balances actually move. It feels illegal."; } }
+  apply(fx); logIt("Free move", msg); render(); setBoardMode(true);
+  narrate("🎲 "+npick(["A small move, quietly made. The campaign barely notices — which is sometimes the win.","The narrator approves of nothing, but files this under 'competent.' High praise. Burn it into memory.","Done. The dice await, impatient as ever."]));
+  stageEl.innerHTML='<span class="cardtag joy">Free Move · '+qLabel()+'</span><h2>Your move before the roll</h2><div class="resultbox">'+msg+'<div class="delta">'+deltaChips(fx)+'</div></div>';
+  actEl.innerHTML='<p class="flavor">Now roll the dice on the board above to keep living.</p>';
+}
+function showChoice(card, tick){
+  setBoardMode(false);
+  S.lastTitle=card.title;
+  narrateCard(card);
+  stageEl.innerHTML='<span class="cardtag '+card.cls+'">'+card.tag+' · '+qLabel()+'</span><h2>'+card.title+'</h2><p class="desc">'+card.desc+'</p><p class="flavor">'+card.flavor+'</p>'+ledgerHtml(tick);
+  actEl.innerHTML='<div class="choices">'+card.choices.map(function(c,i){return '<button class="choice" data-i="'+i+'"><b>'+c.text+'</b><span>'+c.sub+'</span><span class="fx">'+fxChips(c.fx)+'</span></button>';}).join("")+'</div>';
+  var btns=actEl.querySelectorAll(".choice");
+  for(var i=0;i<btns.length;i++){ (function(btn){ btn.onclick=function(){ pickChoice(card, card.choices[parseInt(btn.getAttribute("data-i"))]); }; })(btns[i]); }
+}
+function pickChoice(card,c){
+  apply(c.fx); if(c.setup)c.setup();
+  if(card.cls==="joy") S.boysTrips++;
+  var fate=rollFate(card,c);
+  var fateHtml="";
+  if(fate){ apply(fate.fx); if(fate.setup)fate.setup(); fateHtml='<div class="fatebox '+(fate.good?"good":"bad")+'"><b>🎲 Fate branches: '+fate.label+'</b><br>'+fate.text+'<div class="delta">'+deltaChips(fate.fx)+'</div></div>'; logIt("Fate: "+fate.label, fate.text); }
+  logIt(card.title.replace(/^[^\w]+/,""), c.text+" — "+c.result);
+  narrateOutcome(c, fate);
+  render();
+  if(isDead()){ return death(); }
+  stageEl.innerHTML='<span class="cardtag '+card.cls+'">'+card.tag+' · '+qLabel()+'</span><h2>'+card.title+'</h2><div class="resultbox">'+c.result+'<div class="delta">'+deltaChips(c.fx)+'</div></div>'+fateHtml;
+  continueBtn();
+}
+function continueBtn(){
+  if(S.over) return;
+  actEl.innerHTML='<button class="bigbtn" id="contBtn">🎲 Back to the Board — Roll Again</button>';
+  document.getElementById("contBtn").onclick=function(){ setBoardMode(true); stageEl.innerHTML='<span class="cardtag mile">The Board · '+qLabel()+'</span><h2>🧍 You are on: '+BOARD[S.boardPos].ic+' '+BOARD[S.boardPos].n+'</h2><p class="desc">Age '+S.age+', '+QNAMES[S.q-1]+'. Health '+S.health+', happiness '+S.hap+', debt '+money(totalDebt())+'.</p><p class="flavor">Take a free move if you want one, then roll the dice on the board above. Every square is time, money, and consequences.</p>'; actEl.innerHTML=""; var gc=document.getElementById("stageScroll"); if(gc){ gc.scrollTop=0; } };
+}
+function death(){
+  if(S.over){ return; }
+  S.over=true; setBoardMode(false); render();
+  narrate("☠️ <b>And so the campaign ends.</b> The dice are gathered. The character sheet is closed. I have written your epitaph below — I was fair. I was even, occasionally, kind. Read it, then roll a new soul.");
+  var diedAge=S.age;
+  var title, verdict;
+  if(S.sugar){ title="🍬 The Sugar Daddy"; verdict="He left with an arrangement, a dinner reservation under his name, and absolutely no regrets he'd admit to."; }
+  else if(S.divorces>=3){ title="💍 Marriage Speedrunner"; verdict="He treated marriage like a subscription service with a cancellation fee. The lawyers sent flowers. Plural lawyers."; }
+  else if(S.flags.dog&&S.hap>=50){ title="🐕 At Least He Got the Dog"; verdict="Wives came and went. The dog stayed. Judged purely on loyalty-per-dollar, the best relationship of his life had four legs."; }
+  else if(S.path==="Eternal Bachelor"){ title="🐺 The Eternal Bachelor"; verdict="Never married, never tamed. His remote, his chair, his rules — a life of total, unbothered peace, ended on his own terms."; }
+  else if(S.military&&S.hap>=55){ title="🎖️ The Veteran Who Made It"; verdict="He served, survived deployments, distance, and whatever waited at home — and still lived happy. A decorated life."; }
+  else if(S.stepdad && S.hap>=55){ title="🧢 Stepdad of the Year"; verdict="He raised kids who weren't his like they were. They showed up. They still call."; }
+  else if(S.married && S.hap>=60){ title="👑 The Family King"; verdict="Married, standing, and genuinely happy to the end. Statistically suspicious, personally undeniable."; }
+  else if(S.hap>=80){ title="🏆 A Life Well Lived"; verdict="Top-tier happiness across a whole lifetime of chaos. The boys raised a glass and meant it."; }
+  else if(S.hap>=60){ title="😎 The Content Man"; verdict="Not rich, not famous — just a man who mostly enjoyed his own life. Rarer than both."; }
+  else if(S.hap>=40){ title="😐 He Survived Most Of It"; verdict="He made it through with his humor intact and his happiness dented. A very modern achievement."; }
+  else if(totalDebt()>60000 || S.money<0){ title="💸 Broke To The End"; verdict="The money went first. The happiness went second. The stories remain elite — nobody believes them, but elite."; }
+  else { title="🪦 The Cautionary Tale"; verdict="His life is now told at barbecues as a warning. Legacy is legacy."; }
+  var net=S.money-totalDebt();
+  var highlights=S.log.slice(-6).map(function(e){return "• "+e.title+" ("+e.age+")";}).join("<br>");
+  stageEl.innerHTML='<span class="cardtag chaos">☠️ Game Over — He Died at '+diedAge+'</span>'
+    +'<div class="tombstone"><p class="rip">R.I.P.</p><div class="tname2">A Man</div><div class="tdates">AGE 18 — DIED AGE '+diedAge+' · '+QNAMES[S.q-1]+'</div>'
+    +'<div class="tepitaph">"'+title+'"<br>'+verdict+'</div>'
+    +'<div class="tepitaph" style="border-top:2px dashed rgba(0,0,0,.25);padding-top:10px">🗣️ <b>THE NARRATOR, OVER THE GRAVE:</b> '+narratorEpitaph()+'</div>'
+    +'<div class="tsum"><b>⚰️ CAUSE OF DEATH:</b> '+(S.cause||"Old age, arriving exactly on schedule.")+'<br>'
+    +'<b>😄 FINAL HAPPINESS (HIS SCORE):</b> '+S.hap+'/100 — '+hapWord(S.hap)+'<br>'
+    +'<b>💵 LEFT BEHIND:</b> '+money(S.money)+' cash · <b>Net worth after debt: '+money(net)+'</b><br>'
+    +'<b>🏦 DEBT LEFT TO THE ESTATE:</b> '+money(totalDebt())+' (College '+money(S.dCollege)+' · Cards '+money(S.dCredit)+' · Mortgage '+money(S.dMort)+' · Car '+money(S.dCar)+')<br>'
+    +'<b>📈 PEAK MONEY:</b> '+money(S.peak)+' · <b>Credit at death:</b> '+S.credit+'<br>'
+    +'<b>🏠 HOUSING:</b> '+S.home+' · <b>Final job:</b> '+S.job+'<br>'
+    +'<b>❤️ THE PERSONAL LEDGER:</b> '+S.marriages+' marriage(s) · '+S.divorces+' divorce(s) · '+S.kids+' kid(s) · Partner at the end: '+S.partner+' · Status: '+S.status+'<br>'
+    +'<b>🛤️ PATH:</b> '+S.path+(S.degree?' · 🎓 Degree':'')+(S.military||S.path==="Veteran"?' · 🪖 Served':'')+(S.sugar?' · 🍬 Sugar Daddy':'')+(S.stepdad?' · 🧢 Stepdad':'')+'<br>'
+    +'<b>🎣 WITH THE BOYS:</b> '+S.boysTrips+' trip(s) / legendary weekends · <b>ER stress visits:</b> '+S.erVisits+(S.flags.bankrupt?' · <b>Bankruptcies:</b> '+S.flags.bankrupt:'')+(S.flags.dog?' · 🐕 He got the dog':'')+'<br>'
+    +'<b>📖 LAST CHAPTERS:</b><br>'+highlights+'</div></div>'
+    +'<p class="flavor" style="text-align:center;margin-top:14px">The board is cleared. The debts, mercifully, are no longer his problem. Read the full chronicle in "Your Story So Far" — then live again and make different mistakes.</p>';
+  actEl.innerHTML='<button class="bigbtn" id="againBtn">🔄 Live Again (Reincarnate)</button>';
+  document.getElementById("againBtn").onclick=function(){ S=fresh(); document.getElementById("dieFace").textContent="?"; render(); showIntro(); };
+  logIt("☠️ He died at "+diedAge, title+" — final happiness "+S.hap+"/100, net worth "+money(net)); render();
+}
+render(); showIntro();
+</script>
+</body>
+</html>
