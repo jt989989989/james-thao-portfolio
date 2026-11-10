@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Flappy Bird Clone — James Thao Portfolio</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; background: #222; overflow: hidden;
+    font-family: -apple-system, "Segoe UI", Arial, sans-serif;
+    -webkit-tap-highlight-color: transparent; }
+  #wrap { position: relative; width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center; }
+  canvas { display: block; background: #70c5ce; touch-action: none; }
+  #hud { position: absolute; top: 10px; left: 0; right: 0; text-align: center;
+    color: #fff; font-size: 15px; font-weight: bold;
+    text-shadow: 0 2px 0 rgba(0,0,0,.35); pointer-events: none; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="game" width="400" height="600"></canvas>
+  <div id="hud">Tap / click / Space to flap</div>
+</div>
+<script>
+"use strict";
+// Flappy Bird clone — plain shapes and flat colours only.
+// No copied art, sprites, or trademarked assets: the bird is a yellow
+// circle with a beak and eye, the pipes are green rectangles.
+
+var canvas = document.getElementById("game");
+var ctx = canvas.getContext("2d");
+var hud = document.getElementById("hud");
+
+// Fit the 400x600 playfield into the window, keeping the aspect ratio.
+function resize() {
+  var scale = Math.min(window.innerWidth / 400, window.innerHeight / 600);
+  canvas.style.width = Math.floor(400 * scale) + "px";
+  canvas.style.height = Math.floor(600 * scale) + "px";
+}
+window.addEventListener("resize", resize);
+resize();
+
+// ---- game state ----
+var STATE = { READY: 0, PLAYING: 1, OVER: 2 };
+var state = STATE.READY;
+var score = 0;
+var best = 0;
+try { best = parseInt(localStorage.getItem("flappy-bird-best") || "0", 10) || 0; }
+catch (e) { best = 0; }
+
+var GRAVITY = 0.45;
+var FLAP = -8.5;
+var PIPE_SPEED = 2.6;
+var PIPE_GAP = 150;
+var PIPE_WIDTH = 64;
+var PIPE_SPACING = 220; // horizontal distance between pipes
+var GROUND_H = 64;
+
+var bird = { x: 90, y: 300, r: 16, vy: 0, wing: 0 };
+var pipes = [];
+var frames = 0;
+
+function reset() {
+  bird.y = 300; bird.vy = 0; bird.wing = 0;
+  pipes = [];
+  score = 0;
+  frames = 0;
+  state = STATE.READY;
+}
+
+function addPipe(x) {
+  // Gap top between 60 and (600 - GROUND_H - PIPE_GAP - 60)
+  var minTop = 60;
+  var maxTop = 600 - GROUND_H - PIPE_GAP - 60;
+  var gapTop = minTop + Math.random() * (maxTop - minTop);
+  pipes.push({ x: x, gapTop: gapTop, passed: false });
+}
+
+function flap() {
+  if (state === STATE.READY) {
+    state = STATE.PLAYING;
+    addPipe(420);
+    addPipe(420 + PIPE_SPACING);
+    bird.vy = FLAP;
+  } else if (state === STATE.PLAYING) {
+    bird.vy = FLAP;
+  } else if (state === STATE.OVER) {
+    reset();
+  }
+}
+
+function gameOver() {
+  state = STATE.OVER;
+  if (score > best) {
+    best = score;
+    try { localStorage.setItem("flappy-bird-best", String(best)); } catch (e) {}
+  }
+}
+
+function update() {
+  frames++;
+  if (state === STATE.PLAYING) {
+    bird.vy += GRAVITY;
+    bird.y += bird.vy;
+    bird.wing = (bird.wing + 1) % 12;
+
+    // Move pipes, spawn new ones, score when passed.
+    for (var i = 0; i < pipes.length; i++) {
+      var p = pipes[i];
+      p.x -= PIPE_SPEED;
+      if (!p.passed && p.x + PIPE_WIDTH < bird.x - bird.r) {
+        p.passed = true;
+        score++;
+      }
+    }
+    if (pipes.length === 0 || pipes[pipes.length - 1].x < 400 - PIPE_SPACING) {
+      addPipe(400);
+    }
+    while (pipes.length && pipes[0].x < -PIPE_WIDTH - 10) pipes.shift();
+
+    // Collision: pipes.
+    for (var j = 0; j < pipes.length; j++) {
+      var q = pipes[j];
+      var inX = bird.x + bird.r > q.x && bird.x - bird.r < q.x + PIPE_WIDTH;
+      if (inX && (bird.y - bird.r < q.gapTop ||
+                  bird.y + bird.r > q.gapTop + PIPE_GAP)) {
+        gameOver();
+        return;
+      }
+    }
+    // Collision: ground / ceiling.
+    if (bird.y + bird.r >= 600 - GROUND_H || bird.y - bird.r <= 0) {
+      bird.y = Math.min(bird.y, 600 - GROUND_H - bird.r);
+      gameOver();
+      return;
+    }
+  } else if (state === STATE.READY) {
+    // Gentle bob while waiting to start.
+    bird.y = 300 + Math.sin(frames / 18) * 8;
+    bird.wing = (bird.wing + 1) % 12;
+  }
+}
+
+function drawPipe(x, top, h, capAtBottom) {
+  ctx.fillStyle = "#4caf50";
+  ctx.fillRect(x, top, PIPE_WIDTH, h);
+  ctx.fillStyle = "#66bb6a";
+  ctx.fillRect(x, top, PIPE_WIDTH, 6);
+  // Simple cap lip at the gap-facing end.
+  ctx.fillStyle = "#388e3c";
+  if (capAtBottom) {
+    ctx.fillRect(x - 4, top + h - 18, PIPE_WIDTH + 8, 18);
+  } else {
+    ctx.fillRect(x - 4, top, PIPE_WIDTH + 8, 18);
+  }
+}
+
+function draw() {
+  // Sky.
+  ctx.fillStyle = "#70c5ce";
+  ctx.fillRect(0, 0, 400, 600);
+
+  // Simple flat clouds.
+  ctx.fillStyle = "#ffffff";
+  var cx = (frames * 0.3) % 480 - 40;
+  ctx.beginPath();
+  ctx.arc(cx, 80, 22, 0, Math.PI * 2);
+  ctx.arc(cx + 24, 74, 18, 0, Math.PI * 2);
+  ctx.arc(cx + 48, 82, 20, 0, Math.PI * 2);
+  ctx.fill();
+  var cx2 = (frames * 0.2 + 200) % 480 - 40;
+  ctx.beginPath();
+  ctx.arc(cx2, 160, 16, 0, Math.PI * 2);
+  ctx.arc(cx2 + 20, 155, 13, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Pipes.
+  for (var i = 0; i < pipes.length; i++) {
+    var p = pipes[i];
+    drawPipe(p.x, 0, p.gapTop, true);
+    drawPipe(p.x, p.gapTop + PIPE_GAP, 600 - GROUND_H - p.gapTop - PIPE_GAP, false);
+  }
+
+  // Ground.
+  ctx.fillStyle = "#ded895";
+  ctx.fillRect(0, 600 - GROUND_H, 400, GROUND_H);
+  ctx.fillStyle = "#8bc34a";
+  ctx.fillRect(0, 600 - GROUND_H, 400, 10);
+
+  // Bird: yellow circle, white eye, orange beak, flapping wing.
+  var wingUp = bird.wing < 6;
+  ctx.fillStyle = "#ffeb3b";
+  ctx.beginPath();
+  ctx.arc(bird.x, bird.y, bird.r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#fdd835";
+  ctx.beginPath();
+  ctx.arc(bird.x - 6, bird.y + (wingUp ? -2 : 4), 8, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#ffffff";
+  ctx.beginPath();
+  ctx.arc(bird.x + 6, bird.y - 6, 5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#222222";
+  ctx.beginPath();
+  ctx.arc(bird.x + 8, bird.y - 6, 2.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#ff9800";
+  ctx.beginPath();
+  ctx.moveTo(bird.x + bird.r - 2, bird.y - 2);
+  ctx.lineTo(bird.x + bird.r + 12, bird.y + 3);
+  ctx.lineTo(bird.x + bird.r - 2, bird.y + 7);
+  ctx.closePath();
+  ctx.fill();
+
+  // Score.
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 42px Arial, sans-serif";
+  ctx.textAlign = "center";
+  ctx.strokeStyle = "rgba(0,0,0,.4)";
+  ctx.lineWidth = 5;
+  if (state !== STATE.READY) {
+    ctx.strokeText(String(score), 200, 90);
+    ctx.fillText(String(score), 200, 90);
+  }
+
+  if (state === STATE.READY) {
+    ctx.font = "bold 26px Arial, sans-serif";
+    ctx.strokeText("FLAPPY BIRD", 200, 170);
+    ctx.fillText("FLAPPY BIRD", 200, 170);
+    ctx.font = "16px Arial, sans-serif";
+    ctx.fillText("Tap, click, or press Space to flap", 200, 210);
+    ctx.fillText("Fly through the pipes — don't hit them!", 200, 236);
+    ctx.fillText("Best: " + best, 200, 268);
+  }
+
+  if (state === STATE.OVER) {
+    ctx.fillStyle = "rgba(0,0,0,.45)";
+    ctx.fillRect(50, 190, 300, 190);
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 30px Arial, sans-serif";
+    ctx.fillText("GAME OVER", 200, 240);
+    ctx.font = "20px Arial, sans-serif";
+    ctx.fillText("Score: " + score, 200, 280);
+    ctx.fillText("Best: " + best, 200, 312);
+    ctx.font = "16px Arial, sans-serif";
+    ctx.fillText("Tap / click / Space to play again", 200, 348);
+  }
+
+  hud.textContent = state === STATE.OVER
+    ? "Game over — tap to play again"
+    : (state === STATE.READY ? "Tap / click / Space to flap" : "Score: " + score + "  ·  Best: " + best);
+}
+
+function loop() {
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+canvas.addEventListener("pointerdown", function (e) { e.preventDefault(); flap(); });
+window.addEventListener("keydown", function (e) {
+  if (e.code === "Space" || e.code === "ArrowUp") { e.preventDefault(); flap(); }
+});
+canvas.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+
+reset();
+loop();
+</script>
+</body>
+</html>
