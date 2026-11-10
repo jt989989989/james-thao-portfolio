@@ -86,9 +86,10 @@ INTENTS = [
         "patterns": ["github", "git hub", "repo", "repository", "code",
                      "source code"],
         "answer": (
-            "James's GitHub portfolio is here: " + GITHUB + " — 15 projects "
+            "James's GitHub portfolio is here: " + GITHUB + " — 16 projects "
             "including ADHD My Way, Orbit Hop, Life of a Man, SOC Log "
-            "Analyzer, Phishing Email Detector, and SQL Detective."
+            "Analyzer, Phishing Email Detector, SQL Detective, and the "
+            "Local Chatbot."
         ),
     },
     {
@@ -153,12 +154,12 @@ INTENTS = [
         "patterns": ["project", "projects", "built", "portfolio", "work",
                      "show me"],
         "answer": (
-            "James's portfolio has 15 projects: ADHD My Way, Orbit Hop, "
+            "James's portfolio has 16 projects: ADHD My Way, Orbit Hop, "
             "Jelly Stack, Life of a Man, SOC Log Analyzer, Missed-Call "
             "Follow-Up, Scientific Calculator, Lead Generator, Password "
             "Strength Checker, Secret Scanner, Recon Scanner, SQL Detective, "
-            "SQL Injection Lab, Phishing Email Detector, and the Printed "
-            "Text Reader HUD prototype. See them all at " + GITHUB
+            "SQL Injection Lab, Phishing Email Detector, the Printed "
+            "Text Reader HUD prototype, and the Local Chatbot. See them all at " + GITHUB
         ),
     },
     {
