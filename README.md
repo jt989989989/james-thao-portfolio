@@ -23,6 +23,7 @@ This repository is my project index for programming and IT roles. Each project i
 | [SQL Injection Lab](projects/sql-injection-lab/) | Educational local-only lab — try classic injection payloads against a deliberately vulnerable login, then see the same payloads fail against parameterized queries; spot-it and fix-it guide included | Python (stdlib only, sqlite3) | Security / defensive |
 | [Phishing Email Detector](projects/phishing-email-detector/) | Local ML email classifier — Naive Bayes word model trained on built-in fictional samples plus rule signals (urgency, credential requests, Reply-To mismatch, deceptive links, risky attachments); scores an email 0–100 and explains why | Python (stdlib only) | Security / AI / defensive |
 | [ADHD My Way](projects/adhd-my-way/) | Ionic app for children under 12 — daily quests earn coins, coins buy avatar customisations, plus Memory Match and Tap the Star mini games; everything stays on the device | Ionic 8, Capacitor 7, Vite, JavaScript | Mobile / front-end |
+| [Local Chatbot](projects/local-chatbot/) | Simple offline chatbot — keyword/intent matching over a built-in knowledge base about All Stars Automations and James's portfolio; answers services, booking, pricing (never invents a price), projects, and contact; demo mode included | Python (stdlib only) | AI / automation |
 
 ## How to run them
 
@@ -117,6 +118,12 @@ cd ../phishing-email-detector
 python -m unittest discover -s tests -v
 python phishing_detector.py --demo
 # Score one email: python phishing_detector.py samples/phishing_01_account_locked.txt
+
+# Local Chatbot — 14 unit tests; offline, no API key, no network
+cd ../local-chatbot
+python -m unittest discover -s tests -v
+python chatbot.py --demo
+# Interactive chat: python chatbot.py
 ```
 
 ## Notes
