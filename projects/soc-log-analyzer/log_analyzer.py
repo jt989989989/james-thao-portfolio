@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-SOC Log Analyzer — portfolio project by James Thao.
+SOC Log Analyzer — my portfolio project for flagging suspicious login activity.
 
 Parses authentication log lines and flags suspicious login activity:
 brute-force attempts, logins after repeated failures, and unknown users.

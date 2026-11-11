@@ -52,10 +52,14 @@ class TestIntentMatching(unittest.TestCase):
         self.assertIn("Ionic", reply)
 
     def test_about_james(self):
-        reply = chatbot.answer("Who is James?")
-        self.assertEqual(chatbot.match_intent("Who is James?"), "about_james")
-        self.assertIn("CompTIA Security+", reply)
-        self.assertIn("University of Wisconsin", reply)
+        for question in ("Who is James?", "Who are you?",
+                         "Tell me about yourself"):
+            reply = chatbot.answer(question)
+            self.assertEqual(chatbot.match_intent(question), "about_james")
+            self.assertIn("I'm James Thao", reply)
+            self.assertIn("CompTIA Security+", reply)
+            self.assertIn("University of Wisconsin", reply)
+            self.assertNotIn("He holds", reply)
 
     def test_contact(self):
         reply = chatbot.answer("How can I contact you?")

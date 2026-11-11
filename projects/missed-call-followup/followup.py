@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Missed-Call Follow-Up — portfolio project by James Thao.
+Missed-Call Follow-Up — my portfolio project for turning missed calls into a follow-up queue.
 
 Turns a CSV of missed calls into a prioritized follow-up queue with
 ready-to-send message drafts. Demo only: it writes text, it does not

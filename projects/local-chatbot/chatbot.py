@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Local Chatbot — a simple offline chatbot (AI project #2).
 
-Answers questions about James Thao's portfolio and his business,
+Answers questions about my portfolio and my business,
 All Stars Automations, from a built-in knowledge base. It matches your
 question to an intent with plain keyword matching — no API key, no
 network calls, no model download, no data leaves your machine.
@@ -30,19 +30,19 @@ INTENTS = [
                      "good evening"],
         "answer": (
             "Hi! I'm a small offline demo chatbot for All Stars Automations "
-            "and James Thao's portfolio. Ask me about the business, the "
-            "services, booking, pricing, GitHub projects, or James himself — "
+            "and my portfolio. Ask me about the business, the "
+            "services, booking, pricing, GitHub projects, or me — "
             "or type 'help' to see everything I can answer."
         ),
     },
     {
         "name": "identity",
-        "patterns": ["who are you", "what are you", "your name",
+        "patterns": ["what are you", "your name",
                      "are you ai", "are you a bot"],
         "answer": (
             "I'm a simple rule-based chatbot — keyword matching over a "
             "built-in knowledge base, no API key and no network calls. I "
-            "answer questions about All Stars Automations and James Thao's "
+            "answer questions about All Stars Automations and my "
             "GitHub portfolio. I'm a portfolio demo, not a full AI assistant."
         ),
     },
@@ -66,7 +66,7 @@ INTENTS = [
                      "start", "consult"],
         "answer": (
             "You can book a free Systems Assessment here: " + BOOKING_LINK
-            + " — pick a time and James will walk through where your "
+            + " — pick a time and I will walk through where your "
             "business is losing revenue or wasting time on manual work."
         ),
     },
@@ -86,7 +86,7 @@ INTENTS = [
         "patterns": ["github", "git hub", "repo", "repository", "code",
                      "source code"],
         "answer": (
-            "James's GitHub portfolio is here: " + GITHUB + " — 16 projects "
+            "My GitHub portfolio is here: " + GITHUB + " — 20 projects "
             "including ADHD My Way, Orbit Hop, Life of a Man, SOC Log "
             "Analyzer, Phishing Email Detector, SQL Detective, and the "
             "Local Chatbot."
@@ -127,7 +127,7 @@ INTENTS = [
         "answer": (
             "The SOC Log Analyzer is a Python CLI that parses auth logs and "
             "flags brute-force attempts and success-after-failure logins — "
-            "a defensive security tool from James's SOC background."
+            "a defensive security tool from my SOC background."
         ),
     },
     {
@@ -154,21 +154,24 @@ INTENTS = [
         "patterns": ["project", "projects", "built", "portfolio", "work",
                      "show me"],
         "answer": (
-            "James's portfolio has 16 projects: ADHD My Way, Orbit Hop, "
+            "My portfolio has 20 projects: ADHD My Way, Orbit Hop, "
             "Jelly Stack, Life of a Man, SOC Log Analyzer, Missed-Call "
             "Follow-Up, Scientific Calculator, Lead Generator, Password "
             "Strength Checker, Secret Scanner, Recon Scanner, SQL Detective, "
             "SQL Injection Lab, Phishing Email Detector, the Printed "
-            "Text Reader HUD prototype, and the Local Chatbot. See them all at " + GITHUB
+            "Text Reader HUD prototype, the Local Chatbot, Expense Tracker "
+            "CLI, Flappy Bird Clone, Port Scanner, and Excel Report "
+            "Automator. See them all at " + GITHUB
         ),
     },
     {
         "name": "about_james",
         "patterns": ["who is james", "about james", "james thao",
                      "tell me about james", "your boss", "the owner",
-                     "founder"],
+                     "founder", "who are you", "about you",
+                     "tell me about yourself"],
         "answer": (
-            "James Thao is Director of All Stars Automations. He holds "
+            "I'm James Thao, Director of All Stars Automations. I hold "
             "CompTIA Security+ and a B.S. in Computer Science from the "
             "University of Wisconsin, with a background in cloud security, "
             "vehicle cybersecurity, and IT support."
@@ -177,7 +180,7 @@ INTENTS = [
     {
         "name": "linkedin",
         "patterns": ["linkedin"],
-        "answer": "James is on LinkedIn at " + LINKEDIN,
+        "answer": "I'm on LinkedIn at " + LINKEDIN,
     },
     {
         "name": "website",
@@ -190,9 +193,9 @@ INTENTS = [
         "patterns": ["contact", "reach", "email", "phone", "call",
                      "get in touch", "talk to"],
         "answer": (
-            "The fastest way to reach James is to book a free Systems "
-            "Assessment: " + BOOKING_LINK + " — or find him on LinkedIn at "
-            + LINKEDIN + " and see his work at " + GITHUB
+            "The fastest way to reach me is to book a free Systems "
+            "Assessment: " + BOOKING_LINK + " — or find me on LinkedIn at "
+            + LINKEDIN + " and see my work at " + GITHUB
         ),
     },
     {
@@ -206,7 +209,7 @@ INTENTS = [
             "  - pricing ('How much does it cost?')\n"
             "  - GitHub and projects ('Show me your GitHub')\n"
             "  - individual projects ('Tell me about ADHD My Way')\n"
-            "  - James himself ('Who is James?')\n"
+            "  - me ('Who are you?')\n"
             "  - contact and LinkedIn\n"
             "Type 'quit' to leave."
         ),
@@ -215,7 +218,7 @@ INTENTS = [
 
 FALLBACK = (
     "I'm not sure about that yet — I'm a small offline demo bot and I only "
-    "know about All Stars Automations, James's portfolio, and booking. "
+    "know about All Stars Automations, my portfolio, and booking. "
     "Type 'help' to see what I can answer."
 )
 
@@ -226,7 +229,7 @@ DEMO_QUESTIONS = [
     "Show me your GitHub",
     "What projects have you built?",
     "Tell me about ADHD My Way",
-    "Who is James?",
+    "Who are you?",
     "How can I contact you?",
 ]
 
@@ -299,7 +302,7 @@ def run_demo():
 def chat_loop():
     """Interactive chat: type a question, 'help' for topics, 'quit' to exit."""
     print("Local Chatbot — offline demo for All Stars Automations.")
-    print("Ask me about the business, booking, pricing, GitHub, or James.")
+    print("Ask me about the business, booking, pricing, GitHub, or me.")
     print("Type 'help' for topics, 'quit' to leave.\n")
     while True:
         try:

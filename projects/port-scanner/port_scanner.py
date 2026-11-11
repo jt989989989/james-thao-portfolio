@@ -4,15 +4,15 @@
 Scans a target host over a port range (or a list of ports) and prints
 which ports are OPEN and which are CLOSED, with a short summary.
 
-This is an offensive-security learning tool, built for James's
-penetration-testing practice. It is ONLY for targets he owns or has
+This is an offensive-security learning tool I built for my own
+penetration-testing practice. It is ONLY for targets I own or have
 explicit permission to test:
 
   - localhost / 127.0.0.1 / ::1
   - private lab addresses (10.x.x.x, 172.16.x.x–172.31.x.x, 192.168.x.x,
-    link-local 169.254.x.x) — his own VMs and lab machines
+    link-local 169.254.x.x) — my own VMs and lab machines
   - intentionally vulnerable lab apps (DVWA, Metasploitable) and
-    HackTheBox / TryHackMe machines he is assigned
+    HackTheBox / TryHackMe machines I am assigned
 
 By default the scanner REFUSES any other target. To scan a named target
 outside that list you must pass --i-have-permission, which means you
