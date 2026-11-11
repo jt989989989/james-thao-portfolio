@@ -25,6 +25,7 @@ This repository is my project index for programming and IT roles. Each project i
 | [SQL Detective](projects/sql-detective/) | Fun SQL practice game — solve the case of the missing mascot by writing real SQL queries against a fictional SQLite database; hints and a checker included | Python (stdlib only, sqlite3) | SQL / databases / games |
 | [SQL Injection Lab](projects/sql-injection-lab/) | Educational local-only lab — try classic injection payloads against a deliberately vulnerable login, then see the same payloads fail against parameterized queries; spot-it and fix-it guide included | Python (stdlib only, sqlite3) | Security / defensive |
 | [Phishing Email Detector](projects/phishing-email-detector/) | Local ML email classifier — Naive Bayes word model trained on built-in fictional samples plus rule signals (urgency, credential requests, Reply-To mismatch, deceptive links, risky attachments); scores an email 0–100 and explains why | Python (stdlib only) | Security / AI / defensive |
+| [Port Scanner](projects/port-scanner/) | TCP connect port scanner for lab targets only — scans a port range and prints open/closed; refuses public targets unless `--i-have-permission` is given | Python (stdlib only) | Security / offensive lab |
 | [ADHD My Way](projects/adhd-my-way/) | Ionic app for children under 12 — daily quests earn coins, coins buy avatar customisations, plus Memory Match and Tap the Star mini games; everything stays on the device | Ionic 8, Capacitor 7, Vite, JavaScript | Mobile / front-end |
 | [Local Chatbot](projects/local-chatbot/) | Simple offline chatbot — keyword/intent matching over a built-in knowledge base about All Stars Automations and James's portfolio; answers services, booking, pricing (never invents a price), projects, and contact; demo mode included | Python (stdlib only) | AI / automation |
 | [Expense Tracker CLI](projects/expense-tracker/) | Swift CLI expense tracker — add expenses, list them, totals by category and month; data persists to a local JSON file; money as Decimal for exact totals; demo mode with fictional samples | Swift 6.4.1, Swift Package Manager | Tools / finance |
@@ -131,6 +132,12 @@ cd ../local-chatbot
 python -m unittest discover -s tests -v
 python chatbot.py --demo
 # Interactive chat: python chatbot.py
+
+# Port Scanner — 20 unit tests; lab targets only, no brute force or exploits
+cd ../port-scanner
+python -m unittest discover -s tests -v
+python port_scanner.py --demo
+# Scan localhost: python port_scanner.py 127.0.0.1 --ports 22,80,443
 
 # Expense Tracker CLI — 14 unit tests; Swift 6.4.1, no network, no API key
 cd ../expense-tracker
