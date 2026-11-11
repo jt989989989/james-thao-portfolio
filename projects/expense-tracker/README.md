@@ -5,7 +5,7 @@ Add expenses, list them, and see totals by category and by month.
 Data lives in a local JSON file — no accounts, no network, nothing
 leaves your machine.
 
-This is James's first Swift project (Swift 6.4.1, Swift Package Manager).
+This is my first Swift project (Swift 6.4.1, Swift Package Manager).
 
 ## What it does
 

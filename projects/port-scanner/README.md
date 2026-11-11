@@ -1,7 +1,7 @@
 # Port Scanner — v1.0.0
 
 A basic TCP connect port scanner for **lab targets only** — the first
-tool in the Wednesday cybersecurity track, built as a tool to help beginners learns
+tool in the Wednesday cybersecurity track, built as a tool to help beginners learn
 penetration testing.
 
 It scans a target host over a port range (or a list of ports) and prints
@@ -9,14 +9,14 @@ which ports are OPEN and which are CLOSED, with a short summary.
 
 ## The authorisation rule (read this first)
 
-This tool is ONLY for targets you own or has explicit permission to
+This tool is ONLY for targets I own or have explicit permission to
 test:
 
 - `localhost` / `127.0.0.1` / `::1`
 - Private lab addresses — `10.x.x.x`, `172.16.x.x`–`172.31.x.x`,
-  `192.168.x.x`, link-local `169.254.x.x` (his own VMs and lab machines)
+  `192.168.x.x`, link-local `169.254.x.x` (my own VMs and lab machines)
 - Intentionally vulnerable lab apps (DVWA, Metasploitable) and
-  HackTheBox / TryHackMe machines he is assigned
+  HackTheBox / TryHackMe machines I am assigned
 
 By default the scanner **refuses** any other target. To scan a named
 target outside that list you must pass `--i-have-permission`, which means

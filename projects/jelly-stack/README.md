@@ -6,4 +6,4 @@ Open `index.html` in a browser to play. No build step or server needed. The `ass
 
 Built with JavaScript and Matter.js physics, with soft-body-style stacking, scoring, and game-over / restart state.
 
-Part of James Thao's portfolio projects — see the main [README](../../README.md).
+Part of my portfolio projects — see the main [README](../../README.md).

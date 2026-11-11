@@ -1,7 +1,7 @@
 # Local Chatbot
 
 A simple offline chatbot — Python, standard library only. It answers
-questions about All Stars Automations and James Thao's GitHub portfolio
+questions about All Stars Automations and my GitHub portfolio
 from a built-in knowledge base, using plain keyword/intent matching.
 
 No API key, no network calls, no model download, no data leaves your
@@ -18,7 +18,7 @@ Automations builds for small businesses — just a small, local version.
 - The GitHub portfolio and individual projects (ADHD My Way, Orbit Hop,
   Life of a Man, SOC Log Analyzer, Phishing Email Detector, SQL
   Detective, and more)
-- James himself (Director, All Stars Automations; CompTIA Security+;
+- About me (Director, All Stars Automations; CompTIA Security+;
   B.S. Computer Science, University of Wisconsin)
 - Contact and LinkedIn
 
