@@ -1,7 +1,7 @@
 # Port Scanner — v1.0.0
 
 A basic TCP connect port scanner for **lab targets only** — the first
-tool in the Wednesday cybersecurity track, built as James learns
+tool in the Wednesday cybersecurity track, built as a tool to help beginners learns
 penetration testing.
 
 It scans a target host over a port range (or a list of ports) and prints
@@ -9,7 +9,7 @@ which ports are OPEN and which are CLOSED, with a short summary.
 
 ## The authorisation rule (read this first)
 
-This tool is ONLY for targets James owns or has explicit permission to
+This tool is ONLY for targets you own or has explicit permission to
 test:
 
 - `localhost` / `127.0.0.1` / `::1`
