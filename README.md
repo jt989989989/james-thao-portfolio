@@ -29,6 +29,7 @@ This repository is my project index for programming and IT roles. Each project i
 | [ADHD My Way](projects/adhd-my-way/) | Ionic app for children under 12 — daily quests earn coins, coins buy avatar customisations, plus Memory Match and Tap the Star mini games; everything stays on the device | Ionic 8, Capacitor 7, Vite, JavaScript | Mobile / front-end |
 | [Local Chatbot](projects/local-chatbot/) | Simple offline chatbot — keyword/intent matching over a built-in knowledge base about All Stars Automations and my portfolio; answers services, booking, pricing (never invents a price), projects, and contact; demo mode included | Python (stdlib only) | AI / automation |
 | [Expense Tracker CLI](projects/expense-tracker/) | Swift CLI expense tracker — add expenses, list them, totals by category and month; data persists to a local JSON file; money as Decimal for exact totals; demo mode with fictional samples | Swift 6.4.1, Swift Package Manager | Tools / finance |
+| [Excel Report Automator](projects/excel-report-automator/) | I turn messy spreadsheet exports into clean, presentation-ready workbooks — dedupe, blank-row removal, whitespace and date cleanup, formatted sheets, and pivot summaries I compute with pandas (not native Excel PivotTables); demo mode included | Python, openpyxl + pandas | Tools / Excel |
 
 ## How to run them
 
@@ -144,6 +145,13 @@ cd ../expense-tracker
 swift test
 swift run expense-tracker --demo
 # Add an expense: swift run expense-tracker add 12.50 --category Food --note "Lunch"
+
+# Excel Report Automator — 13 unit tests; needs openpyxl + pandas
+cd ../excel-report-automator
+pip install -r requirements.txt
+python -m unittest discover -s tests -v
+python excel_report_automator.py --demo
+# Clean a file: python excel_report_automator.py messy.xlsx --pivot-rows Category --pivot-cols Month --pivot-values Amount
 ```
 
 ## Notes
