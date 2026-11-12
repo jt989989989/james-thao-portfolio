@@ -23,6 +23,9 @@
         --accent-ink: #ffffff;
         --amber: #9a6206;
         --amber-bg: #fdf0d5;
+        --correct-bg: #dcf5e8;
+        --correct-line: #07734c;
+        --correct-ink: #0b3d28;
         --stage-bg: #05080a;
         --hud-ink: #e6fff3;
         --hud-dim: #9fd8bf;
@@ -41,6 +44,9 @@
           --accent-ink: #06231a;
           --amber: #ffc46b;
           --amber-bg: #2c2110;
+          --correct-bg: #0d2f21;
+          --correct-line: #2fe6a8;
+          --correct-ink: #d9ffee;
         }
       }
       * { box-sizing: border-box; }
@@ -140,7 +146,7 @@
       .hud-pill .dot { width: 7px; height: 7px; border-radius: 50%; background: #5c6f66; flex: none; }
       .hud-pill.on .dot { background: var(--accent-bright); box-shadow: 0 0 8px var(--accent-bright); }
 
-      .frame-corners { position: absolute; inset: 52px 18px 74px; pointer-events: none; z-index: 3; display: none; }
+      .frame-corners { position: absolute; inset: 52px 14px 64px; pointer-events: none; z-index: 3; display: none; }
       .stage.live .frame-corners, .stage.has-photo .frame-corners { display: block; }
       .frame-corners i { position: absolute; width: 26px; height: 26px; border: 2px solid var(--hud-line); }
       .frame-corners i:nth-child(1) { top: 0; left: 0; border-right: 0; border-bottom: 0; border-top-left-radius: 8px; }
@@ -159,47 +165,45 @@
         .stage.scanning .scanline { animation: none; top: 50%; }
       }
 
-      /* Quick-define reticle */
-      .reticle {
-        position: absolute; left: 50%; top: 46%;
-        transform: translate(-50%, -50%);
-        width: min(52%, 280px);
-        z-index: 4; pointer-events: none;
-        display: none; text-align: center;
-      }
-      .stage.live .reticle, .stage.has-photo .reticle { display: block; }
-      .reticle-label {
+      /* Full-frame word overlay */
+      .word-overlay { position: absolute; inset: 0; z-index: 4; pointer-events: none; overflow: hidden; }
+      .word-box {
+        position: absolute; transform: translate(-50%, -50%);
+        pointer-events: auto; cursor: pointer;
         font-family: "IBM Plex Mono", ui-monospace, monospace;
-        font-size: 10px; letter-spacing: 0.16em; color: var(--hud-dim);
-        text-shadow: 0 1px 6px rgba(0,0,0,0.8);
-        margin-bottom: 6px;
+        font-size: 11px; font-weight: 600; line-height: 1.2;
+        color: #fff; background: rgba(3, 14, 10, 0.58);
+        border: 1px solid rgba(47, 230, 168, 0.65);
+        border-radius: 6px; padding: 2px 5px; white-space: nowrap;
+        max-width: 42%; overflow: hidden; text-overflow: ellipsis;
       }
-      .reticle-box {
-        border: 1.5px solid var(--hud-line);
-        border-radius: 10px;
-        background: rgba(3, 12, 9, 0.25);
-        min-height: 58px;
-        display: flex; align-items: center; justify-content: center;
-        padding: 6px 10px;
-      }
-      .reticle-word {
+      .word-box:hover, .word-box.selected { background: var(--accent); border-color: var(--accent-bright); color: #fff; }
+      .scan-hint {
+        position: absolute; left: 50%; bottom: 52px; transform: translateX(-50%);
+        z-index: 4; pointer-events: none; display: none;
         font-family: "IBM Plex Mono", ui-monospace, monospace;
-        font-size: 21px; font-weight: 600; color: #ffffff;
-        text-shadow: 0 1px 8px rgba(0,0,0,0.9);
-        word-break: break-word;
+        font-size: 10.5px; letter-spacing: 0.06em; color: var(--hud-dim);
+        background: rgba(3,12,9,0.55); border-radius: 999px; padding: 4px 10px; white-space: nowrap;
       }
-      .reticle-word.empty { color: rgba(255,255,255,0.45); font-size: 14px; font-weight: 400; }
-      .dwell-track { height: 4px; background: rgba(255,255,255,0.22); border-radius: 4px; margin-top: 8px; overflow: hidden; }
-      .dwell-fill { height: 100%; width: 0%; background: var(--accent-bright); border-radius: 4px; transition: width 0.12s linear; }
-      .dwell-note {
-        font-family: "IBM Plex Mono", ui-monospace, monospace;
-        font-size: 10.5px; color: var(--hud-dim); margin-top: 6px;
-        text-shadow: 0 1px 6px rgba(0,0,0,0.8); min-height: 14px;
+      .stage.live .scan-hint, .stage.has-photo .scan-hint { display: block; }
+      .stage.has-words .scan-hint { display: none; }
+      .words-card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 15px 16px; }
+      .words-grid { display: flex; flex-wrap: wrap; gap: 7px; }
+      .word-chip {
+        min-height: 36px; padding: 7px 11px; font-size: 13.5px; font-weight: 600;
+        border-radius: 999px; background: var(--panel-2);
       }
+      .word-chip.selected { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+      .words-empty { font-size: 13.5px; color: var(--muted); margin: 0; line-height: 1.5; }
+      .word-def { display: none; margin-top: 12px; border-top: 1px solid var(--line); padding-top: 11px; }
+      .word-def.show { display: block; }
+      .word-def .wd-word { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 17px; font-weight: 600; color: var(--accent); }
+      .word-def .wd-pos { font-size: 12px; color: var(--muted); font-style: italic; margin-left: 6px; }
+      .word-def .wd-text { font-size: 14.5px; line-height: 1.5; margin-top: 4px; }
 
       /* Definition popup — the "lens" readout */
       .def-popup {
-        position: absolute; left: 50%; top: 12%;
+        position: absolute; left: 50%; bottom: 64px; top: auto;
         transform: translateX(-50%);
         width: min(88%, 430px);
         z-index: 6; display: none;
@@ -264,6 +268,37 @@
         font-size: 13.5px; line-height: 1.45; font-weight: 500;
       }
       .answer-flag.show { display: block; }
+
+      /* Answer choices — the correct one is highlighted */
+      .options-list { list-style: none; margin: 13px 0 0; padding: 0; display: flex; flex-direction: column; gap: 7px; }
+      .options-list[hidden] { display: none; }
+      .options-list li {
+        display: flex; gap: 10px; align-items: flex-start;
+        border: 1px solid var(--line); border-radius: 10px;
+        background: var(--panel-2); color: var(--muted);
+        padding: 9px 12px; font-size: 14.5px; line-height: 1.45;
+      }
+      .options-list .opt-letter {
+        flex: none; width: 26px; height: 26px; border-radius: 8px;
+        border: 1px solid var(--line); background: var(--panel);
+        font-family: "IBM Plex Mono", ui-monospace, monospace;
+        font-size: 13px; font-weight: 600;
+        display: flex; align-items: center; justify-content: center;
+      }
+      .options-list .opt-text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+      .options-list .opt-tag {
+        flex: none; font-family: "IBM Plex Mono", ui-monospace, monospace;
+        font-size: 10.5px; font-weight: 600; letter-spacing: 0.08em;
+        padding: 3px 7px; border-radius: 999px; margin-top: 2px;
+      }
+      .options-list li.correct {
+        background: var(--correct-bg); border: 2px solid var(--correct-line);
+        color: var(--correct-ink); font-weight: 600;
+      }
+      .options-list li.correct .opt-letter { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+      .options-list li.correct .opt-tag { background: var(--accent); color: var(--accent-ink); }
+      .options-list li.maybe { border-color: var(--amber); background: var(--amber-bg); color: var(--ink); }
+      .options-list li.maybe .opt-tag { background: var(--amber-bg); color: var(--amber); border: 1px solid var(--amber); }
 
       .controls-card, .text-card, .history-card, .how-card {
         background: var(--panel);
@@ -332,12 +367,12 @@
           <img class="photo" id="photoImg" alt="Photo of printed text you chose" />
 
           <div class="stage-placeholder" id="placeholder">
-            <h1>Point at printed text.<br />Get the answer in view.</h1>
-            <p>Prototype — problem-solving mode. You know the saying, “give a tough job to a lazy person and they’ll find the easiest way to solve it”? That’s this tool: point the camera at a printed question and it does the reading and solving for you, right in view — letter and answer for multiple choice (math, vocabulary, science, geography, history, general knowledge and cybersecurity — Security+ topics and all 8 CISSP domains), the worked result for open math, and a quick one-line definition when you center a single word.</p>
+            <h1>Point at a page.<br />Every word is read at once.</h1>
+            <p>Prototype — problem-solving mode. You know the saying, “give a tough job to a lazy person and they’ll find the easiest way to solve it”? That’s this tool: point the camera at a printed question and it does the reading and solving for you, right in view — letter and answer for multiple choice (math, vocabulary, science, geography, history, general knowledge and cybersecurity — Security+ topics and all 8 CISSP domains), the worked result for open math, and a one-tap definition for any word in the frame — tap its box, no typing it into a search box.</p>
             <div class="steps">
               <span><b>1</b>&nbsp; START CAMERA</span>
-              <span><b>2</b>&nbsp; FRAME THE TEXT</span>
-              <span><b>3</b>&nbsp; CAPTURE &amp; READ</span>
+              <span><b>2</b>&nbsp; FRAME THE WHOLE PAGE</span>
+              <span><b>3</b>&nbsp; TAP ANY WORD TO DEFINE</span>
             </div>
           </div>
 
@@ -349,12 +384,8 @@
           <div class="frame-corners"><i></i><i></i><i></i><i></i></div>
           <div class="scanline"></div>
 
-          <div class="reticle" aria-hidden="true">
-            <div class="reticle-label">CENTER A WORD HERE · QUICK DEFINITION</div>
-            <div class="reticle-box"><span class="reticle-word empty" id="reticleWord">no word centered</span></div>
-            <div class="dwell-track"><div class="dwell-fill" id="dwellFill"></div></div>
-            <div class="dwell-note" id="dwellNote">Turn on Auto-scan for instant word definitions</div>
-          </div>
+          <div class="word-overlay" id="wordOverlay" aria-label="Words detected in the frame"></div>
+          <div class="scan-hint">Scanning the whole frame — tap any word box for its definition</div>
 
           <div class="def-popup" id="defPopup" role="status">
             <span class="dw" id="defWord"></span><span class="dp" id="defPos"></span>
@@ -372,11 +403,12 @@
           <div class="answer-row">
             <div class="letter-badge" id="letterBadge">?</div>
             <div>
-              <p class="answer-headline waiting" id="ansHeadline">Nothing read yet. Start the camera and tap Capture &amp; Read.</p>
+              <p class="answer-headline waiting" id="ansHeadline">Nothing read yet. Start the camera — the whole frame is read at once.</p>
               <p class="answer-detail" id="ansDetail"></p>
             </div>
           </div>
           <div class="answer-flag" id="ansFlag"></div>
+          <ul class="options-list" id="optionsList" hidden></ul>
         </section>
 
         <section class="controls-card">
@@ -401,6 +433,16 @@
             <input type="file" id="fileInput" accept="image/*" hidden />
           </div>
           <p class="controls-note" id="controlsNote">Reading happens on this device — the camera image is never uploaded. For a general-knowledge question it checks a built-in fact bank first, then looks the question up in a reference source to pick between the printed options. The bank now includes a cybersecurity section: Security+ topics (CIA triad, phishing and social engineering, malware, firewalls, encryption, ports, incident response) plus CISSP-domain knowledge across all 8 domains.</p>
+        </section>
+
+        <section class="words-card" aria-live="polite">
+          <p class="card-title">WORDS IN FRAME — TAP ANY WORD FOR AN INSTANT DEFINITION</p>
+          <p class="words-empty" id="wordsEmpty">No scan yet. Start the camera or upload a photo and every word in view will appear here as a tappable chip — faster than typing it into a search box.</p>
+          <div class="words-grid" id="wordsGrid"></div>
+          <div class="word-def" id="wordDef">
+            <span class="wd-word" id="wdWord"></span><span class="wd-pos" id="wdPos"></span>
+            <div class="wd-text" id="wdText"></div>
+          </div>
         </section>
 
         <section class="text-card">
@@ -437,11 +479,11 @@
         <section class="how-card">
           <p class="card-title">HOW EACH READ IS ANSWERED</p>
           <ul>
-            <li><b>Multiple choice — any subject:</b> the answer shows as a letter plus the answer text, with a one-line reason. Math is worked out, vocabulary is checked against a dictionary, and general-knowledge questions (science, geography, history and more) are checked against a built-in fact bank and then a reference lookup that scores each printed option. If two options could fit, it flags that instead of guessing.</li>
+            <li><b>Multiple choice — any subject:</b> the answer shows as a letter plus the answer text, with a one-line reason — and the correct choice is highlighted green in the list of options under the answer. With Auto-scan on, a steady page is solved on its own; otherwise tap Capture &amp; Read once and the answer appears as soon as the read finishes. Math is worked out, vocabulary is checked against a dictionary, and general-knowledge questions (science, geography, history and more) are checked against a built-in fact bank and then a reference lookup that scores each printed option. If two options could fit, it flags that instead of guessing.</li>
             <li><b>Cybersecurity:</b> a dedicated bank covers Security+ style questions — CIA triad, phishing / social engineering, malware types, firewalls, encryption and hashing, common ports, and incident response — and CISSP-domain questions across all 8 domains: security &amp; risk management, asset security, security architecture &amp; engineering, communication &amp; network security, identity &amp; access management, security assessment &amp; testing, security operations, and software development security. Questions that name a term and offer definitions are scored against the bank's definition for that term.</li>
             <li><b>Open questions:</b> math shows the worked result; a general question shows the fact-bank answer, or the best reference match when there is one.</li>
             <li><b>Open math:</b> the worked result appears, with the expression it was calculated from.</li>
-            <li><b>Quick-define:</b> with Auto-scan on, just center one word in the box — its definition pops up in under a second, no holding or waiting. Look away and it clears.</li>
+            <li><b>Tap any word to define it:</b> every scan reads the whole frame at once and puts a box on every word it finds — on the camera view and as chips in the Words in Frame panel. Tap any box or chip and its one-line definition appears instantly. No centering, no holding, no typing the word into a search box.</li>
             <li><b>About this prototype:</b> “Give a tough job to a lazy person and they’ll find the easiest way to solve it.” This tool is meant to do exactly that — you point, it reads and solves. Still a prototype, so expect the occasional misread.</li>
             <li><b>Misreads happen:</b> if the read confidence is low, check the text box — fix any wrong characters and tap Solve again.</li>
           </ul>
@@ -455,7 +497,8 @@
 
       var stage = $("stage"), video = $("video"), photoImg = $("photoImg");
       var modePill = $("modePill"), ocrPill = $("ocrPill"), hudStatus = $("hudStatus");
-      var reticleWord = $("reticleWord"), dwellFill = $("dwellFill"), dwellNote = $("dwellNote");
+      var wordOverlay = $("wordOverlay"), wordsGrid = $("wordsGrid"), wordsEmpty = $("wordsEmpty");
+      var wordDef = $("wordDef"), wdWord = $("wdWord"), wdPos = $("wdPos"), wdText = $("wdText");
       var defPopup = $("defPopup"), defWord = $("defWord"), defPos = $("defPos"), defText = $("defText");
       var ansHeadline = $("ansHeadline"), ansDetail = $("ansDetail"), ansFlag = $("ansFlag"), letterBadge = $("letterBadge");
       var textInput = $("textInput"), textMeta = $("textMeta");
@@ -473,6 +516,17 @@
       function setStatus(msg) { hudStatus.textContent = msg; }
       function setOcrPill(msg) { ocrPill.textContent = msg; }
 
+      /* Every network call gets a hard timeout: a slow or blocked lookup must
+         never leave the HUD waiting forever with no answer shown. */
+      function fetchWithTimeout(url, ms) {
+        if (typeof AbortController === "function") {
+          var ctl = new AbortController();
+          var timer = setTimeout(function () { ctl.abort(); }, ms || 8000);
+          return fetch(url, { signal: ctl.signal }).then(function (r) { clearTimeout(timer); return r; }, function (e) { clearTimeout(timer); throw e; });
+        }
+        return fetch(url);
+      }
+
       /* ---------------- Camera ---------------- */
       function startCamera() {
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -480,10 +534,12 @@
           $("controlsNote").textContent = "Camera isn't available here. The Upload photo and paste-text paths below work the same way.";
           return;
         }
-        navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false })
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false })
           .then(function (s) {
             stream = s;
             video.srcObject = s;
+            if (video.play) { var pp = video.play(); if (pp && pp.catch) pp.catch(function () {}); }
+            warmUpReader();
             sourceKind = "video";
             stage.classList.add("live");
             stage.classList.remove("has-photo");
@@ -491,7 +547,7 @@
             camBtnLabel.textContent = "Stop camera";
             captureBtn.disabled = false;
             autoBtn.disabled = false;
-            setStatus("Camera on. Frame the printed text inside the corners, then Capture & Read.");
+            setStatus("Camera on. Point at a page — Capture & Read reads the whole frame at once, or turn on Auto-scan.");
           })
           .catch(function () {
             setStatus("Camera permission wasn't granted — upload a photo or paste the text instead.");
@@ -543,15 +599,33 @@
         return c;
       }
 
+      var ocrWorkerPromise = null;
       function getWorker() {
         if (ocrWorker) return Promise.resolve(ocrWorker);
+        if (ocrWorkerPromise) return ocrWorkerPromise;
         if (!window.Tesseract) return Promise.reject(new Error("reader unavailable"));
         setOcrPill("READER LOADING…");
-        return Tesseract.createWorker("eng", 1, {
+        ocrWorkerPromise = Tesseract.createWorker("eng", 1, {
           logger: function (m) {
             if (m.status === "recognizing text") setOcrPill("READING " + Math.round((m.progress || 0) * 100) + "%");
+            else if (m.status) setOcrPill("READER LOADING…");
           }
-        }).then(function (w) { ocrWorker = w; return w; });
+        }).then(function (w) { ocrWorker = w; ocrWorkerPromise = null; setOcrPill("READER READY"); return w; })
+          .catch(function (e) { ocrWorkerPromise = null; setOcrPill("READER FAILED"); throw e; });
+        return ocrWorkerPromise;
+      }
+      function resetWorker() {
+        var w = ocrWorker; ocrWorker = null; ocrWorkerPromise = null;
+        if (w && w.terminate) { try { w.terminate(); } catch (e) { /* already gone */ } }
+      }
+      /* Start downloading the reader as soon as the page opens (and again when
+         the camera starts), so the first Capture is fast instead of making
+         the user wait through a ~10 MB first-time load with no feedback. */
+      var readerWarmed = false;
+      function warmUpReader() {
+        if (readerWarmed || !window.Tesseract) return;
+        readerWarmed = true;
+        getWorker().catch(function () { readerWarmed = false; });
       }
 
       function extractWords(data) {
@@ -570,10 +644,20 @@
         return out;
       }
 
-      function recognize(canvas) {
+      function recognizeOnce(canvas) {
         return getWorker().then(function (w) {
           return w.recognize(canvas, {}, { blocks: true }).then(function (r) { return r.data; })
             .catch(function () { return w.recognize(canvas).then(function (r) { return r.data; }); });
+        });
+      }
+      function recognize(canvas) {
+        // One automatic retry with a fresh reader: if the first attempt died
+        // while loading (flaky network, worker hiccup), rebuild and go again
+        // instead of telling the user the scan simply failed.
+        return recognizeOnce(canvas).catch(function () {
+          resetWorker();
+          setOcrPill("READER RESTARTING…");
+          return recognizeOnce(canvas);
         });
       }
 
@@ -585,7 +669,10 @@
         stage.classList.add("scanning");
         setOcrPill("READING 0%");
         setStatus("Reading the printed text…");
-        recognize(canvas).then(function (data) {
+        var timedOut = new Promise(function (resolve, reject) {
+          setTimeout(function () { reject(new Error("read timed out")); }, 90000);
+        });
+        Promise.race([recognize(canvas), timedOut]).then(function (data) {
           var text = (data.text || "").trim();
           var conf = Math.round(data.confidence || 0);
           if (!text) {
@@ -594,12 +681,14 @@
             return;
           }
           textInput.value = text;
+          renderWords(extractWords(data), canvas.width, canvas.height);
           textMeta.textContent = "Read confidence ~" + conf + "% · " + text.length + " characters" + (conf < 60 ? " — low confidence, check the text for misreads before trusting the answer." : "");
           setStatus("Text read. Solving…");
           return solveAndShow(text);
-        }).catch(function () {
-          setStatus("The on-device reader couldn't start here — paste the text below and tap Solve instead.");
-          showAnswer({ status: "cant", headline: "Reader unavailable in this view", detail: "Type or paste the printed question in the text box below and tap Solve this text — the solving half works without the camera reader." });
+        }).catch(function (err) {
+          if (err && err.message === "read timed out") resetWorker();
+          setStatus("That read didn't finish — tap Capture & Read to try again, or paste the text below.");
+          showAnswer({ status: "cant", headline: "That read didn't finish", detail: "The reader was still loading or stalled. It has been reset — tap Capture & Read once more. Typing or pasting the question in the text box below and tapping Solve also works, and the samples below answer instantly." });
         }).then(function () {
           ocrBusy = false;
           stage.classList.remove("scanning");
@@ -609,6 +698,36 @@
       captureBtn.addEventListener("click", captureAndRead);
 
       /* ---------------- Answer display ---------------- */
+      function renderOptions(res) {
+        var list = $("optionsList");
+        list.innerHTML = "";
+        var mc = parseOptions(textInput.value || "");
+        if (!mc || !mc.options.length) { list.hidden = true; return; }
+        var maybe = {};
+        if (!res.letter && res.headline) {
+          var mm = /between ([A-E]) and ([A-E])/i.exec(res.headline);
+          if (mm) { maybe[mm[1].toUpperCase()] = 1; maybe[mm[2].toUpperCase()] = 1; }
+        }
+        mc.options.forEach(function (o) {
+          var li = document.createElement("li");
+          var lt = document.createElement("span"); lt.className = "opt-letter"; lt.textContent = o.letter;
+          var tx = document.createElement("span"); tx.className = "opt-text"; tx.textContent = o.text;
+          li.appendChild(lt); li.appendChild(tx);
+          if (res.letter && o.letter === res.letter) {
+            li.className = "correct";
+            var tag = document.createElement("span"); tag.className = "opt-tag"; tag.textContent = "✓ CORRECT";
+            li.appendChild(tag);
+          } else if (maybe[o.letter]) {
+            li.className = "maybe";
+            var tag2 = document.createElement("span"); tag2.className = "opt-tag"; tag2.textContent = "POSSIBLE";
+            li.appendChild(tag2);
+          }
+          list.appendChild(li);
+        });
+        list.hidden = false;
+      }
+      function hideOptions() { var list = $("optionsList"); list.innerHTML = ""; list.hidden = true; }
+
       function showAnswer(res) {
         letterBadge.classList.remove("show");
         ansFlag.classList.remove("show");
@@ -617,6 +736,7 @@
         ansHeadline.textContent = res.headline;
         ansDetail.textContent = res.detail || "";
         if (res.flag) { ansFlag.textContent = res.flag; ansFlag.classList.add("show"); }
+        renderOptions(res);
         var q = (textInput.value || "").split(/\n/)[0] || "Read";
         readsLog.unshift({ q: q, a: (res.letter ? res.letter + " — " : "") + res.headline, bad: res.status !== "solved" });
         if (readsLog.length > 5) readsLog.pop();
@@ -846,7 +966,7 @@
       function lookupWord(word) {
         var w = word.toLowerCase().replace(/[^a-z'-]/g, "");
         if (!w) return Promise.resolve(null);
-        return fetch("https://api.dictionaryapi.dev/api/v2/entries/en/" + encodeURIComponent(w))
+        return fetchWithTimeout("https://api.dictionaryapi.dev/api/v2/entries/en/" + encodeURIComponent(w), 7000)
           .then(function (r) { if (!r.ok) throw new Error("nf"); return r.json(); })
           .then(function (j) {
             var entry = j[0], meaning = entry.meanings[0], def = meaning.definitions[0];
@@ -1393,13 +1513,13 @@
       function stripHtml(s) { var d = document.createElement("div"); d.innerHTML = s || ""; return d.textContent || ""; }
       function wikiCorpus(query) {
         var searchUrl = "https://en.wikipedia.org/w/api.php?action=query&list=search&srnamespace=0&srlimit=4&format=json&origin=*&srsearch=" + encodeURIComponent(query);
-        return fetch(searchUrl).then(function (r) { if (!r.ok) throw new Error("wiki"); return r.json(); }).then(function (j) {
+        return fetchWithTimeout(searchUrl, 7000).then(function (r) { if (!r.ok) throw new Error("wiki"); return r.json(); }).then(function (j) {
           var results = (j.query && j.query.search) || [];
           if (!results.length) return "";
           var snippets = results.map(function (s) { return stripHtml(s.snippet); }).join(" ");
           var titles = results.map(function (s) { return s.title; }).join("|");
           var pageUrl = "https://en.wikipedia.org/w/api.php?action=query&prop=extracts&explaintext=1&format=json&origin=*&titles=" + encodeURIComponent(titles);
-          return fetch(pageUrl).then(function (r) { return r.json(); }).then(function (j2) {
+          return fetchWithTimeout(pageUrl, 7000).then(function (r) { return r.json(); }).then(function (j2) {
             var extracts = [];
             var pages = (j2.query && j2.query.pages) || {};
             Object.keys(pages).forEach(function (key) { if (pages[key].extract) extracts.push(pages[key].extract); });
@@ -1448,7 +1568,7 @@
         return wikiCorpus(query).then(function (corpus) {
           if (!corpus) return null;
           var clean = corpus.replace(/\s+/g, " ").trim();
-          var sentence = clean.split(/(?<=\.)\s+/).filter(function (s) { return s.length > 25; })[0] || clean.slice(0, 180);
+          var sentence = (clean.match(/[^.!?]+[.!?]+/g) || []).filter(function (s) { return s.trim().length > 25; })[0] || clean.slice(0, 180);
           if (!sentence) return null;
           return { status: "solved", headline: "Reference answer", detail: oneLine(sentence) };
         }).catch(function () { return null; });
@@ -1533,13 +1653,16 @@
         var t = textInput.value.trim();
         if (!t) { textMeta.textContent = "The text box is empty — capture a read, upload a photo, or type a question first."; return; }
         textMeta.textContent = "";
+        if (!wordsGrid.children.length) renderWordsFromText(t);
         solveAndShow(t);
       });
       $("clearBtn").addEventListener("click", function () {
         textInput.value = ""; textMeta.textContent = "";
-        ansHeadline.textContent = "Nothing read yet. Start the camera and tap Capture & Read.";
+        wordOverlay.innerHTML = ""; wordsGrid.innerHTML = ""; wordsEmpty.style.display = "block"; wordDef.classList.remove("show"); stage.classList.remove("has-words");
+        ansHeadline.textContent = "Nothing read yet. Start the camera — the whole frame is read at once.";
         ansHeadline.classList.add("waiting");
         ansDetail.textContent = ""; ansFlag.classList.remove("show"); letterBadge.classList.remove("show");
+        hideOptions();
       });
 
       var SAMPLES = {
@@ -1559,98 +1682,143 @@
       document.querySelectorAll("[data-sample]").forEach(function (btn) {
         btn.addEventListener("click", function () {
           textInput.value = SAMPLES[btn.getAttribute("data-sample")] || "";
+          renderWordsFromText(textInput.value);
           textMeta.textContent = "Sample text — tap Solve this text, or edit it first.";
           solveAndShow(textInput.value);
         });
       });
 
-      /* ---------------- Auto-scan + quick-define ---------------- */
-      var DWELL_MS = 650;
-      var centerWord = null, dwellStart = 0, definedWord = null, dwellTick = null, defining = false;
+      /* ---------------- Full-frame auto-scan + tap-to-define ---------------- */
+      var lastAutoText = "", lastAutoSolvedText = "";
+      var selectedWord = null, definingWord = false;
+
+      function cleanWord(raw) { return (raw || "").replace(/[^A-Za-z'-]/g, "").toLowerCase(); }
+
+      function showDefinition(word, info) {
+        // Stage popup (over the camera, near the bottom — not a center label)
+        defWord.textContent = word;
+        defPos.textContent = info ? (info.pos || "") : "";
+        defText.textContent = info ? info.def : "No dictionary entry found — check the spelling in the text box.";
+        defPopup.classList.add("show");
+        // Panel readout (readable without the camera)
+        wdWord.textContent = word;
+        wdPos.textContent = info ? (info.pos || "") : "";
+        wdText.textContent = info ? info.def : "No dictionary entry found for this word.";
+        wordDef.classList.add("show");
+      }
+      function defineWord(word) {
+        var w = cleanWord(word);
+        if (!w || w.length < 2) return;
+        selectedWord = w;
+        document.querySelectorAll(".word-box, .word-chip").forEach(function (el) {
+          el.classList.toggle("selected", cleanWord(el.textContent) === w);
+        });
+        wdWord.textContent = w; wdPos.textContent = ""; wdText.textContent = "Looking up…"; wordDef.classList.add("show");
+        definingWord = true;
+        lookupWord(w).then(function (info) {
+          definingWord = false;
+          if (selectedWord !== w) return;
+          showDefinition(w, info);
+        });
+      }
+
+      function renderWords(words, cw, ch) {
+        wordOverlay.innerHTML = "";
+        wordsGrid.innerHTML = "";
+        var seen = {}, chips = [], boxes = 0;
+        (words || []).forEach(function (wd) {
+          var clean = cleanWord(wd.text);
+          if (!clean || clean.length < 2 || !wd.bbox || !cw || !ch) return;
+          if (boxes < 90) {
+            var b = document.createElement("button");
+            b.type = "button"; b.className = "word-box"; b.textContent = wd.text;
+            b.style.left = (((wd.bbox.x0 + wd.bbox.x1) / 2) / cw * 100) + "%";
+            b.style.top = (((wd.bbox.y0 + wd.bbox.y1) / 2) / ch * 100) + "%";
+            b.setAttribute("aria-label", "Define " + clean);
+            (function (w) { b.addEventListener("click", function () { defineWord(w); }); })(clean);
+            wordOverlay.appendChild(b); boxes++;
+          }
+          if (!seen[clean]) { seen[clean] = 1; chips.push(clean); }
+        });
+        // Fallback: no bbox words (some OCR results) — build chips from full text
+        if (!chips.length) {
+          (textInput.value || "").split(/\s+/).forEach(function (raw) {
+            var c = cleanWord(raw);
+            if (c && c.length >= 3 && !seen[c]) { seen[c] = 1; chips.push(c); }
+          });
+        }
+        chips.slice(0, 120).forEach(function (c) {
+          var chip = document.createElement("button");
+          chip.type = "button"; chip.className = "word-chip"; chip.textContent = c;
+          chip.addEventListener("click", function () { defineWord(c); });
+          wordsGrid.appendChild(chip);
+        });
+        var has = chips.length > 0;
+        wordsEmpty.style.display = has ? "none" : "block";
+        if (has) wordsEmpty.textContent = "";
+        stage.classList.toggle("has-words", has);
+        if (has) setStatus("Read " + chips.length + " words in the whole frame — tap any word for its definition, or see the answer below.");
+      }
+      function renderWordsFromText(text) {
+        var words = (text || "").split(/\s+/).filter(Boolean).map(function (w) { return { text: w, bbox: null }; });
+        // chips-only path
+        wordsGrid.innerHTML = ""; wordOverlay.innerHTML = "";
+        var seen = {}, chips = [];
+        words.forEach(function (wd) { var c = cleanWord(wd.text); if (c && c.length >= 2 && !seen[c]) { seen[c] = 1; chips.push(c); } });
+        chips.slice(0, 120).forEach(function (c) {
+          var chip = document.createElement("button");
+          chip.type = "button"; chip.className = "word-chip"; chip.textContent = c;
+          chip.addEventListener("click", function () { defineWord(c); });
+          wordsGrid.appendChild(chip);
+        });
+        wordsEmpty.style.display = chips.length ? "none" : "block";
+      }
 
       function setAutoScan(on) {
         autoScan = on;
         autoBtn.setAttribute("aria-pressed", on ? "true" : "false");
         autoBtn.textContent = on ? "Auto-scan on" : "Auto-scan";
         if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
-        if (dwellTick) { clearInterval(dwellTick); dwellTick = null; }
         if (on) {
-          dwellNote.textContent = "Center a word in the box — definition pops up in under a second.";
-          autoTimer = setInterval(autoScanPass, 900);
-          dwellTick = setInterval(updateDwellBar, 50);
+          setStatus("Auto-scan on — reading the whole frame continuously. Tap any word for its definition.");
+          autoTimer = setInterval(autoScanPass, 1400);
           autoScanPass();
         } else {
-          dwellNote.textContent = "Turn on Auto-scan for instant word definitions";
-          dwellFill.style.width = "0%";
-          centerWord = null; definedWord = null;
-          reticleWord.textContent = "no word centered"; reticleWord.classList.add("empty");
           defPopup.classList.remove("show");
         }
       }
       autoBtn.addEventListener("click", function () { setAutoScan(!autoScan); });
 
-      function updateDwellBar() {
-        if (!centerWord) { dwellFill.style.width = "0%"; return; }
-        var pct = Math.min(100, (Date.now() - dwellStart) / DWELL_MS * 100);
-        dwellFill.style.width = pct + "%";
-        if (pct >= 100 && centerWord !== definedWord && !defining) defineCenterWord(centerWord);
-      }
-
-      function defineCenterWord(word) {
-        defining = true;
-        lookupWord(word).then(function (info) {
-          defining = false;
-          if (centerWord !== word) return;
-          definedWord = word;
-          if (info) {
-            defWord.textContent = info.word;
-            defPos.textContent = info.pos || "";
-            defText.textContent = info.def;
-            defPopup.classList.add("show");
-            dwellNote.textContent = "Definition shown — look away to clear it.";
-          } else {
-            dwellNote.textContent = "No dictionary entry for \"" + word + "\" — try another word.";
-          }
-        });
-      }
-
       function autoScanPass() {
         if (!autoScan || ocrBusy || !sourceKind) return;
-        var canvas = frameCanvas(800);
+        var canvas = frameCanvas(1100);
         if (!canvas) return;
         ocrBusy = true;
         stage.classList.add("scanning");
         recognize(canvas).then(function (data) {
-          var words = extractWords(data);
-          var cx = canvas.width / 2, cy = canvas.height / 2;
-          var best = null, bestDist = Infinity;
-          words.forEach(function (w) {
-            var wx = (w.bbox.x0 + w.bbox.x1) / 2, wy = (w.bbox.y0 + w.bbox.y1) / 2;
-            if (Math.abs(wx - cx) > canvas.width * 0.30 || Math.abs(wy - cy) > canvas.height * 0.30) return;
-            var clean = w.text.replace(/[^A-Za-z'-]/g, "");
-            if (clean.length < 3) return;
-            var d = Math.abs(wx - cx) + Math.abs(wy - cy);
-            if (d < bestDist) { bestDist = d; best = clean.toLowerCase(); }
-          });
-          if (best && best !== centerWord) {
-            centerWord = best; dwellStart = Date.now(); definedWord = null;
-            defPopup.classList.remove("show");
-            reticleWord.textContent = best; reticleWord.classList.remove("empty");
-            dwellNote.textContent = "Defining \"" + best + "\"…";
-          } else if (!best && centerWord) {
-            centerWord = null; definedWord = null;
-            defPopup.classList.remove("show");
-            reticleWord.textContent = "no word centered"; reticleWord.classList.add("empty");
-            dwellNote.textContent = "Center a word to define it — looking away clears the definition.";
+          var fullText = (data.text || "").trim();
+          if (fullText) {
+            var prev = textInput.value;
+            textInput.value = fullText;
+            renderWords(extractWords(data), canvas.width, canvas.height);
+            if (fullText === lastAutoText && fullText !== lastAutoSolvedText && parseOptions(fullText)) {
+              lastAutoSolvedText = fullText;
+              solveAndShow(fullText);
+            }
+            lastAutoText = fullText;
           }
-          // Keep the full text fresh while auto-scanning, without re-solving every pass
-          if ((data.text || "").trim()) textInput.value = data.text.trim();
         }).catch(function () { /* keep scanning silently */ })
           .then(function () { ocrBusy = false; stage.classList.remove("scanning"); });
       }
 
-      setOcrPill(window.Tesseract ? "READER READY" : "READER OFFLINE");
-      if (!window.Tesseract) setStatus("The reading library didn't load — paste text below and tap Solve, or reload.");
+      if (window.Tesseract) {
+        setOcrPill("READER LOADING…");
+        if (window.requestIdleCallback) requestIdleCallback(function () { warmUpReader(); }, { timeout: 2500 });
+        else setTimeout(warmUpReader, 1200);
+      } else {
+        setOcrPill("READER OFFLINE");
+        setStatus("The reading library didn't load — paste text below and tap Solve, or reload.");
+      }
     </script>
   </body>
 </html>

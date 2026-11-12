@@ -2,13 +2,14 @@
 
 > "You know the saying — give a tough job to a lazy person and see how they solve it. Well, this tool is meant to do that."
 
-Point your phone's camera at printed text and this tool does the hard work for you: it reads the text and gives you the answer in a heads-up panel — the lazy way to solve hard questions.
+Point your phone's camera at printed text and this tool does the hard work for you: it reads **all the words in the frame at once** — every word gets a tappable box, and tapping any word gives you an instant one-line definition. No giant center label, no staring at one word at a time — I built it to be faster than typing a word into Google.
 
 ## What it does
 
+- **Full-frame scan** — the camera reads every word in view at once. Each word gets a tappable overlay box, and the Words in Frame panel lists them all as chips — tap any word, anywhere in the frame.
 - **Multiple choice** — point at a question, get the letter + answer with a one-line reason. It flags uncertainty instead of guessing.
 - **Math** — arithmetic, percent-of, and simple solve-for-x, worked out on the spot.
-- **Word definitions** — stare at a word in the center reticle for about 3 seconds and get a one-line definition; look away and it clears.
+- **Word definitions** — tap any word on screen (or in the Words in Frame panel) and get a one-line definition instantly. No waiting, no center label — the whole frame is read at once.
 - **General knowledge** — open questions answered from a built-in fact bank (capitals, planets, science, history, and more).
 - **Security+ and CISSP question banks** — cybersecurity questions answered from built-in banks covering Security+ topics and all 8 CISSP domains.
 
