@@ -8,6 +8,13 @@ It never changes anything. It only reads, and it only reports.
 
 When I worked as a Cloud Security Engineer, the same misconfigurations kept showing up: a bucket left public, a key that hadn't rotated in a year, a database reachable from the internet. None of them are hard to fix — the hard part is noticing them. This tool notices them, scores the account 0–100, and tells you exactly what to fix first (High findings first).
 
+## Use cases
+
+- **Check my own account** — run it monthly to catch a public bucket, an old key, or SSH open to the world before anyone else finds it.
+- **Audit a client's account** — hand them a scored report with the fix for each finding, instead of clicking through the AWS console.
+- **Prove the fix worked** — run it before and after; the score going up is the proof.
+- **Show it in an interview** — a concrete answer to "how do you secure cloud accounts?"
+
 ## How it scores
 
 Start at 100. High findings cost 10 points, Medium cost 5, Low cost 2. Grade: 90+ A, 80+ B, 70+ C, 60+ D, below 60 F.
