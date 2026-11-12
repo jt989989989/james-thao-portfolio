@@ -4,21 +4,24 @@
 import { defineCustomElements } from '@ionic/core/loader';
 import './style.css';
 import {
+  CATEGORIES,
   MEMORY_WIN_COINS,
   SHOP,
   STAR_TAP_COINS,
   STORAGE_KEY,
-  TIMER_BONUS_COINS,
   addTask,
   applyDailyReset,
   awardMemoryWin,
-  awardTimerFinish,
   buyOrEquip,
+  categoryById,
   createDefaultState,
   createMemoryDeck,
+  finishFocusSession,
   isMemoryMatch,
+  migrateState,
   needsDailyReset,
   removeTask,
+  tasksByCategory,
   tasksDoneCount,
   toggleTask,
 } from './logic.js';
@@ -30,10 +33,12 @@ function loadState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return createDefaultState();
-    const state = JSON.parse(raw);
-    if (!state || state.version !== 1 || !Array.isArray(state.tasks)) {
+    const parsed = JSON.parse(raw);
+    if (!parsed || (parsed.version !== 1 && parsed.version !== 2) || !Array.isArray(parsed.tasks)) {
       return createDefaultState();
     }
+    // v1 saves keep working: v2 fields (streak, categories) are filled in.
+    const state = migrateState(parsed);
     if (needsDailyReset(state)) applyDailyReset(state);
     return state;
   } catch {
@@ -176,10 +181,36 @@ function renderShop() {
 }
 
 // ---------- quests ----------
+let activeCategory = 'all'; // filter only — not saved, resets to "all" each visit
+
+function renderCategoryFilters() {
+  const wrap = $('#category-filters');
+  const chips = [{ id: 'all', name: 'All', color: '#636e72' }, ...CATEGORIES];
+  wrap.innerHTML = '';
+  for (const cat of chips) {
+    const chip = document.createElement('ion-chip');
+    chip.textContent = cat.name;
+    chip.color = activeCategory === cat.id ? 'primary' : 'medium';
+    chip.setAttribute('outline', activeCategory === cat.id ? 'false' : 'true');
+    chip.addEventListener('click', () => {
+      activeCategory = cat.id;
+      renderCategoryFilters();
+      renderTasks();
+    });
+    wrap.append(chip);
+  }
+}
+
 function renderTasks() {
   const list = $('#task-list');
   list.innerHTML = '';
-  for (const task of state.tasks) {
+  const visible = tasksByCategory(state, activeCategory);
+  if (visible.length === 0) {
+    const empty = document.createElement('ion-item');
+    empty.innerHTML = '<ion-label><p>No quests in this group yet — add one below!</p></ion-label>';
+    list.append(empty);
+  }
+  for (const task of visible) {
     const item = document.createElement('ion-item');
     const checkbox = document.createElement('ion-checkbox');
     checkbox.setAttribute('slot', 'start');
@@ -189,15 +220,35 @@ function renderTasks() {
       const result = toggleTask(state, task.id);
       save();
       renderCoins();
+      renderTasks();
       renderProgress();
       if (result.done) {
-        await toast(`Nice work! +${task.coins} coins!`, 'success');
+        const streak = state.streak.count;
+        await toast(`Nice work! +${task.coins} coins!${streak > 1 ? ` 🔥 ${streak}-day streak!` : ''}`, 'success');
       }
     });
     const label = document.createElement('ion-label');
-    label.innerHTML = `<h2>${escapeHtml(task.title)}</h2><p>+${task.coins} coins</p>`;
+    const cat = categoryById(task.category);
+    label.innerHTML = `<h2>${escapeHtml(task.title)}</h2><p>+${task.coins} coins · ${cat ? cat.name : 'Home'}</p>`;
     if (task.done) label.classList.add('task-done');
     item.append(checkbox, label);
+    // Focus on this quest: the timer counts down for this one quest.
+    if (!task.done) {
+      const focus = document.createElement('ion-button');
+      focus.setAttribute('slot', 'end');
+      focus.setAttribute('fill', 'outline');
+      focus.setAttribute('size', 'small');
+      focus.setAttribute('color', timer.taskId === task.id ? 'success' : 'tertiary');
+      focus.textContent = timer.taskId === task.id ? 'Focusing ✓' : 'Focus';
+      focus.setAttribute('aria-label', `Focus on ${task.title}`);
+      focus.addEventListener('click', () => {
+        timer.taskId = task.id;
+        renderTasks();
+        renderTimer();
+        document.querySelector('#timer-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+      item.append(focus);
+    }
     if (task.custom) {
       const del = document.createElement('ion-button');
       del.setAttribute('slot', 'end');
@@ -206,10 +257,12 @@ function renderTasks() {
       del.textContent = '✕';
       del.setAttribute('aria-label', `Remove ${task.title}`);
       del.addEventListener('click', () => {
+        if (timer.taskId === task.id) timer.taskId = null;
         removeTask(state, task.id);
         save();
         renderTasks();
         renderProgress();
+        renderTimer();
       });
       item.append(del);
     }
@@ -223,8 +276,13 @@ function renderProgress() {
   const total = state.tasks.length;
   $('#progress-label').textContent = `${done} of ${total} quests done today`;
   $('#progress-bar').value = total ? done / total : 0;
+  const streak = state.streak || { count: 0, best: 0 };
+  $('#streak-line').textContent =
+    streak.count > 0
+      ? `🔥 ${streak.count}-day streak!${streak.best > streak.count ? ` Best: ${streak.best} days.` : ' Keep it going tomorrow!'}`
+      : 'Finish a quest today to start your streak! 🔥';
   $('#stats-line').textContent =
-    `Quests finished: ${state.stats.tasksDone} · Games won: ${state.stats.gamesWon} · Stars tapped: ${state.stats.starsTapped}`;
+    `Quests finished: ${state.stats.tasksDone} · Games won: ${state.stats.gamesWon} · Stars tapped: ${state.stats.starsTapped} · Focus sessions: ${state.stats.timersFinished}`;
 }
 
 function escapeHtml(text) {
@@ -234,7 +292,13 @@ function escapeHtml(text) {
 }
 
 // ---------- focus timer ----------
-const timer = { total: 600, left: 600, running: false, handle: null };
+// v2: the timer can focus on one chosen quest. Finishing the session
+// ticks that quest off (its coins included) plus the +5 focus bonus.
+const timer = { total: 600, left: 600, running: false, handle: null, taskId: null };
+
+function focusedTask() {
+  return timer.taskId ? state.tasks.find((t) => t.id === timer.taskId) || null : null;
+}
 
 function renderTimer() {
   const mins = Math.floor(timer.left / 60);
@@ -242,6 +306,10 @@ function renderTimer() {
   $('#timer-label').textContent = `${mins}:${secs}`;
   $('#timer-bar').value = timer.total ? 1 - timer.left / timer.total : 0;
   $('#timer-toggle').textContent = timer.running ? 'Pause' : 'Start';
+  const task = focusedTask();
+  $('#timer-focus-line').textContent = task
+    ? `Focusing on: ${task.title} — finish the timer and this quest is done!`
+    : 'No quest picked — tap Focus on a quest, or just focus on anything!';
 }
 
 function stopTimer() {
@@ -339,14 +407,23 @@ function endStarGame() {
 // ---------- wire up ----------
 function init() {
   renderCoins();
+  renderCategoryFilters();
   renderTasks();
   renderAvatar();
   renderShop();
 
-  // Add a custom quest.
+  // Add a custom quest, in the chosen category.
+  const categorySelect = $('#new-task-category');
+  for (const cat of CATEGORIES) {
+    const opt = document.createElement('ion-select-option');
+    opt.value = cat.id;
+    opt.textContent = cat.name;
+    categorySelect.append(opt);
+  }
+  categorySelect.value = 'home';
   $('#add-task-btn').addEventListener('click', async () => {
     const input = $('#new-task-input');
-    const result = addTask(state, input.value);
+    const result = addTask(state, input.value, categorySelect.value);
     if (!result.ok) {
       await toast('Type a quest first!', 'warning');
       return;
@@ -379,11 +456,19 @@ function init() {
         if (timer.left <= 0) {
           stopTimer();
           timer.left = 0;
-          const earned = awardTimerFinish(state);
+          const result = finishFocusSession(state, timer.taskId);
+          timer.taskId = null;
           save();
           renderCoins();
+          renderTasks();
           renderProgress();
-          toast(`Focus time done! +${earned} coins!`, 'success');
+          renderTimer();
+          toast(
+            result.taskDone
+              ? `Focus time done! "${result.taskTitle}" is finished — +${result.coins} coins!`
+              : `Focus time done! +${result.coins} coins!`,
+            'success',
+          );
         }
         renderTimer();
       }, 1000);

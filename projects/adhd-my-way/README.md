@@ -14,14 +14,27 @@ coins, a customisable avatar, and mini games to keep it fun.
 > **Update (8 Nov 2026)** — phone-friendly layout (the app now sits in a
 > centred phone-width column on wide screens, with bigger tap targets) and
 > the official ADHD My Way logo, shown in the app header and above.
+>
+> **Update — v2 (12 Nov 2026, Day 5 of the challenge)** — per-quest focus
+> timer (tap Focus on a quest and finishing the timer ticks that quest off),
+> quest categories (Morning / School / Home / Health / Fun, with filter
+> chips and a group picker when adding a quest), and daily streaks (a day
+> counts when at least one quest is finished; the best streak is tracked).
+> Saved v1 data carries over — coins, quests and avatar are kept.
 
 ## What it does
 
 - **Daily quests** — a simple checklist (brush teeth, homework, tidy room, read
-  10 minutes…). Ticking one off earns **10 coins**. Kids can add their own quests.
-  The list resets each morning; coins stay.
-- **Focus timer** — a gentle 5 / 10 / 15-minute countdown to focus on one quest.
-  Finishing it earns **5 bonus coins**.
+  10 minutes…). Ticking one off earns **10 coins**. Kids can add their own quests
+  (choosing a group: Morning, School, Home, Health or Fun). The list resets each
+  morning; coins stay.
+- **Quest groups** — every quest belongs to a group, and filter chips above the
+  list show just one group at a time (e.g. only the morning routine).
+- **Daily streaks** — a day counts when at least one quest is finished. The app
+  shows the current streak and the best streak so far; missing a day restarts it.
+- **Focus timer** — pick a quest to focus on (tap **Focus** next to it), choose
+  5 / 10 / 15 minutes, and press start. Finishing the timer ticks that quest off
+  (+10 coins) and adds a **+5 coin** focus bonus. It also works with no quest picked.
 - **Avatar shop** — coins buy avatar customisations: skin colours, hair styles and
   colours, hats (cap, beanie, gold crown) and accessories (star badge, glasses,
   headphones). The avatar is drawn from plain shapes and colours.
@@ -70,7 +83,8 @@ open www/index.html
 
 ```bash
 npm test
-# 9 tests: task coins, daily reset, shop purchases, memory deck, rewards
+# 14 tests: task coins, daily reset, shop purchases, memory deck, rewards,
+# quest categories, daily streaks, per-quest focus sessions, v1 save migration
 ```
 
 ## Project structure

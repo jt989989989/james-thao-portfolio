@@ -65,6 +65,37 @@ ion-tab-bar {
   --padding-start: 12px;
 }
 
+/* Quest categories + streak */
+.category-filters {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 4px 16px 8px;
+}
+
+.category-filters ion-chip {
+  cursor: pointer;
+}
+
+.streak-line {
+  font-weight: bold;
+  color: #e8590c;
+  margin: 8px 0 0;
+}
+
+.timer-focus-line {
+  font-size: 0.95rem;
+  color: #636e72;
+  margin: 4px 0 8px;
+}
+
+.add-task-row ion-select {
+  min-width: 110px;
+  --background: #ffffff;
+  border-radius: 12px;
+  --padding-start: 10px;
+}
+
 /* Focus timer */
 .timer-box {
   text-align: center;

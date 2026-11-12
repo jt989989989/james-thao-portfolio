@@ -6,8 +6,8 @@
     <meta name="description" content="ADHD My Way — an Ionic app that helps children under 12 focus on daily tasks, earn coins, customise an avatar, and play mini games. Everything stays on the device." />
     <title>ADHD My Way</title>
     <link rel="icon" type="image/svg+xml" href="./logo-star.svg" />
-    <script type="module" crossorigin src="./assets/index-CyoA4XMp.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-BQvD4xiR.css">
+    <script type="module" crossorigin src="./assets/index-C5nymNey.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-DqEGlcVZ.css">
   </head>
   <body>
     <ion-app>
@@ -35,6 +35,7 @@
               <ion-card-content>
                 <p id="progress-label">0 of 6 quests done today</p>
                 <ion-progress-bar id="progress-bar" value="0" color="success"></ion-progress-bar>
+                <p id="streak-line" class="streak-line">Finish a quest today to start your streak! 🔥</p>
                 <p id="stats-line"></p>
               </ion-card-content>
             </ion-card>
@@ -44,21 +45,24 @@
                 <ion-card-title>Daily quests</ion-card-title>
                 <ion-card-subtitle>Tick one off and earn 10 coins!</ion-card-subtitle>
               </ion-card-header>
+              <div class="category-filters" id="category-filters"></div>
               <ion-list id="task-list"></ion-list>
               <div class="add-task-row">
                 <ion-input id="new-task-input" placeholder="Add your own quest…" maxlength="60" aria-label="New quest"></ion-input>
+                <ion-select id="new-task-category" interface="popover" aria-label="Quest group"></ion-select>
                 <ion-button id="add-task-btn" color="secondary">Add</ion-button>
               </div>
             </ion-card>
 
-            <ion-card>
+            <ion-card id="timer-card">
               <ion-card-header>
                 <ion-card-title>Focus timer</ion-card-title>
-                <ion-card-subtitle>Pick a time, press start, and focus on one quest. Finish it for +5 coins!</ion-card-subtitle>
+                <ion-card-subtitle>Pick a quest to focus on, choose a time, and press start. Finish the timer and that quest is done — +10 coins for the quest and +5 for focusing!</ion-card-subtitle>
               </ion-card-header>
               <ion-card-content>
                 <div class="timer-box">
                   <div class="timer-label" id="timer-label">10:00</div>
+                  <p id="timer-focus-line" class="timer-focus-line">No quest picked — tap Focus on a quest, or just focus on anything!</p>
                   <ion-progress-bar id="timer-bar" value="0" color="tertiary"></ion-progress-bar>
                   <div class="timer-buttons">
                     <ion-button class="timer-length" data-minutes="5" fill="outline" size="small">5 min</ion-button>
