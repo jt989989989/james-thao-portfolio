@@ -2,16 +2,17 @@
 
 > "You know the saying — give a tough job to a lazy person and see how they solve it. Well, this tool is meant to do that."
 
-Point your phone's camera at printed text and this tool does the hard work for you: it reads **all the words in the frame at once** — every word gets a tappable box, and tapping any word gives you an instant one-line definition. No giant center label, no staring at one word at a time — I built it to be faster than typing a word into Google.
+I built this to make problem-solving and reading texts faster and easier — point the camera at a page and it reads each question as a whole, then solves it from the actual printed options, right there on screen. No giant center label, no word-by-word scanning, no knowledge-base section to wade through: the camera reads the paragraph, the real multiple-choice options show up just below it, and the best answer is picked for me. I built it to be faster than typing a question into Google — solving quizzes should feel like a breeze.
 
 ## What it does
 
-- **Full-frame scan** — the camera reads every word in view at once. Each word gets a tappable overlay box, and the Words in Frame panel lists them all as chips — tap any word, anywhere in the frame.
-- **Multiple choice** — point at a question, get the letter + answer with a one-line reason. It flags uncertainty instead of guessing.
+- **Minimal camera-first layout** — the camera fills the top of the screen. Below it, each question it sees gets its own card. Nothing else cluttering the page.
+- **Reads the question as a whole** — it understands the full English sentence or paragraph, not just each word on its own. The stem is read as one question.
+- **Solves from the actual printed options** — each card shows the real multiple-choice options from the page, and the picked answer is highlighted green with a letter badge and a one-line reason.
+- **Several questions in one frame** — if the camera sees more than one question at once, each gets its own card and its own answer, numbered or unnumbered. A summary line reports what it found, e.g. "3 QUESTIONS IN THIS FRAME · 3 SOLVED".
 - **Math** — arithmetic, percent-of, and simple solve-for-x, worked out on the spot.
-- **Word definitions** — tap any word on screen (or in the Words in Frame panel) and get a one-line definition instantly. No waiting, no center label — the whole frame is read at once.
-- **General knowledge** — open questions answered from a built-in fact bank (capitals, planets, science, history, and more).
-- **Security+ and CISSP question banks** — cybersecurity questions answered from built-in banks covering Security+ topics and all 8 CISSP domains.
+- **General knowledge and cybersecurity** — open questions answered from built-in fact banks (capitals, planets, science, history, and more), plus Security+ and CISSP question banks covering Security+ topics and all 8 CISSP domains.
+- **"Text it read"** — the exact text the camera read is shown in a box below, so I can check what it saw.
 
 Everything runs on-device in the browser. No API key, no accounts, no network calls for the logic (the display font loads from Google Fonts when online).
 
@@ -19,8 +20,8 @@ Everything runs on-device in the browser. No API key, no accounts, no network ca
 
 Open `index.html` in a browser. No build step, no server needed.
 
-- **With a camera:** tap Capture & Read. The camera needs HTTPS, which GitHub Pages provides — try the live demo below.
-- **Without a camera:** tap one of the 4 built-in samples (multiple choice, algebra, geography, science) and tap Solve this text.
+- **With a camera:** point it at a printed question page. The camera needs HTTPS, which GitHub Pages provides — try the live demo below.
+- **Without a camera:** tap one of the built-in samples — including "Three questions at once" — and tap Solve this text.
 
 Live demo: https://jt989989989.github.io/james-thao-portfolio/projects/printed-text-reader-hud/
 

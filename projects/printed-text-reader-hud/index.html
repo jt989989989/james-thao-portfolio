@@ -8,14 +8,14 @@
     <title>Printed Text Reader HUD</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.5/dist/tesseract.min.js"></script>
     <style>
       :root {
-        --bg: #edf1ee;
+        --bg: #eef2ef;
         --panel: #ffffff;
-        --panel-2: #f4f7f5;
-        --ink: #15211b;
+        --panel-2: #f3f6f4;
+        --ink: #14211a;
         --muted: #5b6d63;
         --line: #d3ddd6;
         --accent: #07734c;
@@ -30,7 +30,6 @@
         --hud-ink: #e6fff3;
         --hud-dim: #9fd8bf;
         --hud-line: rgba(47, 230, 168, 0.55);
-        --radius: 14px;
       }
       @media (prefers-color-scheme: dark) {
         :root {
@@ -59,41 +58,23 @@
       }
       .mono { font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace; }
 
-      .layout {
-        max-width: 1180px;
+      .app {
+        max-width: 760px;
         margin: 0 auto;
-        padding: 14px 14px 34px;
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 14px;
+        padding: 12px 12px 30px;
+        display: flex; flex-direction: column; gap: 12px;
       }
-      @media (min-width: 960px) {
-        .layout { grid-template-columns: minmax(0, 1.45fr) minmax(330px, 1fr); align-items: start; padding: 20px 20px 40px; }
-        .stage-wrap { position: sticky; top: 20px; }
-      }
+      .app > * { min-width: 0; }
 
-      .layout > *, .panel > * { min-width: 0; }
-      .answer-row > div { min-width: 0; }
-      @media (max-width: 560px) {
-        .stage { aspect-ratio: 3 / 3.35; }
-        .hud-pill { font-size: 10px; letter-spacing: 0.08em; padding: 5px 8px; }
-        .stage-placeholder { padding: 56px 18px 20px; gap: 11px; }
-        .stage-placeholder h1 { font-size: 21px; }
-        .stage-placeholder p { font-size: 13.5px; line-height: 1.5; }
-        .steps span { font-size: 10.5px; padding: 5px 9px; }
-      }
-
-      /* ---------- Stage / viewfinder ---------- */
+      /* ---------- Camera stage: the whole point of the page ---------- */
       .stage {
         position: relative;
         background: var(--stage-bg);
         border-radius: 18px;
         overflow: hidden;
-        aspect-ratio: 4 / 3;
-        min-height: 320px;
+        height: clamp(340px, 56vh, 540px);
         box-shadow: 0 10px 34px rgba(0, 0, 0, 0.28);
       }
-      @media (min-width: 960px) { .stage { aspect-ratio: 4 / 3.1; } }
       .stage video, .stage img.photo {
         position: absolute; inset: 0;
         width: 100%; height: 100%;
@@ -105,7 +86,7 @@
       .stage-placeholder {
         position: absolute; inset: 0;
         display: flex; flex-direction: column; align-items: center; justify-content: center;
-        gap: 14px; text-align: center; padding: 28px;
+        gap: 13px; text-align: center; padding: 26px;
         color: var(--hud-ink);
         background:
           radial-gradient(ellipse 70% 50% at 50% 42%, rgba(47, 230, 168, 0.10), transparent 70%),
@@ -113,21 +94,20 @@
       }
       .stage.live .stage-placeholder, .stage.has-photo .stage-placeholder { display: none; }
       .stage-placeholder h1 {
-        font-size: clamp(22px, 4.6vw, 32px);
+        font-size: clamp(23px, 5.4vw, 32px);
         line-height: 1.15; margin: 0; font-weight: 800; letter-spacing: -0.01em;
-        max-width: 22ch;
+        max-width: 20ch;
       }
-      .stage-placeholder p { margin: 0; color: var(--hud-dim); font-size: 15px; line-height: 1.55; max-width: 46ch; }
-      .steps { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 4px; }
+      .stage-placeholder p { margin: 0; color: var(--hud-dim); font-size: 14.5px; line-height: 1.55; max-width: 44ch; }
+      .steps { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 2px; }
       .steps span {
         font-family: "IBM Plex Mono", ui-monospace, monospace;
-        font-size: 11.5px; letter-spacing: 0.04em;
+        font-size: 11px; letter-spacing: 0.04em;
         border: 1px solid rgba(47, 230, 168, 0.35); color: var(--hud-dim);
         padding: 6px 10px; border-radius: 999px;
       }
       .steps b { color: var(--accent-bright); font-weight: 600; }
 
-      /* HUD chrome over the camera */
       .hud-top {
         position: absolute; top: 0; left: 0; right: 0;
         display: flex; justify-content: space-between; align-items: flex-start;
@@ -146,7 +126,7 @@
       .hud-pill .dot { width: 7px; height: 7px; border-radius: 50%; background: #5c6f66; flex: none; }
       .hud-pill.on .dot { background: var(--accent-bright); box-shadow: 0 0 8px var(--accent-bright); }
 
-      .frame-corners { position: absolute; inset: 52px 14px 64px; pointer-events: none; z-index: 3; display: none; }
+      .frame-corners { position: absolute; inset: 52px 14px 56px; pointer-events: none; z-index: 3; display: none; }
       .stage.live .frame-corners, .stage.has-photo .frame-corners { display: block; }
       .frame-corners i { position: absolute; width: 26px; height: 26px; border: 2px solid var(--hud-line); }
       .frame-corners i:nth-child(1) { top: 0; left: 0; border-right: 0; border-bottom: 0; border-top-left-radius: 8px; }
@@ -155,73 +135,15 @@
       .frame-corners i:nth-child(4) { bottom: 0; right: 0; border-left: 0; border-top: 0; border-bottom-right-radius: 8px; }
 
       .scanline {
-        position: absolute; left: 20px; right: 20px; height: 2px; top: 60px;
+        position: absolute; left: 20px; right: 20px; height: 2px; top: 56px;
         background: linear-gradient(90deg, transparent, var(--accent-bright), transparent);
         opacity: 0; z-index: 3; pointer-events: none;
       }
       .stage.scanning .scanline { opacity: 0.85; animation: sweep 1.6s ease-in-out infinite alternate; }
-      @keyframes sweep { from { top: 60px; } to { top: calc(100% - 84px); } }
+      @keyframes sweep { from { top: 56px; } to { top: calc(100% - 72px); } }
       @media (prefers-reduced-motion: reduce) {
         .stage.scanning .scanline { animation: none; top: 50%; }
       }
-
-      /* Full-frame word overlay */
-      .word-overlay { position: absolute; inset: 0; z-index: 4; pointer-events: none; overflow: hidden; }
-      .word-box {
-        position: absolute; transform: translate(-50%, -50%);
-        pointer-events: auto; cursor: pointer;
-        font-family: "IBM Plex Mono", ui-monospace, monospace;
-        font-size: 11px; font-weight: 600; line-height: 1.2;
-        color: #fff; background: rgba(3, 14, 10, 0.58);
-        border: 1px solid rgba(47, 230, 168, 0.65);
-        border-radius: 6px; padding: 2px 5px; white-space: nowrap;
-        max-width: 42%; overflow: hidden; text-overflow: ellipsis;
-      }
-      .word-box:hover, .word-box.selected { background: var(--accent); border-color: var(--accent-bright); color: #fff; }
-      .scan-hint {
-        position: absolute; left: 50%; bottom: 52px; transform: translateX(-50%);
-        z-index: 4; pointer-events: none; display: none;
-        font-family: "IBM Plex Mono", ui-monospace, monospace;
-        font-size: 10.5px; letter-spacing: 0.06em; color: var(--hud-dim);
-        background: rgba(3,12,9,0.55); border-radius: 999px; padding: 4px 10px; white-space: nowrap;
-      }
-      .stage.live .scan-hint, .stage.has-photo .scan-hint { display: block; }
-      .stage.has-words .scan-hint { display: none; }
-      .words-card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 15px 16px; }
-      .words-grid { display: flex; flex-wrap: wrap; gap: 7px; }
-      .word-chip {
-        min-height: 36px; padding: 7px 11px; font-size: 13.5px; font-weight: 600;
-        border-radius: 999px; background: var(--panel-2);
-      }
-      .word-chip.selected { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
-      .words-empty { font-size: 13.5px; color: var(--muted); margin: 0; line-height: 1.5; }
-      .word-def { display: none; margin-top: 12px; border-top: 1px solid var(--line); padding-top: 11px; }
-      .word-def.show { display: block; }
-      .word-def .wd-word { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 17px; font-weight: 600; color: var(--accent); }
-      .word-def .wd-pos { font-size: 12px; color: var(--muted); font-style: italic; margin-left: 6px; }
-      .word-def .wd-text { font-size: 14.5px; line-height: 1.5; margin-top: 4px; }
-
-      /* Definition popup — the "lens" readout */
-      .def-popup {
-        position: absolute; left: 50%; bottom: 64px; top: auto;
-        transform: translateX(-50%);
-        width: min(88%, 430px);
-        z-index: 6; display: none;
-        background: rgba(3, 14, 10, 0.82);
-        border: 1px solid var(--hud-line);
-        border-radius: 10px;
-        padding: 10px 14px 11px;
-        color: var(--hud-ink);
-        backdrop-filter: blur(4px);
-        text-align: left;
-      }
-      .def-popup.show { display: block; }
-      .def-popup .dw {
-        font-family: "IBM Plex Mono", ui-monospace, monospace;
-        font-size: 17px; font-weight: 600; color: var(--accent-bright);
-      }
-      .def-popup .dp { font-size: 11px; color: var(--hud-dim); font-style: italic; margin-left: 6px; }
-      .def-popup .dd { font-size: 14.5px; line-height: 1.45; margin-top: 3px; }
 
       .hud-status {
         position: absolute; left: 14px; right: 14px; bottom: 12px; z-index: 5;
@@ -235,61 +157,77 @@
       }
       .stage.live .hud-status, .stage.has-photo .hud-status { display: block; }
 
-      /* ---------- Side panel ---------- */
-      .panel { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+      /* ---------- Controls: one compact bar ---------- */
+      .controls { display: flex; flex-wrap: wrap; gap: 9px; }
+      button {
+        font: inherit; cursor: pointer;
+        border-radius: 10px; border: 1px solid var(--line);
+        background: var(--panel); color: var(--ink);
+        font-size: 14.5px; font-weight: 600;
+        padding: 11px 15px; min-height: 46px;
+        display: inline-flex; align-items: center; gap: 8px;
+      }
+      button:hover { border-color: var(--accent); }
+      button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+      button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 700; flex: 1 1 auto; justify-content: center; }
+      button[disabled] { opacity: 0.45; cursor: not-allowed; }
+      button[disabled]:hover { border-color: var(--line); }
+      button.toggle[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+      button svg { width: 17px; height: 17px; flex: none; }
+      .controls-note { margin: 0; font-size: 12.5px; color: var(--muted); line-height: 1.5; }
 
-      .answer-card {
+      /* ---------- Questions → choices → answer (one card per question) ---------- */
+      .qa-list { display: flex; flex-direction: column; gap: 12px; }
+      .qa-list > * { min-width: 0; }
+      .results-summary {
+        margin: 0; font-size: 12px; letter-spacing: 0.06em; font-weight: 600;
+        color: var(--accent);
+      }
+      .results-summary[hidden] { display: none; }
+      .qa-card {
         background: var(--panel);
         border: 1px solid var(--line);
-        border-radius: var(--radius);
-        padding: 16px 18px 15px;
+        border-radius: 16px;
+        padding: 17px 18px 16px;
       }
-      .answer-kicker {
+      .qa-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+      .qa-head .qa-label { margin: 0; }
+      .q-count {
+        flex: none; font-family: "IBM Plex Mono", ui-monospace, monospace;
+        font-size: 10.5px; font-weight: 600; letter-spacing: 0.08em;
+        color: var(--muted); border: 1px solid var(--line); border-radius: 999px;
+        padding: 3px 9px;
+      }
+      .qa-label {
         font-family: "IBM Plex Mono", ui-monospace, monospace;
         font-size: 11px; letter-spacing: 0.14em; font-weight: 600;
         color: var(--accent); margin: 0 0 8px;
-        display: flex; align-items: center; gap: 8px;
       }
-      .answer-row { display: flex; gap: 14px; align-items: flex-start; }
-      .letter-badge {
-        flex: none; width: 52px; height: 52px; border-radius: 12px;
-        background: var(--accent); color: var(--accent-ink);
-        font-size: 27px; font-weight: 800;
-        display: none; align-items: center; justify-content: center;
-      }
-      .letter-badge.show { display: flex; }
-      .answer-headline { font-size: 27px; font-weight: 800; line-height: 1.16; letter-spacing: -0.01em; margin: 0; overflow-wrap: anywhere; }
-      .answer-headline.waiting { font-size: 19px; font-weight: 700; color: var(--muted); line-height: 1.35; }
-      .answer-detail { margin: 7px 0 0; font-size: 14.5px; line-height: 1.5; color: var(--muted); }
-      .answer-flag {
-        display: none; margin-top: 11px;
-        background: var(--amber-bg); color: var(--amber);
-        border-radius: 9px; padding: 9px 12px;
-        font-size: 13.5px; line-height: 1.45; font-weight: 500;
-      }
-      .answer-flag.show { display: block; }
+      .q-stem { font-size: 17.5px; font-weight: 600; line-height: 1.5; margin: 0; overflow-wrap: anywhere; }
+      .q-stem.empty { color: var(--muted); font-weight: 500; font-size: 15.5px; }
 
-      /* Answer choices — the correct one is highlighted */
-      .options-list { list-style: none; margin: 13px 0 0; padding: 0; display: flex; flex-direction: column; gap: 7px; }
+      .options-label { margin-top: 18px; }
+      .options-empty { font-size: 14px; color: var(--muted); margin: 0; line-height: 1.5; }
+      .options-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
       .options-list[hidden] { display: none; }
       .options-list li {
-        display: flex; gap: 10px; align-items: flex-start;
-        border: 1px solid var(--line); border-radius: 10px;
+        display: flex; gap: 11px; align-items: flex-start;
+        border: 1px solid var(--line); border-radius: 12px;
         background: var(--panel-2); color: var(--muted);
-        padding: 9px 12px; font-size: 14.5px; line-height: 1.45;
+        padding: 11px 13px; font-size: 15.5px; line-height: 1.45;
       }
       .options-list .opt-letter {
-        flex: none; width: 26px; height: 26px; border-radius: 8px;
+        flex: none; width: 28px; height: 28px; border-radius: 8px;
         border: 1px solid var(--line); background: var(--panel);
         font-family: "IBM Plex Mono", ui-monospace, monospace;
-        font-size: 13px; font-weight: 600;
+        font-size: 13.5px; font-weight: 600;
         display: flex; align-items: center; justify-content: center;
       }
-      .options-list .opt-text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+      .options-list .opt-text { flex: 1; min-width: 0; overflow-wrap: anywhere; padding-top: 2px; }
       .options-list .opt-tag {
         flex: none; font-family: "IBM Plex Mono", ui-monospace, monospace;
         font-size: 10.5px; font-weight: 600; letter-spacing: 0.08em;
-        padding: 3px 7px; border-radius: 999px; margin-top: 2px;
+        padding: 3px 8px; border-radius: 999px; margin-top: 3px;
       }
       .options-list li.correct {
         background: var(--correct-bg); border: 2px solid var(--correct-line);
@@ -300,10 +238,32 @@
       .options-list li.maybe { border-color: var(--amber); background: var(--amber-bg); color: var(--ink); }
       .options-list li.maybe .opt-tag { background: var(--amber-bg); color: var(--amber); border: 1px solid var(--amber); }
 
-      .controls-card, .text-card, .history-card, .how-card {
+      .answer-block { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 15px; }
+      .answer-row { display: flex; gap: 14px; align-items: flex-start; }
+      .answer-row > div { min-width: 0; }
+      .letter-badge {
+        flex: none; width: 54px; height: 54px; border-radius: 12px;
+        background: var(--accent); color: var(--accent-ink);
+        font-size: 28px; font-weight: 800;
+        display: none; align-items: center; justify-content: center;
+      }
+      .letter-badge.show { display: flex; }
+      .answer-headline { font-size: 24px; font-weight: 800; line-height: 1.2; letter-spacing: -0.01em; margin: 0; overflow-wrap: anywhere; }
+      .answer-headline.waiting { font-size: 16.5px; font-weight: 600; color: var(--muted); line-height: 1.45; }
+      .answer-detail { margin: 6px 0 0; font-size: 14.5px; line-height: 1.55; color: var(--muted); }
+      .answer-flag {
+        display: none; margin-top: 11px;
+        background: var(--amber-bg); color: var(--amber);
+        border-radius: 9px; padding: 9px 12px;
+        font-size: 13.5px; line-height: 1.45; font-weight: 500;
+      }
+      .answer-flag.show { display: block; }
+
+      /* ---------- Text it read (kept — small and out of the way) ---------- */
+      .text-card {
         background: var(--panel);
         border: 1px solid var(--line);
-        border-radius: var(--radius);
+        border-radius: 16px;
         padding: 15px 16px;
       }
       .card-title {
@@ -311,26 +271,8 @@
         font-size: 11px; letter-spacing: 0.14em; font-weight: 600;
         color: var(--muted); margin: 0 0 11px;
       }
-      .btn-row { display: flex; flex-wrap: wrap; gap: 9px; }
-      button {
-        font: inherit; cursor: pointer;
-        border-radius: 10px; border: 1px solid var(--line);
-        background: var(--panel-2); color: var(--ink);
-        font-size: 14.5px; font-weight: 600;
-        padding: 11px 15px; min-height: 44px;
-        display: inline-flex; align-items: center; gap: 8px;
-      }
-      button:hover { border-color: var(--accent); }
-      button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-      button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 700; }
-      button[disabled] { opacity: 0.45; cursor: not-allowed; }
-      button[disabled]:hover { border-color: var(--line); }
-      button.toggle[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
-      button svg { width: 17px; height: 17px; flex: none; }
-      .controls-note { margin: 11px 0 0; font-size: 13px; color: var(--muted); line-height: 1.5; }
-
       textarea {
-        width: 100%; min-height: 118px; resize: vertical;
+        width: 100%; min-height: 104px; resize: vertical;
         font-family: "IBM Plex Mono", ui-monospace, monospace;
         font-size: 13.5px; line-height: 1.55;
         color: var(--ink); background: var(--panel-2);
@@ -339,169 +281,109 @@
       }
       textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
       .text-meta { font-size: 12.5px; color: var(--muted); margin: 8px 0 0; min-height: 16px; }
-      .sample-row { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 11px; }
+      .btn-row { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 10px; }
+      .btn-row button.primary { flex: 0 1 auto; }
+      .sample-row { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 12px; align-items: center; }
       .sample-row button {
         min-height: 36px; padding: 7px 11px; font-size: 12.5px; font-weight: 500;
-        border-radius: 999px;
+        border-radius: 999px; background: var(--panel-2);
       }
-      .sample-label { font-size: 12.5px; color: var(--muted); align-self: center; margin-right: 2px; }
+      .sample-label { font-size: 12.5px; color: var(--muted); margin-right: 2px; }
 
-      .history-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 9px; }
-      .history-list li { font-size: 13.5px; line-height: 1.45; border-top: 1px solid var(--line); padding-top: 9px; }
-      .history-list li:first-child { border-top: 0; padding-top: 0; }
-      .history-list .hq { color: var(--muted); display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-      .history-list .ha { font-weight: 700; }
-      .history-empty { font-size: 13.5px; color: var(--muted); margin: 0; }
-
-      .how-card ul { margin: 0; padding-left: 18px; font-size: 13.5px; line-height: 1.6; color: var(--muted); }
-      .how-card li::marker { color: var(--accent); }
-      .how-card b { color: var(--ink); font-weight: 600; }
+      @media (max-width: 560px) {
+        .stage { height: 52vh; min-height: 330px; }
+        .hud-pill { font-size: 10px; letter-spacing: 0.08em; padding: 5px 8px; }
+        .q-stem { font-size: 16.5px; }
+        .answer-headline { font-size: 21px; }
+      }
     </style>
   </head>
   <body>
-    <main class="layout">
-      <!-- ===== Camera stage ===== -->
-      <div class="stage-wrap">
-        <section class="stage" id="stage" aria-label="Camera view">
-          <video id="video" autoplay playsinline muted></video>
-          <img class="photo" id="photoImg" alt="Photo of printed text you chose" />
+    <main class="app">
+      <!-- ===== Camera: reads the whole question + its choices ===== -->
+      <section class="stage" id="stage" aria-label="Camera view">
+        <video id="video" autoplay playsinline muted></video>
+        <img class="photo" id="photoImg" alt="Photo of a printed question you chose" />
 
-          <div class="stage-placeholder" id="placeholder">
-            <h1>Point at a page.<br />Every word is read at once.</h1>
-            <p>Prototype — problem-solving mode. You know the saying, “give a tough job to a lazy person and they’ll find the easiest way to solve it”? That’s this tool: point the camera at a printed question and it does the reading and solving for you, right in view — letter and answer for multiple choice (math, vocabulary, science, geography, history, general knowledge and cybersecurity — Security+ topics and all 8 CISSP domains), the worked result for open math, and a one-tap definition for any word in the frame — tap its box, no typing it into a search box.</p>
-            <div class="steps">
-              <span><b>1</b>&nbsp; START CAMERA</span>
-              <span><b>2</b>&nbsp; FRAME THE WHOLE PAGE</span>
-              <span><b>3</b>&nbsp; TAP ANY WORD TO DEFINE</span>
-            </div>
+        <div class="stage-placeholder" id="placeholder">
+          <h1>Point at the questions.<br />It solves each one.</h1>
+          <p>Fill the frame with the questions <em>and</em> their printed choices — one question or a whole page of them. The scanner reads each question as one piece of writing, works out what it is asking, and picks the best answer from that question's own choices.</p>
+          <div class="steps">
+            <span><b>1</b>&nbsp; START CAMERA</span>
+            <span><b>2</b>&nbsp; FRAME QUESTIONS + CHOICES</span>
+            <span><b>3</b>&nbsp; EACH ANSWER APPEARS BELOW</span>
           </div>
+        </div>
 
-          <div class="hud-top">
-            <span class="hud-pill" id="modePill"><span class="dot"></span>PROBLEM-SOLVING MODE</span>
-            <span class="hud-pill mono" id="ocrPill">READER IDLE</span>
-          </div>
+        <div class="hud-top">
+          <span class="hud-pill" id="modePill"><span class="dot"></span>QUESTION SOLVER</span>
+          <span class="hud-pill mono" id="ocrPill">READER IDLE</span>
+        </div>
 
-          <div class="frame-corners"><i></i><i></i><i></i><i></i></div>
-          <div class="scanline"></div>
+        <div class="frame-corners"><i></i><i></i><i></i><i></i></div>
+        <div class="scanline"></div>
 
-          <div class="word-overlay" id="wordOverlay" aria-label="Words detected in the frame"></div>
-          <div class="scan-hint">Scanning the whole frame — tap any word box for its definition</div>
+        <div class="hud-status mono" id="hudStatus">Camera off — start the camera, upload a photo, or paste a question below.</div>
+      </section>
 
-          <div class="def-popup" id="defPopup" role="status">
-            <span class="dw" id="defWord"></span><span class="dp" id="defPos"></span>
-            <div class="dd" id="defText"></div>
-          </div>
-
-          <div class="hud-status mono" id="hudStatus">Camera off — start the camera, upload a photo, or paste text.</div>
-        </section>
+      <!-- ===== One compact control bar ===== -->
+      <div class="controls">
+        <button type="button" id="camBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          <span id="camBtnLabel">Start camera</span>
+        </button>
+        <button type="button" class="primary" id="captureBtn" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          Scan &amp; solve
+        </button>
+        <button type="button" class="toggle" id="autoBtn" aria-pressed="false" disabled>Auto-scan</button>
+        <button type="button" id="uploadBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/></svg>
+          Photo
+        </button>
+        <input type="file" id="fileInput" accept="image/*" hidden />
       </div>
+      <p class="controls-note" id="controlsNote">Reading happens on this device — the camera image is never uploaded. Frame the questions with their A–D choices in view — one question or several at once; every answer below is one of that question's own printed choices.</p>
 
-      <!-- ===== Panel ===== -->
-      <div class="panel">
-        <section class="answer-card" aria-live="polite">
-          <p class="answer-kicker">◈ HEADS-UP ANSWER</p>
-          <div class="answer-row">
-            <div class="letter-badge" id="letterBadge">?</div>
-            <div>
-              <p class="answer-headline waiting" id="ansHeadline">Nothing read yet. Start the camera — the whole frame is read at once.</p>
-              <p class="answer-detail" id="ansDetail"></p>
-            </div>
-          </div>
-          <div class="answer-flag" id="ansFlag"></div>
-          <ul class="options-list" id="optionsList" hidden></ul>
-        </section>
+      <!-- ===== One card per question: its stem, its printed choices, its answer ===== -->
+      <p class="results-summary mono" id="resultsSummary" hidden></p>
+      <div class="qa-list" id="qaList" aria-live="polite"></div>
 
-        <section class="controls-card">
-          <p class="card-title">CONTROLS</p>
-          <div class="btn-row">
-            <button type="button" class="primary" id="camBtn">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-              <span id="camBtnLabel">Start camera</span>
-            </button>
-            <button type="button" id="captureBtn" disabled>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-              Capture &amp; Read
-            </button>
-            <button type="button" class="toggle" id="autoBtn" aria-pressed="false" disabled>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
-              Auto-scan
-            </button>
-            <button type="button" id="uploadBtn">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/></svg>
-              Upload photo
-            </button>
-            <input type="file" id="fileInput" accept="image/*" hidden />
-          </div>
-          <p class="controls-note" id="controlsNote">Reading happens on this device — the camera image is never uploaded. For a general-knowledge question it checks a built-in fact bank first, then looks the question up in a reference source to pick between the printed options. The bank now includes a cybersecurity section: Security+ topics (CIA triad, phishing and social engineering, malware, firewalls, encryption, ports, incident response) plus CISSP-domain knowledge across all 8 domains.</p>
-        </section>
-
-        <section class="words-card" aria-live="polite">
-          <p class="card-title">WORDS IN FRAME — TAP ANY WORD FOR AN INSTANT DEFINITION</p>
-          <p class="words-empty" id="wordsEmpty">No scan yet. Start the camera or upload a photo and every word in view will appear here as a tappable chip — faster than typing it into a search box.</p>
-          <div class="words-grid" id="wordsGrid"></div>
-          <div class="word-def" id="wordDef">
-            <span class="wd-word" id="wdWord"></span><span class="wd-pos" id="wdPos"></span>
-            <div class="wd-text" id="wdText"></div>
-          </div>
-        </section>
-
-        <section class="text-card">
-          <p class="card-title">TEXT IT READ</p>
-          <textarea id="textInput" placeholder="The words from the page will appear here after a read. You can also type or paste a printed question yourself, then tap Solve."></textarea>
-          <p class="text-meta mono" id="textMeta"></p>
-          <div class="btn-row" style="margin-top:10px;">
-            <button type="button" class="primary" id="solveBtn">Solve this text</button>
-            <button type="button" id="clearBtn">Clear</button>
-          </div>
-          <div class="sample-row">
-            <span class="sample-label">Try a sample:</span>
-            <button type="button" data-sample="mc">Multiple choice · math</button>
-            <button type="button" data-sample="algebra">Multiple choice · algebra</button>
-            <button type="button" data-sample="geography">Multiple choice · geography</button>
-            <button type="button" data-sample="science">Multiple choice · science</button>
-            <button type="button" data-sample="history">Multiple choice · history</button>
-            <button type="button" data-sample="open">Open math</button>
-            <button type="button" data-sample="vocab">Vocabulary</button>
-            <button type="button" data-sample="cyber-cia">Cybersecurity · CIA triad</button>
-            <button type="button" data-sample="cyber-port">Cybersecurity · ports</button>
-            <button type="button" data-sample="cyber-ransomware">Cybersecurity · malware</button>
-            <button type="button" data-sample="cissp-ale">CISSP · risk (ALE)</button>
-            <button type="button" data-sample="cissp-rbac">CISSP · IAM (access control)</button>
-          </div>
-        </section>
-
-        <section class="history-card">
-          <p class="card-title">RECENT READS — THIS SESSION ONLY</p>
-          <p class="history-empty" id="historyEmpty">Nothing read yet this session.</p>
-          <ul class="history-list" id="historyList"></ul>
-        </section>
-
-        <section class="how-card">
-          <p class="card-title">HOW EACH READ IS ANSWERED</p>
-          <ul>
-            <li><b>Multiple choice — any subject:</b> the answer shows as a letter plus the answer text, with a one-line reason — and the correct choice is highlighted green in the list of options under the answer. With Auto-scan on, a steady page is solved on its own; otherwise tap Capture &amp; Read once and the answer appears as soon as the read finishes. Math is worked out, vocabulary is checked against a dictionary, and general-knowledge questions (science, geography, history and more) are checked against a built-in fact bank and then a reference lookup that scores each printed option. If two options could fit, it flags that instead of guessing.</li>
-            <li><b>Cybersecurity:</b> a dedicated bank covers Security+ style questions — CIA triad, phishing / social engineering, malware types, firewalls, encryption and hashing, common ports, and incident response — and CISSP-domain questions across all 8 domains: security &amp; risk management, asset security, security architecture &amp; engineering, communication &amp; network security, identity &amp; access management, security assessment &amp; testing, security operations, and software development security. Questions that name a term and offer definitions are scored against the bank's definition for that term.</li>
-            <li><b>Open questions:</b> math shows the worked result; a general question shows the fact-bank answer, or the best reference match when there is one.</li>
-            <li><b>Open math:</b> the worked result appears, with the expression it was calculated from.</li>
-            <li><b>Tap any word to define it:</b> every scan reads the whole frame at once and puts a box on every word it finds — on the camera view and as chips in the Words in Frame panel. Tap any box or chip and its one-line definition appears instantly. No centering, no holding, no typing the word into a search box.</li>
-            <li><b>About this prototype:</b> “Give a tough job to a lazy person and they’ll find the easiest way to solve it.” This tool is meant to do exactly that — you point, it reads and solves. Still a prototype, so expect the occasional misread.</li>
-            <li><b>Misreads happen:</b> if the read confidence is low, check the text box — fix any wrong characters and tap Solve again.</li>
-          </ul>
-        </section>
-      </div>
+      <!-- ===== Text it read: check a misread, fix it, re-solve ===== -->
+      <section class="text-card">
+        <p class="card-title">TEXT IT READ</p>
+        <textarea id="textInput" placeholder="The questions and their choices will appear here after a scan. You can also paste questions yourself — one or several at a time — then tap Solve. Each question gets its own answer below."></textarea>
+        <p class="text-meta mono" id="textMeta"></p>
+        <div class="btn-row">
+          <button type="button" class="primary" id="solveBtn">Solve this text</button>
+          <button type="button" id="clearBtn">Clear</button>
+        </div>
+        <div class="sample-row">
+          <span class="sample-label">Try a sample:</span>
+          <button type="button" data-sample="mc">Math</button>
+          <button type="button" data-sample="geography">Geography</button>
+          <button type="button" data-sample="science">Science</button>
+          <button type="button" data-sample="vocab">Vocabulary</button>
+          <button type="button" data-sample="multi">Three questions at once</button>
+          <button type="button" data-sample="cyber-port">Cybersecurity · ports</button>
+          <button type="button" data-sample="cissp-rbac">CISSP · access control</button>
+        </div>
+      </section>
     </main>
 
-    <script>
+<script>
       "use strict";
       var $ = function (id) { return document.getElementById(id); };
 
       var stage = $("stage"), video = $("video"), photoImg = $("photoImg");
       var modePill = $("modePill"), ocrPill = $("ocrPill"), hudStatus = $("hudStatus");
-      var wordOverlay = $("wordOverlay"), wordsGrid = $("wordsGrid"), wordsEmpty = $("wordsEmpty");
-      var wordDef = $("wordDef"), wdWord = $("wdWord"), wdPos = $("wdPos"), wdText = $("wdText");
-      var defPopup = $("defPopup"), defWord = $("defWord"), defPos = $("defPos"), defText = $("defText");
-      var ansHeadline = $("ansHeadline"), ansDetail = $("ansDetail"), ansFlag = $("ansFlag"), letterBadge = $("letterBadge");
+      var qaList = $("qaList"), resultsSummary = $("resultsSummary");
       var textInput = $("textInput"), textMeta = $("textMeta");
+      /* One entry per question found in the frame: its raw text block and,
+         once solved, its result. cards[i] holds the DOM refs for block i. */
+      var currentBlocks = [];
+      var cards = [];
+      var lastAutoText = "", lastAutoSolvedText = "";
       var camBtn = $("camBtn"), camBtnLabel = $("camBtnLabel"), captureBtn = $("captureBtn"),
           autoBtn = $("autoBtn"), uploadBtn = $("uploadBtn"), fileInput = $("fileInput");
 
@@ -511,7 +393,6 @@
       var ocrBusy = false;
       var autoScan = false;
       var autoTimer = null;
-      var readsLog = [];
 
       function setStatus(msg) { hudStatus.textContent = msg; }
       function setOcrPill(msg) { ocrPill.textContent = msg; }
@@ -547,7 +428,7 @@
             camBtnLabel.textContent = "Stop camera";
             captureBtn.disabled = false;
             autoBtn.disabled = false;
-            setStatus("Camera on. Point at a page — Capture & Read reads the whole frame at once, or turn on Auto-scan.");
+            setStatus("Camera on. Fill the frame with a question and its choices, then tap Scan & solve.");
           })
           .catch(function () {
             setStatus("Camera permission wasn't granted — upload a photo or paste the text instead.");
@@ -628,22 +509,6 @@
         getWorker().catch(function () { readerWarmed = false; });
       }
 
-      function extractWords(data) {
-        var out = [];
-        if (data.words && data.words.length) {
-          data.words.forEach(function (w) { if (w.text && w.bbox) out.push({ text: w.text, bbox: w.bbox }); });
-          if (out.length) return out;
-        }
-        (data.blocks || []).forEach(function (b) {
-          (b.paragraphs || []).forEach(function (p) {
-            (p.lines || []).forEach(function (l) {
-              (l.words || []).forEach(function (w) { if (w.text && w.bbox) out.push({ text: w.text, bbox: w.bbox }); });
-            });
-          });
-        });
-        return out;
-      }
-
       function recognizeOnce(canvas) {
         return getWorker().then(function (w) {
           return w.recognize(canvas, {}, { blocks: true }).then(function (r) { return r.data; })
@@ -677,18 +542,19 @@
           var conf = Math.round(data.confidence || 0);
           if (!text) {
             setStatus("Nothing readable in frame — move closer, flatten the page, and add light.");
-            showAnswer({ status: "cant", headline: "No text found in that frame", detail: "Move closer to the page, keep it flat and well lit, and capture again." });
+            buildCards([]);
+            showAnswer(0, { status: "cant", headline: "No text found in that frame", detail: "Move closer to the page, keep it flat and well lit, and scan again." });
             return;
           }
           textInput.value = text;
-          renderWords(extractWords(data), canvas.width, canvas.height);
-          textMeta.textContent = "Read confidence ~" + conf + "% · " + text.length + " characters" + (conf < 60 ? " — low confidence, check the text for misreads before trusting the answer." : "");
-          setStatus("Text read. Solving…");
+          textMeta.textContent = "Read confidence ~" + conf + "% · " + text.length + " characters" + (conf < 60 ? " — low confidence, check the text for misreads before trusting the answers." : "");
+          setStatus("Text read. Solving each question…");
           return solveAndShow(text);
         }).catch(function (err) {
           if (err && err.message === "read timed out") resetWorker();
-          setStatus("That read didn't finish — tap Capture & Read to try again, or paste the text below.");
-          showAnswer({ status: "cant", headline: "That read didn't finish", detail: "The reader was still loading or stalled. It has been reset — tap Capture & Read once more. Typing or pasting the question in the text box below and tapping Solve also works, and the samples below answer instantly." });
+          setStatus("That read didn't finish — tap Scan & solve to try again, or paste the questions below.");
+          buildCards([]);
+          showAnswer(0, { status: "cant", headline: "That read didn't finish", detail: "The reader was still loading or stalled. It has been reset — tap Scan & solve once more. Pasting the questions in the text box below and tapping Solve also works, and the samples below answer instantly." });
         }).then(function () {
           ocrBusy = false;
           stage.classList.remove("scanning");
@@ -697,17 +563,200 @@
       }
       captureBtn.addEventListener("click", captureAndRead);
 
-      /* ---------------- Answer display ---------------- */
-      function renderOptions(res) {
-        var list = $("optionsList");
-        list.innerHTML = "";
-        var mc = parseOptions(textInput.value || "");
-        if (!mc || !mc.options.length) { list.hidden = true; return; }
+      /* ---------------- Splitting a frame into separate questions ----------------
+         A frame can hold several questions. Split the read text into one
+         block per question so each is listed — and solved — on its own,
+         with its own printed choices. A new block starts when:
+           • a numbered question line appears ("2. …", "Question 3 …")
+             after the current block already has choices, or
+           • an "A." choice appears after the current block already has
+             choices — the plain lines collected since the last choice
+             are the next question's stem. */
+      function splitQuestions(text) {
+        var lines = String(text || "").split(/\n/);
+        var blocks = [];
+        var cur = null;      // { lines:[], hasOpts:bool }
+        var pending = [];    // plain lines seen after choices started, uncommitted
+        var optRe = /^\s*\(?([A-Ea-e])\s*[\)\.\:\-]\s*(.+)$/;
+
+        function startBlock(initialLines) {
+          cur = { lines: initialLines ? initialLines.slice() : [], hasOpts: false };
+          blocks.push(cur);
+          pending = [];
+        }
+        function flushPending() {
+          if (cur && pending.length) cur.lines = cur.lines.concat(pending);
+          pending = [];
+        }
+
+        lines.forEach(function (line) {
+          var t = line.trim();
+          if (!t) return;
+          var optM = optRe.exec(line);
+          var isExplicitQ = /^\s*question\s*\d+/i.test(line);
+          var qNumM = /^\s*(?:question\s*)?(\d{1,3})\s*[\)\.\:]\s+(.+)$/i.exec(line);
+
+          if (!optM && cur && cur.hasOpts && (isExplicitQ || qNumM)) {
+            var after = isExplicitQ ? t.replace(/^\s*question\s*\d+\s*[\)\.\:\-]?\s*/i, "") : qNumM[2].trim();
+            if (isExplicitQ || /\?/.test(after) || after.split(/\s+/).length >= 4) {
+              // Lines collected since the last choice belong to the old
+              // question (a wrapped choice); the numbered line starts fresh.
+              flushPending();
+              startBlock([after]);
+              return;
+            }
+          }
+          if (optM) {
+            var letter = optM[1].toUpperCase();
+            if (!cur) startBlock([]);
+            if (cur.hasOpts && letter === "A") {
+              // Choices are starting over: the pending lines are the stem
+              // of the next question.
+              var stemLines = pending;
+              startBlock(stemLines);
+              cur.lines.push(line);
+              cur.hasOpts = true;
+              return;
+            }
+            flushPending();
+            cur.lines.push(line);
+            cur.hasOpts = true;
+            return;
+          }
+          // Plain line: stem text before choices, or uncommitted after them
+          // (it may be a wrapped choice or the next question's stem).
+          if (!cur) startBlock([]);
+          if (cur.hasOpts) pending.push(line);
+          else {
+            // Strip a leading "1." / "Question 1" marker from a stem's first line.
+            if (!cur.lines.length && qNumM) cur.lines.push(isExplicitQ ? t.replace(/^\s*question\s*\d+\s*[\)\.\:\-]?\s*/i, "") : qNumM[2].trim());
+            else cur.lines.push(line);
+          }
+        });
+        if (pending.length) {
+          if (cur && cur.hasOpts && /\?/.test(pending.join(" "))) startBlock(pending);
+          else flushPending();
+        }
+        var out = blocks.map(function (b) { return b.lines.join("\n").trim(); }).filter(function (s) { return s.length; });
+        if (!out.length && String(text || "").trim()) out = [String(text).trim()];
+        return out;
+      }
+
+      function cleanStem(stem) {
+        return (stem || "").replace(/^\s*(?:question\s*)?\d{1,3}\s*[\)\.\:]\s+/i, "").trim();
+      }
+
+      /* ---------------- One card per question ---------------- */
+      function buildCards(blocks) {
+        qaList.innerHTML = "";
+        cards = [];
+        currentBlocks = blocks.map(function (raw) { return { raw: raw, result: null }; });
+        if (!currentBlocks.length) currentBlocks = [{ raw: "", result: null }];
+        var total = currentBlocks.length;
+        var multi = total > 1;
+        currentBlocks.forEach(function (block, idx) {
+          var card = document.createElement("section");
+          card.className = "qa-card";
+
+          var head = document.createElement("div"); head.className = "qa-head";
+          var qLabel = document.createElement("p"); qLabel.className = "qa-label";
+          qLabel.textContent = multi ? "QUESTION " + (idx + 1) : "QUESTION";
+          head.appendChild(qLabel);
+          if (multi) {
+            var count = document.createElement("span"); count.className = "q-count";
+            count.textContent = (idx + 1) + " OF " + total;
+            head.appendChild(count);
+          }
+          card.appendChild(head);
+
+          var stem = document.createElement("p"); stem.className = "q-stem";
+          card.appendChild(stem);
+
+          var optLabel = document.createElement("p"); optLabel.className = "qa-label options-label";
+          optLabel.textContent = "CHOICES — AS PRINTED ON THE PAGE";
+          card.appendChild(optLabel);
+
+          var optEmpty = document.createElement("p"); optEmpty.className = "options-empty";
+          optEmpty.textContent = "The choices from the page will appear here, exactly as printed.";
+          card.appendChild(optEmpty);
+
+          var list = document.createElement("ul"); list.className = "options-list"; list.hidden = true;
+          card.appendChild(list);
+
+          var answerBlock = document.createElement("div"); answerBlock.className = "answer-block";
+          var aLabel = document.createElement("p"); aLabel.className = "qa-label"; aLabel.textContent = "ANSWER";
+          answerBlock.appendChild(aLabel);
+          var row = document.createElement("div"); row.className = "answer-row";
+          var badge = document.createElement("div"); badge.className = "letter-badge"; badge.textContent = "?";
+          row.appendChild(badge);
+          var txtWrap = document.createElement("div");
+          var headline = document.createElement("p"); headline.className = "answer-headline waiting";
+          headline.textContent = multi ? "Solving…" : "Point the camera at a question to solve it here.";
+          var detail = document.createElement("p"); detail.className = "answer-detail";
+          txtWrap.appendChild(headline); txtWrap.appendChild(detail);
+          row.appendChild(txtWrap);
+          answerBlock.appendChild(row);
+          var flag = document.createElement("div"); flag.className = "answer-flag";
+          answerBlock.appendChild(flag);
+          card.appendChild(answerBlock);
+
+          qaList.appendChild(card);
+          cards.push({ stem: stem, optEmpty: optEmpty, list: list, badge: badge, headline: headline, detail: detail, flag: flag });
+
+          // Fill in this question's stem and its own printed choices.
+          var raw = block.raw;
+          var mc = raw ? parseOptions(raw) : null;
+          if (mc && cleanStem(mc.stem)) { stem.textContent = cleanStem(mc.stem); }
+          else if (mc && mc.options.length) { stem.textContent = "Question " + (idx + 1) + " — stem wasn't read clearly; its choices are below."; stem.classList.add("empty"); }
+          else if (raw) { stem.textContent = raw.split(/\n/).filter(function (l) { return l.trim(); }).slice(0, 3).join(" "); }
+          else { stem.textContent = "No question read yet — point the camera at a question with its choices and tap Scan & solve."; stem.classList.add("empty"); }
+          if (mc && mc.options.length) {
+            optEmpty.style.display = "none";
+            list.hidden = false;
+            mc.options.forEach(function (o) {
+              var li = document.createElement("li");
+              var lt = document.createElement("span"); lt.className = "opt-letter"; lt.textContent = o.letter;
+              var tx = document.createElement("span"); tx.className = "opt-text"; tx.textContent = o.text;
+              li.appendChild(lt); li.appendChild(tx);
+              list.appendChild(li);
+            });
+          }
+          headline.textContent = raw ? "Solving…" : "Point the camera at a question to solve it here.";
+        });
+        updateSummary();
+      }
+
+      function updateSummary() {
+        if (!currentBlocks.length || (currentBlocks.length === 1 && !currentBlocks[0].raw && !currentBlocks[0].result)) {
+          resultsSummary.hidden = true;
+          return;
+        }
+        var total = currentBlocks.length;
+        var solved = currentBlocks.filter(function (b) { return b.result && b.result.status === "solved"; }).length;
+        var pendingCount = currentBlocks.filter(function (b) { return !b.result; }).length;
+        var parts = [];
+        parts.push(total === 1 ? "1 QUESTION IN THIS FRAME" : total + " QUESTIONS IN THIS FRAME");
+        if (pendingCount) parts.push("SOLVING…");
+        else {
+          parts.push(solved === 1 ? "1 SOLVED" : solved + " SOLVED");
+          if (total - solved > 0) parts.push((total - solved) + " NEED" + (total - solved === 1 ? "S" : "") + " A CHECK");
+        }
+        resultsSummary.textContent = parts.join(" · ");
+        resultsSummary.hidden = false;
+      }
+
+      /* ---------------- Answer display (per question card) ---------------- */
+      function renderOptions(idx, res) {
+        var card = cards[idx];
+        if (!card) return;
+        var mc = parseOptions(currentBlocks[idx] ? currentBlocks[idx].raw : "");
+        if (!mc || !mc.options.length) { card.list.hidden = true; return; }
         var maybe = {};
         if (!res.letter && res.headline) {
           var mm = /between ([A-E]) and ([A-E])/i.exec(res.headline);
           if (mm) { maybe[mm[1].toUpperCase()] = 1; maybe[mm[2].toUpperCase()] = 1; }
         }
+        card.list.innerHTML = "";
         mc.options.forEach(function (o) {
           var li = document.createElement("li");
           var lt = document.createElement("span"); lt.className = "opt-letter"; lt.textContent = o.letter;
@@ -722,37 +771,25 @@
             var tag2 = document.createElement("span"); tag2.className = "opt-tag"; tag2.textContent = "POSSIBLE";
             li.appendChild(tag2);
           }
-          list.appendChild(li);
+          card.list.appendChild(li);
         });
-        list.hidden = false;
+        card.list.hidden = false;
+        card.optEmpty.style.display = "none";
       }
-      function hideOptions() { var list = $("optionsList"); list.innerHTML = ""; list.hidden = true; }
 
-      function showAnswer(res) {
-        letterBadge.classList.remove("show");
-        ansFlag.classList.remove("show");
-        ansHeadline.classList.remove("waiting");
-        if (res.letter) { letterBadge.textContent = res.letter; letterBadge.classList.add("show"); }
-        ansHeadline.textContent = res.headline;
-        ansDetail.textContent = res.detail || "";
-        if (res.flag) { ansFlag.textContent = res.flag; ansFlag.classList.add("show"); }
-        renderOptions(res);
-        var q = (textInput.value || "").split(/\n/)[0] || "Read";
-        readsLog.unshift({ q: q, a: (res.letter ? res.letter + " — " : "") + res.headline, bad: res.status !== "solved" });
-        if (readsLog.length > 5) readsLog.pop();
-        renderHistory();
-      }
-      function renderHistory() {
-        var list = $("historyList");
-        list.innerHTML = "";
-        $("historyEmpty").style.display = readsLog.length ? "none" : "block";
-        readsLog.forEach(function (h) {
-          var li = document.createElement("li");
-          var qs = document.createElement("span"); qs.className = "hq"; qs.textContent = h.q;
-          var as = document.createElement("span"); as.className = "ha"; as.textContent = h.a;
-          li.appendChild(qs); li.appendChild(as);
-          list.appendChild(li);
-        });
+      function showAnswer(idx, res) {
+        var card = cards[idx];
+        if (!card) return;
+        if (currentBlocks[idx]) currentBlocks[idx].result = res;
+        card.badge.classList.remove("show");
+        card.flag.classList.remove("show");
+        card.headline.classList.remove("waiting");
+        if (res.letter) { card.badge.textContent = res.letter; card.badge.classList.add("show"); }
+        card.headline.textContent = res.headline;
+        card.detail.textContent = res.detail || "";
+        if (res.flag) { card.flag.textContent = res.flag; card.flag.classList.add("show"); }
+        renderOptions(idx, res);
+        updateSummary();
       }
 
       /* ---------------- Math engine (safe parser, no eval) ---------------- */
@@ -1510,7 +1547,7 @@
          question. The question decides the search; the options are never
          sent as the answer — they are only scored against what the
          reference says. */
-      function stripHtml(s) { var d = document.createElement("div"); d.innerHTML = s || ""; return d.textContent || ""; }
+      function stripHtml(s) { var ta = document.createElement("textarea"); ta.innerHTML = (s || "").replace(/<[^>]*>/g, " "); return ta.value || ""; }
       function wikiCorpus(query) {
         var searchUrl = "https://en.wikipedia.org/w/api.php?action=query&list=search&srnamespace=0&srlimit=4&format=json&origin=*&srsearch=" + encodeURIComponent(query);
         return fetchWithTimeout(searchUrl, 7000).then(function (r) { if (!r.ok) throw new Error("wiki"); return r.json(); }).then(function (j) {
@@ -1642,10 +1679,22 @@
         });
       }
 
+      /* Solve every question found in the text — each block gets its own
+         card, its own choices, and its own highlighted answer. */
       function solveAndShow(text) {
-        return solve(text).then(function (res) {
-          showAnswer(res);
-          setStatus(res.status === "solved" ? "Answer is in the heads-up display." : "Read complete — see the answer panel.");
+        var blocks = splitQuestions(text);
+        buildCards(blocks);
+        var jobs = blocks.map(function (raw, idx) {
+          return solve(raw).then(function (res) { showAnswer(idx, res); })
+            .catch(function () { showAnswer(idx, { status: "cant", headline: "Couldn't solve this one", detail: "Check its text in the box below for misreads and tap Solve again." }); });
+        });
+        return Promise.all(jobs).then(function () {
+          var solved = currentBlocks.filter(function (b) { return b.result && b.result.status === "solved"; }).length;
+          if (blocks.length > 1) {
+            setStatus("Read complete — " + blocks.length + " questions found, " + solved + " solved. Each answer is picked out under its own question below.");
+          } else {
+            setStatus(solved ? "Solved — the answer is picked out below." : "Read complete — see below.");
+          }
         });
       }
 
@@ -1653,126 +1702,29 @@
         var t = textInput.value.trim();
         if (!t) { textMeta.textContent = "The text box is empty — capture a read, upload a photo, or type a question first."; return; }
         textMeta.textContent = "";
-        if (!wordsGrid.children.length) renderWordsFromText(t);
         solveAndShow(t);
       });
       $("clearBtn").addEventListener("click", function () {
         textInput.value = ""; textMeta.textContent = "";
-        wordOverlay.innerHTML = ""; wordsGrid.innerHTML = ""; wordsEmpty.style.display = "block"; wordDef.classList.remove("show"); stage.classList.remove("has-words");
-        ansHeadline.textContent = "Nothing read yet. Start the camera — the whole frame is read at once.";
-        ansHeadline.classList.add("waiting");
-        ansDetail.textContent = ""; ansFlag.classList.remove("show"); letterBadge.classList.remove("show");
-        hideOptions();
+        buildCards([]);
       });
 
       var SAMPLES = {
+        multi: "1. What is the capital of France?\nA. London\nB. Berlin\nC. Paris\nD. Madrid\n2. Which planet is known as the Red Planet?\nA. Venus\nB. Mars\nC. Jupiter\nD. Saturn\n3. What is 15% of 240?\nA. 24\nB. 36\nC. 48\nD. 60",
         mc: "What is 15% of 240?\nA. 24\nB. 36\nC. 48\nD. 60",
-        algebra: "If 3x + 5 = 20, what is the value of x?\nA. 3\nB. 4\nC. 5\nD. 6",
         geography: "What is the capital of France?\nA. London\nB. Berlin\nC. Paris\nD. Madrid",
         science: "Which planet is known as the Red Planet?\nA. Venus\nB. Mars\nC. Jupiter\nD. Saturn",
-        history: "Who was the first President of the United States?\nA. Abraham Lincoln\nB. Thomas Jefferson\nC. George Washington\nD. John Adams",
-        open: "Solve: 48 ÷ 6 + 3 × 4",
         vocab: "What does the word \"rapid\" mean?\nA. Very slow\nB. Happening quickly\nC. Extremely loud\nD. Full of color",
-        "cyber-cia": "What does the CIA triad stand for in cybersecurity?\nA. Central Intelligence Agency\nB. Confidentiality, Integrity, and Availability\nC. Confidentiality, Integrity, and Accounting\nD. Control, Integrity, and Access",
         "cyber-port": "Which port is used by HTTPS?\nA. 80\nB. 443\nC. 22\nD. 25",
-        "cyber-ransomware": "A hospital's files are encrypted and the attacker demands payment to unlock them. What type of malware is this?\nA. Keylogger\nB. Rootkit\nC. Ransomware\nD. Spyware",
-        "cissp-ale": "What is the formula for Annualized Loss Expectancy (ALE)?\nA. ALE = SLE × ARO\nB. ALE = AV × EF\nC. ALE = SLE + ARO\nD. ALE = AV − EF",
         "cissp-rbac": "In which access control model are permissions assigned based on a user's job role?\nA. Discretionary Access Control (DAC)\nB. Mandatory Access Control (MAC)\nC. Role-Based Access Control (RBAC)\nD. Rule-Based Access Control"
       };
       document.querySelectorAll("[data-sample]").forEach(function (btn) {
         btn.addEventListener("click", function () {
           textInput.value = SAMPLES[btn.getAttribute("data-sample")] || "";
-          renderWordsFromText(textInput.value);
           textMeta.textContent = "Sample text — tap Solve this text, or edit it first.";
           solveAndShow(textInput.value);
         });
       });
-
-      /* ---------------- Full-frame auto-scan + tap-to-define ---------------- */
-      var lastAutoText = "", lastAutoSolvedText = "";
-      var selectedWord = null, definingWord = false;
-
-      function cleanWord(raw) { return (raw || "").replace(/[^A-Za-z'-]/g, "").toLowerCase(); }
-
-      function showDefinition(word, info) {
-        // Stage popup (over the camera, near the bottom — not a center label)
-        defWord.textContent = word;
-        defPos.textContent = info ? (info.pos || "") : "";
-        defText.textContent = info ? info.def : "No dictionary entry found — check the spelling in the text box.";
-        defPopup.classList.add("show");
-        // Panel readout (readable without the camera)
-        wdWord.textContent = word;
-        wdPos.textContent = info ? (info.pos || "") : "";
-        wdText.textContent = info ? info.def : "No dictionary entry found for this word.";
-        wordDef.classList.add("show");
-      }
-      function defineWord(word) {
-        var w = cleanWord(word);
-        if (!w || w.length < 2) return;
-        selectedWord = w;
-        document.querySelectorAll(".word-box, .word-chip").forEach(function (el) {
-          el.classList.toggle("selected", cleanWord(el.textContent) === w);
-        });
-        wdWord.textContent = w; wdPos.textContent = ""; wdText.textContent = "Looking up…"; wordDef.classList.add("show");
-        definingWord = true;
-        lookupWord(w).then(function (info) {
-          definingWord = false;
-          if (selectedWord !== w) return;
-          showDefinition(w, info);
-        });
-      }
-
-      function renderWords(words, cw, ch) {
-        wordOverlay.innerHTML = "";
-        wordsGrid.innerHTML = "";
-        var seen = {}, chips = [], boxes = 0;
-        (words || []).forEach(function (wd) {
-          var clean = cleanWord(wd.text);
-          if (!clean || clean.length < 2 || !wd.bbox || !cw || !ch) return;
-          if (boxes < 90) {
-            var b = document.createElement("button");
-            b.type = "button"; b.className = "word-box"; b.textContent = wd.text;
-            b.style.left = (((wd.bbox.x0 + wd.bbox.x1) / 2) / cw * 100) + "%";
-            b.style.top = (((wd.bbox.y0 + wd.bbox.y1) / 2) / ch * 100) + "%";
-            b.setAttribute("aria-label", "Define " + clean);
-            (function (w) { b.addEventListener("click", function () { defineWord(w); }); })(clean);
-            wordOverlay.appendChild(b); boxes++;
-          }
-          if (!seen[clean]) { seen[clean] = 1; chips.push(clean); }
-        });
-        // Fallback: no bbox words (some OCR results) — build chips from full text
-        if (!chips.length) {
-          (textInput.value || "").split(/\s+/).forEach(function (raw) {
-            var c = cleanWord(raw);
-            if (c && c.length >= 3 && !seen[c]) { seen[c] = 1; chips.push(c); }
-          });
-        }
-        chips.slice(0, 120).forEach(function (c) {
-          var chip = document.createElement("button");
-          chip.type = "button"; chip.className = "word-chip"; chip.textContent = c;
-          chip.addEventListener("click", function () { defineWord(c); });
-          wordsGrid.appendChild(chip);
-        });
-        var has = chips.length > 0;
-        wordsEmpty.style.display = has ? "none" : "block";
-        if (has) wordsEmpty.textContent = "";
-        stage.classList.toggle("has-words", has);
-        if (has) setStatus("Read " + chips.length + " words in the whole frame — tap any word for its definition, or see the answer below.");
-      }
-      function renderWordsFromText(text) {
-        var words = (text || "").split(/\s+/).filter(Boolean).map(function (w) { return { text: w, bbox: null }; });
-        // chips-only path
-        wordsGrid.innerHTML = ""; wordOverlay.innerHTML = "";
-        var seen = {}, chips = [];
-        words.forEach(function (wd) { var c = cleanWord(wd.text); if (c && c.length >= 2 && !seen[c]) { seen[c] = 1; chips.push(c); } });
-        chips.slice(0, 120).forEach(function (c) {
-          var chip = document.createElement("button");
-          chip.type = "button"; chip.className = "word-chip"; chip.textContent = c;
-          chip.addEventListener("click", function () { defineWord(c); });
-          wordsGrid.appendChild(chip);
-        });
-        wordsEmpty.style.display = chips.length ? "none" : "block";
-      }
 
       function setAutoScan(on) {
         autoScan = on;
@@ -1780,11 +1732,9 @@
         autoBtn.textContent = on ? "Auto-scan on" : "Auto-scan";
         if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
         if (on) {
-          setStatus("Auto-scan on — reading the whole frame continuously. Tap any word for its definition.");
+          setStatus("Auto-scan on — reading each question in frame and solving it below.");
           autoTimer = setInterval(autoScanPass, 1400);
           autoScanPass();
-        } else {
-          defPopup.classList.remove("show");
         }
       }
       autoBtn.addEventListener("click", function () { setAutoScan(!autoScan); });
@@ -1798,18 +1748,21 @@
         recognize(canvas).then(function (data) {
           var fullText = (data.text || "").trim();
           if (fullText) {
-            var prev = textInput.value;
             textInput.value = fullText;
-            renderWords(extractWords(data), canvas.width, canvas.height);
-            if (fullText === lastAutoText && fullText !== lastAutoSolvedText && parseOptions(fullText)) {
+            var hasMc = splitQuestions(fullText).some(function (b) { return !!parseOptions(b); });
+            if (fullText === lastAutoText && fullText !== lastAutoSolvedText && hasMc) {
               lastAutoSolvedText = fullText;
               solveAndShow(fullText);
+            } else if (fullText !== lastAutoSolvedText) {
+              buildCards(splitQuestions(fullText));
             }
             lastAutoText = fullText;
           }
         }).catch(function () { /* keep scanning silently */ })
           .then(function () { ocrBusy = false; stage.classList.remove("scanning"); });
       }
+
+      buildCards([]);
 
       if (window.Tesseract) {
         setOcrPill("READER LOADING…");
