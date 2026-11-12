@@ -72,7 +72,7 @@
         background: var(--stage-bg);
         border-radius: 18px;
         overflow: hidden;
-        height: clamp(340px, 56vh, 540px);
+        height: clamp(440px, 66vh, 660px);
         box-shadow: 0 10px 34px rgba(0, 0, 0, 0.28);
       }
       .stage video, .stage img.photo {
@@ -126,7 +126,20 @@
       .hud-pill .dot { width: 7px; height: 7px; border-radius: 50%; background: #5c6f66; flex: none; }
       .hud-pill.on .dot { background: var(--accent-bright); box-shadow: 0 0 8px var(--accent-bright); }
 
-      .frame-corners { position: absolute; inset: 52px 14px 56px; pointer-events: none; z-index: 3; display: none; }
+      .frame-corners {
+        position: absolute; inset: 52px 14px 56px; pointer-events: none; z-index: 3; display: none;
+        /* What you see is what gets read: everything OUTSIDE this box is dimmed
+           in the preview and cropped out of the scan — it is never OCR'd. */
+        box-shadow: 0 0 0 9999px rgba(3, 10, 7, 0.52);
+        border-radius: 10px;
+      }
+      .frame-tag {
+        position: absolute; top: 9px; left: 50%; transform: translateX(-50%);
+        font-size: 10px; letter-spacing: 0.1em; font-weight: 600; white-space: nowrap;
+        color: var(--hud-ink); background: rgba(3, 12, 9, 0.66);
+        border: 1px solid rgba(47, 230, 168, 0.35);
+        padding: 4px 8px; border-radius: 999px;
+      }
       .stage.live .frame-corners, .stage.has-photo .frame-corners { display: block; }
       .frame-corners i { position: absolute; width: 26px; height: 26px; border: 2px solid var(--hud-line); }
       .frame-corners i:nth-child(1) { top: 0; left: 0; border-right: 0; border-bottom: 0; border-top-left-radius: 8px; }
@@ -156,6 +169,56 @@
         backdrop-filter: blur(3px);
       }
       .stage.live .hud-status, .stage.has-photo .hud-status { display: block; }
+
+      /* ---------- On-camera answer: highlight + why, no scrolling ---------- */
+      /* Same inset as the scan frame, so the reader's own text positions
+         (fractions of the scanned crop) land exactly on the words. */
+      .hl-layer {
+        position: absolute; inset: 52px 14px 56px; z-index: 4; pointer-events: none;
+      }
+      .hl-layer[hidden] { display: none; }
+      .hl-box {
+        position: absolute;
+        border: 3px solid var(--accent-bright);
+        background: rgba(47, 230, 168, 0.16);
+        border-radius: 8px;
+        box-shadow: 0 0 0 1px rgba(3, 12, 9, 0.35), 0 0 18px rgba(47, 230, 168, 0.35);
+      }
+      .hl-tag {
+        position: absolute; top: -11px; left: -3px;
+        font-family: "IBM Plex Mono", ui-monospace, monospace;
+        font-size: 11px; font-weight: 700; letter-spacing: 0.06em;
+        color: #06231a; background: var(--accent-bright);
+        border-radius: 5px; padding: 2px 7px; white-space: nowrap;
+      }
+      /* A sentence-form question gets its own box on the camera — amber,
+         so it never reads as the (green) answer: this is WHAT was asked,
+         the green box is the answer to it. */
+      .hl-box.q-box {
+        border-color: #ffc46b;
+        background: rgba(255, 196, 107, 0.13);
+        box-shadow: 0 0 0 1px rgba(3, 12, 9, 0.35), 0 0 18px rgba(255, 196, 107, 0.30);
+      }
+      .hl-box.q-box .hl-tag { background: #ffc46b; color: #2c1e04; }
+      .answer-banner {
+        position: absolute; left: 14px; right: 14px; bottom: 52px; z-index: 6;
+        background: rgba(3, 14, 10, 0.9);
+        border: 1px solid var(--accent-bright);
+        border-radius: 10px; padding: 9px 12px;
+        color: var(--hud-ink);
+        display: flex; flex-direction: column; gap: 6px;
+        max-height: 38%; overflow-y: auto;
+        backdrop-filter: blur(3px);
+      }
+      .answer-banner[hidden] { display: none; }
+      .ab-row { display: flex; gap: 9px; align-items: flex-start; font-size: 14px; line-height: 1.45; }
+      .ab-letter {
+        flex: none; min-width: 24px; height: 24px; padding: 0 5px;
+        display: inline-flex; align-items: center; justify-content: center;
+        background: var(--accent-bright); color: #06231a;
+        font-weight: 800; font-size: 14px; border-radius: 6px;
+      }
+      .ab-text b { color: var(--accent-bright); font-weight: 700; }
 
       /* ---------- Controls: one compact bar ---------- */
       .controls { display: flex; flex-wrap: wrap; gap: 9px; }
@@ -205,6 +268,24 @@
       }
       .q-stem { font-size: 17.5px; font-weight: 600; line-height: 1.5; margin: 0; overflow-wrap: anywhere; }
       .q-stem.empty { color: var(--muted); font-weight: 500; font-size: 15.5px; }
+      /* The part of a sentence-form question that was turned into a
+         calculation is lit up, so the user can see exactly what the
+         solver worked from — and spot it if the read got it wrong. */
+      .q-mark {
+        background: rgba(255, 196, 107, 0.38);
+        color: inherit;
+        border-radius: 4px; padding: 0 3px;
+        box-shadow: inset 0 0 0 1px rgba(154, 98, 6, 0.45);
+      }
+      @media (prefers-color-scheme: dark) {
+        .q-mark { background: rgba(255, 196, 107, 0.30); box-shadow: inset 0 0 0 1px rgba(255, 196, 107, 0.55); }
+      }
+      .q-stem.q-sentence { background: var(--amber-bg); border-radius: 8px; padding: 6px 9px; margin: -6px -9px 0; }
+      .read-as {
+        margin: 9px 0 0; font-size: 12.5px; font-weight: 600; letter-spacing: 0.05em;
+        color: var(--amber);
+      }
+      .read-as[hidden] { display: none; }
 
       .options-label { margin-top: 18px; }
       .options-empty { font-size: 14px; color: var(--muted); margin: 0; line-height: 1.5; }
@@ -291,7 +372,8 @@
       .sample-label { font-size: 12.5px; color: var(--muted); margin-right: 2px; }
 
       @media (max-width: 560px) {
-        .stage { height: 52vh; min-height: 330px; }
+        .stage { height: 64vh; min-height: 410px; }
+        .frame-tag { font-size: 9px; letter-spacing: 0.06em; }
         .hud-pill { font-size: 10px; letter-spacing: 0.08em; padding: 5px 8px; }
         .q-stem { font-size: 16.5px; }
         .answer-headline { font-size: 21px; }
@@ -307,11 +389,11 @@
 
         <div class="stage-placeholder" id="placeholder">
           <h1>Point at the questions.<br />It solves each one.</h1>
-          <p>Fill the frame with the questions <em>and</em> their printed choices — one question or a whole page of them. The scanner reads each question as one piece of writing, works out what it is asking, and picks the best answer from that question's own choices.</p>
+          <p>Fit the whole question <em>and</em> all of its A–D choices inside the green frame — the scan reads only what is inside that frame, nothing outside it. The scanner reads each question as one piece of writing, works out what it is asking, and highlights the best answer from that question's own choices right on the camera, with the reason why.</p>
           <div class="steps">
             <span><b>1</b>&nbsp; START CAMERA</span>
-            <span><b>2</b>&nbsp; FRAME QUESTIONS + CHOICES</span>
-            <span><b>3</b>&nbsp; EACH ANSWER APPEARS BELOW</span>
+            <span><b>2</b>&nbsp; FIT QUESTION + ALL CHOICES IN THE FRAME</span>
+            <span><b>3</b>&nbsp; ANSWER HIGHLIGHTED ON THE CAMERA</span>
           </div>
         </div>
 
@@ -320,10 +402,13 @@
           <span class="hud-pill mono" id="ocrPill">READER IDLE</span>
         </div>
 
-        <div class="frame-corners"><i></i><i></i><i></i><i></i></div>
+        <div class="frame-corners" id="scanFrame"><i></i><i></i><i></i><i></i><span class="frame-tag mono">ONLY TEXT INSIDE THIS FRAME IS READ</span></div>
         <div class="scanline"></div>
 
         <div class="hud-status mono" id="hudStatus">Camera off — start the camera, upload a photo, or paste a question below.</div>
+
+        <div class="hl-layer" id="hlLayer" hidden></div>
+        <div class="answer-banner" id="answerBanner" hidden></div>
       </section>
 
       <!-- ===== One compact control bar ===== -->
@@ -343,7 +428,7 @@
         </button>
         <input type="file" id="fileInput" accept="image/*" hidden />
       </div>
-      <p class="controls-note" id="controlsNote">Reading happens on this device — the camera image is never uploaded. Frame the questions with their A–D choices in view — one question or several at once; every answer below is one of that question's own printed choices.</p>
+      <p class="controls-note" id="controlsNote">Reading happens on this device — the camera image is never uploaded. Only the text inside the green frame is read: fit each question with all of its A–D choices inside it (move back a little rather than in close, so the choices fit too). Pointing at another screen? If the first read comes back unclear, the scan automatically re-reads the frame with a screen-cleanup pass that flattens glow and screen texture — hold steady and fill the frame. Every answer below is one of that question's own printed choices. Questions asked in words are solved too ("What is twelve divided by three?", "Mia shares 24 stickers equally among 4 friends") — and a story problem is answered even when its choices aren't in the frame ("A factory packs 480 juice boxes into packs of 24", "8 shelves, each holds 45 books"), with the worked answer shown right on the camera. The card highlights the question it read, and for word questions it marks the words it turned into a calculation and shows what it read them as. And because a ÷ can scan as a + when its dots are lost in screen glow, any + in a maths question is double-checked against the picture itself before it is trusted. Each question is anchored on its printed number ("2."), so that number is never treated as part of the maths, and anything read before it — the quiz title, the "4/5" progress marker — is ignored. If a question is read but its choices aren't in the frame, you still get a suggested answer worked from the question alone, labelled as a suggestion. And if the worked answer doesn't match any of that question's choices, the symbols and digits are re-analysed against the choices before anything is reported — a ÷ that read as + and a ? that read as an extra 7 are both retried the way the choices support (432 + 127 is re-read as 432 ÷ 12 when 36 is one of the choices). If the question and its choices still don't agree, the scan re-reads the frame with different treatments — a hard black-and-white pass, then flipped colours — and keeps whichever read makes them agree. So the answer the choices point to is the one you see, highlighted on the camera with the working that picked it shown on the highlighted choice.</p>
 
       <!-- ===== One card per question: its stem, its printed choices, its answer ===== -->
       <p class="results-summary mono" id="resultsSummary" hidden></p>
@@ -361,6 +446,17 @@
         <div class="sample-row">
           <span class="sample-label">Try a sample:</span>
           <button type="button" data-sample="mc">Math</button>
+          <button type="button" data-sample="mcx">Math · 12x6</button>
+          <button type="button" data-sample="frac">Math · fractions</button>
+          <button type="button" data-sample="words">Math · in words</button>
+          <button type="button" data-sample="story">Word problem</button>
+          <button type="button" data-sample="story-packs">Word problem · packs</button>
+          <button type="button" data-sample="story-baskets">Word problem · baskets</button>
+          <button type="button" data-sample="story-shelves">Word problem · shelves</button>
+          <button type="button" data-sample="story-candles">Word problem · profit</button>
+          <button type="button" data-sample="story-speed">Word problem · speed</button>
+          <button type="button" data-sample="story-change">Word problem · change</button>
+          <button type="button" data-sample="story-theater">Word problem · theater</button>
           <button type="button" data-sample="geography">Geography</button>
           <button type="button" data-sample="science">Science</button>
           <button type="button" data-sample="vocab">Vocabulary</button>
@@ -375,9 +471,10 @@
       "use strict";
       var $ = function (id) { return document.getElementById(id); };
 
-      var stage = $("stage"), video = $("video"), photoImg = $("photoImg");
+      var stage = $("stage"), video = $("video"), photoImg = $("photoImg"), scanFrame = $("scanFrame");
       var modePill = $("modePill"), ocrPill = $("ocrPill"), hudStatus = $("hudStatus");
       var qaList = $("qaList"), resultsSummary = $("resultsSummary");
+      var hlLayer = $("hlLayer"), answerBanner = $("answerBanner");
       var textInput = $("textInput"), textMeta = $("textMeta");
       /* One entry per question found in the frame: its raw text block and,
          once solved, its result. cards[i] holds the DOM refs for block i. */
@@ -428,13 +525,14 @@
             camBtnLabel.textContent = "Stop camera";
             captureBtn.disabled = false;
             autoBtn.disabled = false;
-            setStatus("Camera on. Fill the frame with a question and its choices, then tap Scan & solve.");
+            setStatus("Camera on. Fit a whole question and all of its A–D choices inside the green frame, then tap Scan & solve.");
           })
           .catch(function () {
             setStatus("Camera permission wasn't granted — upload a photo or paste the text instead.");
           });
       }
       function stopCamera() {
+        clearAnswerOverlay();
         if (stream) { stream.getTracks().forEach(function (t) { t.stop(); }); stream = null; }
         video.srcObject = null;
         if (sourceKind === "video") sourceKind = null;
@@ -467,17 +565,299 @@
       });
 
       /* ---------------- OCR ---------------- */
-      function frameCanvas(maxWidth) {
+      /* What you see is what gets read. The preview uses object-fit: cover,
+         so the camera's full sensor image is WIDER/TALLER than the part
+         actually shown — the old capture OCR'd that whole sensor image,
+         which is why scans picked up text that wasn't in the visible frame
+         (and why the preview looked like a small cropped square). This crop
+         maps the on-screen scan-frame box back into source pixels — taking
+         the cover crop into account — and captures ONLY that box. */
+      function scanCropRect(sw, sh) {
+        var stageRect = stage.getBoundingClientRect();
+        var srcRect = (sourceKind === "image" ? photoImg : video).getBoundingClientRect();
+        if (!stageRect.width || !srcRect.width) return { sx: 0, sy: 0, sw: sw, sh: sh };
+        // Cover-fit geometry: the source is scaled until it covers the
+        // element, then centered — the overflow on each side is not shown.
+        var cover = Math.max(srcRect.width / sw, srcRect.height / sh);
+        var dispW = sw * cover, dispH = sh * cover;
+        var offX = srcRect.left + (srcRect.width - dispW) / 2;
+        var offY = srcRect.top + (srcRect.height - dispH) / 2;
+        // The scan frame is the inset box drawn on the stage; fall back to
+        // the whole visible stage if it can't be measured.
+        var fr = scanFrame && scanFrame.getBoundingClientRect();
+        var fx = fr && fr.width ? fr.left : stageRect.left;
+        var fy = fr && fr.height ? fr.top : stageRect.top;
+        var fw = fr && fr.width ? fr.width : stageRect.width;
+        var fh = fr && fr.height ? fr.height : stageRect.height;
+        var sx = (fx - offX) / cover, sy = (fy - offY) / cover;
+        var cw = fw / cover, ch = fh / cover;
+        // Clamp to the source image.
+        if (sx < 0) { cw += sx; sx = 0; }
+        if (sy < 0) { ch += sy; sy = 0; }
+        if (sx + cw > sw) cw = sw - sx;
+        if (sy + ch > sh) ch = sh - sy;
+        if (cw < 20 || ch < 20) return { sx: 0, sy: 0, sw: sw, sh: sh };
+        return { sx: sx, sy: sy, sw: cw, sh: ch };
+      }
+
+      /* Prepare a cropped frame for the reader: grayscale + contrast stretch
+         (and, for the retry pass, hard black/white thresholding). Printed
+         choices are usually smaller/lighter than the question, and plain
+         downscaled colour frames are where the reader was losing them.
+
+         Polarity matters as much as sharpness: the reader expects DARK text
+         on a LIGHT background. A quiz shown in a dark-mode app — glowing
+         white text on a near-black screen, choices as white text on grey
+         pills — came back as garbage or nothing at all, because the frame
+         was never flipped. So each frame is sampled first: if most of it
+         is dark, the text on it must be light, and the frame is inverted
+         before the reader sees it. Returns the polarity actually used
+         ("invert" or "normal") so a retry can deliberately try the other
+         one. */
+      var lastPolarity = "normal";
+      function prepForOcr(ctx, w, h, binary, polarity) {
+        var img;
+        try { img = ctx.getImageData(0, 0, w, h); } catch (e) { return "normal"; }
+        var d = img.data, i, lum;
+        var dark = 0, sampled = 0, lumSum = 0;
+        for (i = 0; i < d.length; i += 16) {
+          lum = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+          lumSum += lum;
+          if (lum < 128) dark++;
+          sampled++;
+        }
+        /* A photographed quiz screen is MIXED: a dark surround, mid-grey
+           choice pills, bright text throughout. Only ~37% of its pixels are
+           "dark", so the old majority-dark test said "not a dark frame" and
+           never flipped it — the reader then OCR'd glowing light-on-mid-grey
+           text as-is and returned word salad. The mean luminance is the
+           giveaway: a mixed screen sits mid-grey (~124) while a normal
+           printed page is bright (~220+). */
+        var meanLum = sampled ? lumSum / sampled : 255;
+        var invert = polarity === "invert" ? true
+          : polarity === "normal" ? false
+          : (meanLum < 132 || (sampled > 0 && dark / sampled > 0.52));
+        for (i = 0; i < d.length; i += 4) {
+          lum = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+          var v = (lum - 128) * 1.45 + 128;            // contrast stretch
+          if (invert) v = 255 - v;                    // light-on-dark -> dark-on-light
+          if (binary) v = v < 165 ? 0 : 255;          // hard threshold pass
+          else v = v < 0 ? 0 : (v > 255 ? 255 : v);
+          d[i] = v; d[i + 1] = v; d[i + 2] = v;
+        }
+        ctx.putImageData(img, 0, 0);
+        return invert ? "invert" : "normal";
+      }
+
+      function frameCanvas(maxWidth, binary, polarity) {
         var src = sourceKind === "image" ? photoImg : video;
         var sw = sourceKind === "image" ? photoImg.naturalWidth : video.videoWidth;
         var sh = sourceKind === "image" ? photoImg.naturalHeight : video.videoHeight;
         if (!sw || !sh) return null;
-        var scale = Math.min(1, maxWidth / sw);
+        var crop = scanCropRect(sw, sh);
+        // Upscale (never just downscale) small cropped text to a reader-friendly
+        // width, so question AND choices stay legible from a normal distance —
+        // before, the choices only survived when the camera was held close.
+        var outW = Math.min(2600, Math.max(maxWidth || 1600, Math.round(crop.sw)));
+        var scale = outW / crop.sw;
         var c = document.createElement("canvas");
-        c.width = Math.round(sw * scale);
-        c.height = Math.round(sh * scale);
-        c.getContext("2d").drawImage(src, 0, 0, c.width, c.height);
+        c.width = Math.round(crop.sw * scale);
+        c.height = Math.round(crop.sh * scale);
+        var ctx = c.getContext("2d");
+        ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, c.width, c.height);
+        ctx.drawImage(src, crop.sx, crop.sy, crop.sw, crop.sh, 0, 0, c.width, c.height);
+        lastPolarity = prepForOcr(ctx, c.width, c.height, !!binary, polarity || "auto");
         return c;
+      }
+
+      /* ---------------- Screen pass: reading a photo OF a screen ----------------
+         The live failure (2026-11-12): pointing the camera at a quiz shown
+         on another screen returned total garbage that still "parsed" into
+         fake D/A/A/A choices, so the old retry never fired. A photographed
+         screen defeats plain grayscale OCR three ways at once:
+           • moiré / screen-door texture everywhere — the reader invents
+             letters out of it (the garbage was LONGER than the real text);
+           • mixed polarity — dark surround, mid-grey choice pills, bright
+             text — no single global invert/threshold separates the text;
+           • glow/bloom — letters come out fat and merged ("1/4" as one blob).
+         This pass is built for exactly that, and was verified against the
+         user's own photo of his quiz screen (1/4 + 1/4, choices 2/8, 2/2,
+         1/8, 1/2): a 3×3 MEDIAN filter kills the moiré, an ADAPTIVE local
+         threshold separates bright text from whatever its local background
+         is (dark surround or grey pill alike), and a THINNING pass (white
+         grows 1px per round) splits the bloomed, merged strokes. On that
+         photo the old pipeline scored ~40 confidence of pure nonsense;
+         this one reads the question and all four choices. */
+      function screenCanvas(thinCount) {
+        var src = sourceKind === "image" ? photoImg : video;
+        var sw = sourceKind === "image" ? photoImg.naturalWidth : video.videoWidth;
+        var sh = sourceKind === "image" ? photoImg.naturalHeight : video.videoHeight;
+        if (!sw || !sh) return null;
+        var crop = scanCropRect(sw, sh);
+        var outW = Math.min(1500, Math.max(900, Math.round(crop.sw)));
+        var scale = outW / crop.sw;
+        var w = Math.round(crop.sw * scale), h = Math.round(crop.sh * scale);
+        var c = document.createElement("canvas");
+        c.width = w; c.height = h;
+        var ctx = c.getContext("2d");
+        ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, w, h);
+        ctx.drawImage(src, crop.sx, crop.sy, crop.sw, crop.sh, 0, 0, w, h);
+        var img;
+        try { img = ctx.getImageData(0, 0, w, h); } catch (e) { return c; }
+        var d = img.data, n = w * h, i, x, y;
+        var g = new Float32Array(n);
+        for (i = 0; i < n; i++) g[i] = 0.299 * d[i * 4] + 0.587 * d[i * 4 + 1] + 0.114 * d[i * 4 + 2];
+        // 3×3 median — removes screen-door speckle without blurring edges.
+        var med = new Float32Array(n);
+        var win = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+        for (y = 0; y < h; y++) {
+          var yUp = y > 0 ? y - 1 : 0, yDn = y < h - 1 ? y + 1 : h - 1;
+          for (x = 0; x < w; x++) {
+            var xL = x > 0 ? x - 1 : 0, xR = x < w - 1 ? x + 1 : w - 1;
+            win[0] = g[yUp * w + xL]; win[1] = g[yUp * w + x]; win[2] = g[yUp * w + xR];
+            win[3] = g[y * w + xL];   win[4] = g[y * w + x];   win[5] = g[y * w + xR];
+            win[6] = g[yDn * w + xL]; win[7] = g[yDn * w + x]; win[8] = g[yDn * w + xR];
+            win.sort(function (a, b) { return a - b; });
+            med[y * w + x] = win[4];
+          }
+        }
+        // Adaptive threshold via an integral image: a pixel becomes TEXT
+        // (black) when it is brighter than its neighbourhood mean by C —
+        // true for the question on the dark surround AND for the choices
+        // on their lighter grey pills, so both read in one pass.
+        var iw = w + 1;
+        var ii = new Float64Array(iw * (h + 1));
+        for (y = 0; y < h; y++) {
+          var rowSum = 0;
+          for (x = 0; x < w; x++) {
+            rowSum += med[y * w + x];
+            ii[(y + 1) * iw + x + 1] = ii[y * iw + x + 1] + rowSum;
+          }
+        }
+        var block = Math.max(31, Math.round(w / 18));
+        if (block % 2 === 0) block++;
+        var rad = (block - 1) / 2, C = 11;
+        var out = new Uint8Array(n);
+        for (y = 0; y < h; y++) {
+          var y0 = y - rad < 0 ? 0 : y - rad, y1 = y + rad + 1 > h ? h : y + rad + 1;
+          for (x = 0; x < w; x++) {
+            var x0 = x - rad < 0 ? 0 : x - rad, x1 = x + rad + 1 > w ? w : x + rad + 1;
+            var sum = ii[y1 * iw + x1] - ii[y0 * iw + x1] - ii[y1 * iw + x0] + ii[y0 * iw + x0];
+            var mean = sum / ((y1 - y0) * (x1 - x0));
+            out[y * w + x] = med[y * w + x] > mean + C ? 0 : 255;
+          }
+        }
+        // Thinning: grow the white by 1px per round (3×3 max filter), which
+        // splits glyphs the screen's glow fused together ("1/4" as a blob).
+        var rounds = thinCount || 1;
+        for (var r = 0; r < rounds; r++) {
+          var grown = new Uint8Array(n);
+          for (y = 0; y < h; y++) {
+            var yu = y > 0 ? y - 1 : 0, yd = y < h - 1 ? y + 1 : h - 1;
+            for (x = 0; x < w; x++) {
+              var xl = x > 0 ? x - 1 : 0, xr = x < w - 1 ? x + 1 : w - 1;
+              var m = out[yu * w + xl];
+              if (out[yu * w + x] > m) m = out[yu * w + x];
+              if (out[yu * w + xr] > m) m = out[yu * w + xr];
+              if (out[y * w + xl] > m) m = out[y * w + xl];
+              if (out[y * w + x] > m) m = out[y * w + x];
+              if (out[y * w + xr] > m) m = out[y * w + xr];
+              if (out[yd * w + xl] > m) m = out[yd * w + xl];
+              if (out[yd * w + x] > m) m = out[yd * w + x];
+              if (out[yd * w + xr] > m) m = out[yd * w + xr];
+              grown[y * w + x] = m;
+            }
+          }
+          out = grown;
+        }
+        for (i = 0; i < n; i++) { d[i * 4] = out[i]; d[i * 4 + 1] = out[i]; d[i * 4 + 2] = out[i]; }
+        ctx.putImageData(img, 0, 0);
+        return c;
+      }
+
+      /* ---------------- Read quality: never trust garbage ----------------
+         Word salad can still "parse" — the failed live read produced four
+         choices labelled D/A/A/A out of noise — so "some text with some
+         options" is NOT success. Every read is scored on the reader's own
+         confidence, how word-like its tokens are, symbol noise, and
+         whether its choices have distinct letters. The capture runs extra
+         passes while the score is poor and solves the BEST read, and a
+         read under the floor is reported as unreadable instead of being
+         dressed up as a question with fake choices. */
+      function readQuality(text, conf) {
+        if (!text || !text.trim()) return -100;
+        var score = (conf || 0) * 0.6;
+        var toks = text.toLowerCase().match(/[a-z]{2,}/g) || [];
+        if (toks.length >= 3) {
+          var vow = 0, caps = 0;
+          toks.forEach(function (t) {
+            if (/[aeiouy]/.test(t)) vow++;
+            if (t.length <= 4 && t === t.toUpperCase()) caps++;
+          });
+          score += (vow / toks.length) * 25;
+          score -= (caps / toks.length) * 18;   // random OCR shouts in short ALL-CAPS fragments
+        }
+        var noise = (text.match(/[^\w\s\.\,\?\%\+\-\*\/\(\)\:\;\'\"\=\<\>]/g) || []).length;
+        score -= Math.min(20, noise * 1.2);
+        var bestOpts = 0, hasDup = false;
+        splitQuestions(text).forEach(function (b) {
+          var mc = parseOptions(b);
+          if (mc && mc.options.length) {
+            var seen = {}, uniq = 0;
+            mc.options.forEach(function (o) { if (seen[o.letter]) hasDup = true; else { seen[o.letter] = 1; uniq++; } });
+            if (uniq > bestOpts) bestOpts = uniq;
+          }
+        });
+        if (bestOpts >= 3) score += hasDup ? 8 : 25;
+        else if (bestOpts === 2) score += 12;
+        if (findExpression(text)) score += 10;
+        if (/\?/.test(text)) score += 4;
+        return score;
+      }
+
+      /* ---------------- Fraction repair for OCR confusions ----------------
+         Even a good screen read confuses the thin strokes of fractions:
+         "1/4" comes back as "V4" or "U4" (the 1 and / fuse into one glyph)
+         and an option "1/2" can lose its slash entirely ("12"). These
+         repairs run ONLY in a clearly fraction-math context, and the fixed
+         count is reported so the user can check them in the text box. */
+      function repairFractionOcr(text) {
+        var t = String(text || "");
+        var realFrac = (t.match(/\d+\s*\/\s*\d+/g) || []).length;
+        var fracLike = (t.match(/\b[VvUu]\d\b/g) || []).length;
+        var hasPlus = /\+/.test(t);
+        if (!((realFrac >= 1 && hasPlus) || fracLike >= 2 || (fracLike >= 1 && hasPlus))) return { text: t, fixed: 0 };
+        var fixed = 0;
+        t = t.replace(/\b[VvUu](\d)\b/g, function (m, dg) { fixed++; return "1/" + dg; });
+        var lines = t.split("\n");
+        var fracOpts = 0;
+        lines.forEach(function (l) { if (/^\s*\(?[A-Ea-e]\s*[\)\.\:\-]/.test(l) && /\d+\s*\/\s*\d+/.test(l)) fracOpts++; });
+        if (fracOpts >= 2) {
+          lines = lines.map(function (l) {
+            return l.replace(/^(\s*\(?[A-Ea-e]\s*[\)\.\:\-]\s*)(\d)(\d)\s*$/, function (m, pre, a, b) { fixed++; return pre + a + "/" + b; });
+          });
+          t = lines.join("\n");
+        }
+        // A "?" glued onto the stem's last fraction as an extra digit
+        // ("1/4?" read as "1/42"): the stem is left with no "?" at all,
+        // ends in a two-digit-denominator fraction, and the choices are
+        // simple one-digit fractions — trim the phantom digit back off.
+        var firstOpt = -1, simpleOpts = 0;
+        lines.forEach(function (l, li) {
+          var om = /^\s*\(?[A-Ea-e]\s*[\)\.\:\-]\s*(.+)$/.exec(l);
+          if (om) {
+            if (firstOpt === -1) firstOpt = li;
+            if (/^\d\s*\/\s*\d$/.test(om[1].trim())) simpleOpts++;
+          }
+        });
+        if (firstOpt > 0 && simpleOpts >= 2) {
+          var stemText = lines.slice(0, firstOpt).join("\n");
+          if (stemText.indexOf("?") === -1 && /\d+\s*\/\s*\d\d\s*$/.test(stemText)) {
+            lines[firstOpt - 1] = lines[firstOpt - 1].replace(/(\d+)\s*\/\s*(\d)\d\s*$/, function (m, a, b) { fixed++; return a + "/" + b + "?"; });
+            t = lines.join("\n");
+          }
+        }
+        return { text: t, fixed: fixed };
       }
 
       var ocrWorkerPromise = null;
@@ -491,7 +871,15 @@
             if (m.status === "recognizing text") setOcrPill("READING " + Math.round((m.progress || 0) * 100) + "%");
             else if (m.status) setOcrPill("READER LOADING…");
           }
-        }).then(function (w) { ocrWorker = w; ocrWorkerPromise = null; setOcrPill("READER READY"); return w; })
+        }).then(function (w) {
+          // Page-segmentation mode 6 ("one uniform block of text") reads a
+          // question followed by A–D choice lines far more reliably than the
+          // fully automatic layout mode, which was dropping the choices.
+          var ready = (w.setParameters ? w.setParameters({ tessedit_pageseg_mode: "6", preserve_interword_spaces: "1" }) : Promise.resolve());
+          return Promise.resolve(ready).catch(function () { /* defaults still work */ }).then(function () {
+            ocrWorker = w; ocrWorkerPromise = null; setOcrPill("READER READY"); return w;
+          });
+        })
           .catch(function (e) { ocrWorkerPromise = null; setOcrPill("READER FAILED"); throw e; });
         return ocrWorkerPromise;
       }
@@ -526,30 +914,389 @@
         });
       }
 
+      /* ---------------- Where the words are: on-camera highlight ----------------
+         The reader reports the position of every line it read, in pixels of
+         the scanned crop. Kept alongside the text, those positions let the
+         answer be highlighted ON the camera — a box over the correct choice
+         where it sits in the frame — instead of only in the cards below.
+         lastLayout is the layout of the read that produced the current
+         text; it is cleared whenever text is solved without a camera read
+         (pasted text, samples), where there is nothing to point at. */
+      var lastLayout = null;
+      function layoutFromData(data, canvas) {
+        if (!data || !canvas || !canvas.width || !canvas.height) return null;
+        var lines = [];
+        function pushLine(ln) {
+          if (!ln || !ln.bbox || typeof ln.bbox.x0 !== "number") return;
+          var words = [];
+          (ln.words || []).forEach(function (wd) {
+            if (wd && wd.bbox && typeof wd.bbox.x0 === "number") words.push({ text: wd.text || "", x0: wd.bbox.x0, x1: wd.bbox.x1 });
+          });
+          lines.push({ text: ln.text || "", x0: ln.bbox.x0, y0: ln.bbox.y0, x1: ln.bbox.x1, y1: ln.bbox.y1, words: words });
+        }
+        if (data.lines && data.lines.length) data.lines.forEach(pushLine);
+        else if (data.blocks) {
+          data.blocks.forEach(function (b) {
+            (b.paragraphs || []).forEach(function (p) { (p.lines || []).forEach(pushLine); });
+          });
+        }
+        return lines.length ? { lines: lines, w: canvas.width, h: canvas.height } : null;
+      }
+      /* Find the read line that holds a given printed choice: the line that
+         starts with the choice's letter marker and contains its text.
+         Returns the box to highlight — narrowed to just that choice when
+         two choices share one printed line ("A. 64  B. 70"). */
+      function findOptionBox(layout, letter, optText) {
+        if (!layout || !layout.lines.length || !letter) return null;
+        var target = normText(optText || "");
+        var marker = new RegExp("^\\s*\\(?\\s*" + letter + "\\s*[\\)\\.\\:\\-]\\s*", "i");
+        var best = null, bestScore = -1;
+        layout.lines.forEach(function (ln) {
+          var t = normText(ln.text);
+          if (!t) return;
+          var score = 0;
+          if (marker.test(ln.text)) score += 4;
+          if (target && t === target) score += 6;
+          else if (target && t.indexOf(target) !== -1) score += 5;
+          else if (target) {
+            var toks = target.split(" ").filter(function (w) { return w.length; });
+            var hit = 0;
+            toks.forEach(function (w) { if ((" " + t + " ").indexOf(" " + w + " ") !== -1) hit++; });
+            if (toks.length && hit === toks.length) score += 3; else score += hit;
+          }
+          if (score > bestScore) { bestScore = score; best = ln; }
+        });
+        // The letter marker alone is not enough when the choice's text is
+        // known: the line's content must agree with it too, otherwise a
+        // misread line could get highlighted as the answer.
+        if (!best || bestScore < (target ? 5 : 4)) return null;
+        var box = { x0: best.x0, y0: best.y0, x1: best.x1, y1: best.y1 };
+        // Two choices on one line: narrow the box to this choice's words,
+        // from its letter marker up to (not including) the next marker.
+        if (best.words.length >= 2) {
+          var start = -1, end = best.words.length, j;
+          for (j = 0; j < best.words.length; j++) {
+            var wm = /^\(?\s*([A-E])\s*[\)\.\:\-]?\s*$/i.exec(best.words[j].text) || /^\(?\s*([A-E])[\).\:\-]/i.exec(best.words[j].text);
+            if (!wm) continue;
+            if (start === -1 && wm[1].toUpperCase() === letter) start = j;
+            else if (start !== -1) { end = j; break; }
+          }
+          if (start !== -1 && end > start) {
+            box.x0 = best.words[start].x0;
+            box.x1 = best.words[end - 1].x1;
+          }
+        }
+        return box;
+      }
+
+      /* Find the lines that hold a question's stem, for the amber
+         QUESTION box on the camera: lines whose words (or numbers)
+         overlap the stem's, excluding lines that are printed choices.
+         Lines scoring 2+ are unioned (a stem can wrap); otherwise the
+         single best line stands, if it shares at least one stem word. */
+      function findStemBox(layout, raw) {
+        if (!layout || !layout.lines.length) return null;
+        var mc = parseOptions(raw || "");
+        var stem = mc ? mc.stem : String(raw || "");
+        var stemToks = {};
+        tokens(stem).forEach(function (w) { stemToks[w] = 1; });
+        (stem.match(/\d+(?:\.\d+)?/g) || []).forEach(function (n) { stemToks[n] = 1; });
+        var scored = [];
+        layout.lines.forEach(function (ln) {
+          if (/^\s*\(?[A-Ea-e]\s*[\)\.\:\-]/.test(ln.text || "")) return;
+          var seen = {}, score = 0;
+          (String(ln.text || "").toLowerCase().match(/[a-z]+|\d+(?:\.\d+)?/g) || []).forEach(function (w) {
+            if (stemToks[w] && !seen[w]) { seen[w] = 1; score++; }
+          });
+          if (score > 0) scored.push({ ln: ln, score: score });
+        });
+        if (!scored.length) return null;
+        var strong = scored.filter(function (s) { return s.score >= 2; });
+        var pick = strong.length ? strong : [scored.reduce(function (a, b) { return b.score > a.score ? b : a; })];
+        var box = null;
+        pick.forEach(function (s) {
+          if (!box) box = { x0: s.ln.x0, y0: s.ln.y0, x1: s.ln.x1, y1: s.ln.y1 };
+          else {
+            box.x0 = Math.min(box.x0, s.ln.x0); box.y0 = Math.min(box.y0, s.ln.y0);
+            box.x1 = Math.max(box.x1, s.ln.x1); box.y1 = Math.max(box.y1, s.ln.y1);
+          }
+        });
+        return box;
+      }
+
+      /* ---------------- Is that + really a ÷? ----------------
+         The reported failure: a quiz showing "12 ÷ 4" came back solved
+         as 12 + 4 = 16, because a division sign photographed off a
+         screen loses its two dots to glow and the reader returns "+".
+         Once the text says +, no text logic can tell it apart from a
+         real plus — so before solving, every + (or :) sitting between
+         two plain numbers in a question is checked against the PICTURE:
+         the glyph is cropped out of the scanned frame, enlarged, and
+         re-read with the reader restricted to operator characters,
+         where + and ÷ are far easier to tell apart. A confirmed ÷ is
+         written back into the text; anything unclear is left as read,
+         and the solver then flags the question instead of guessing
+         (both answers are among the choices — see plusDivAmbiguity). */
+      function opCandidates(text) {
+        var out = [];
+        var re = /(\d+(?:\.\d+)?)\s*([+:])\s*(\d+(?:\.\d+)?)/g, m;
+        while ((m = re.exec(text)) && out.length < 3) {
+          // Fraction guards: in "1/4 + 1/4" the + joins two fractions —
+          // the operands touching it are a denominator and a numerator,
+          // and fraction addition is genuinely addition.
+          if (/\d\s*\/\s*$/.test(text.slice(0, m.index))) continue;
+          if (/^\s*\/\s*\d/.test(text.slice(m.index + m[0].length))) continue;
+          // A match inside a printed choice ("A. 3 + 4") is not the
+          // question's operator — leave choices exactly as printed.
+          var lineStart = text.lastIndexOf("\n", m.index) + 1;
+          var lineHead = text.slice(lineStart, m.index);
+          if (/^\s*\(?[A-Ea-e]\s*[\)\.\:\-]\s/.test(lineHead) && lineHead.replace(/\s/g, "").length <= 5) continue;
+          var mm = /^(\d+(?:\.\d+)?)(\s*)/.exec(m[0]);
+          out.push({ a: m[1], op: m[2], b: m[3], opIndex: m.index + mm[1].length + mm[2].length });
+        }
+        return out;
+      }
+
+      function locateOperator(c, layout) {
+        if (!layout || !layout.lines) return null;
+        var pat = new RegExp(c.a.replace(/\./g, "\\.") + "\\s*\\" + c.op + "\\s*" + c.b.replace(/\./g, "\\."));
+        for (var li = 0; li < layout.lines.length; li++) {
+          var ln = layout.lines[li];
+          var m = pat.exec(ln.text || "");
+          if (!m) continue;
+          var opPos = m.index + m[0].indexOf(c.op, c.a.length);
+          // Walk the line's word boxes to find where that character sits.
+          var cum = 0, cx = null, halfW = (ln.y1 - ln.y0) * 0.55;
+          for (var wi = 0; wi < ln.words.length; wi++) {
+            var wd = ln.words[wi], wlen = (wd.text || "").length;
+            if (!wlen) continue;
+            if (opPos >= cum && opPos < cum + wlen) {
+              var frac = (opPos - cum) / wlen;
+              cx = wd.x0 + frac * (wd.x1 - wd.x0);
+              halfW = Math.max(halfW, (wd.x1 - wd.x0) / wlen * 0.95);
+              break;
+            }
+            cum += wlen + 1;
+          }
+          if (cx === null) cx = ln.x0 + (opPos / Math.max(1, (ln.text || "").length)) * (ln.x1 - ln.x0);
+          return { cx: cx, y0: ln.y0, y1: ln.y1, halfW: halfW };
+        }
+        return null;
+      }
+
+      function cropAround(srcCanvas, loc) {
+        var lh = loc.y1 - loc.y0;
+        if (!srcCanvas || lh <= 0) return null;
+        var x0 = Math.max(0, Math.round(loc.cx - loc.halfW * 1.6)), x1 = Math.min(srcCanvas.width, Math.round(loc.cx + loc.halfW * 1.6));
+        var y0 = Math.max(0, Math.round(loc.y0 - lh * 0.3)), y1 = Math.min(srcCanvas.height, Math.round(loc.y1 + lh * 0.3));
+        if (x1 - x0 < 6 || y1 - y0 < 6) return null;
+        var scale = Math.max(2, Math.min(6, Math.round(110 / (y1 - y0)) || 2));
+        var pad = 14;
+        var c = document.createElement("canvas");
+        c.width = (x1 - x0) * scale + pad * 2;
+        c.height = (y1 - y0) * scale + pad * 2;
+        var ctx = c.getContext("2d");
+        ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, c.width, c.height);
+        ctx.drawImage(srcCanvas, x0, y0, x1 - x0, y1 - y0, pad, pad, (x1 - x0) * scale, (y1 - y0) * scale);
+        return c;
+      }
+
+      function ocrOperatorCrop(crop) {
+        return getWorker().then(function (w) {
+          function restore() {
+            if (!w.setParameters) return Promise.resolve();
+            return Promise.resolve(w.setParameters({ tessedit_pageseg_mode: "6", tessedit_char_whitelist: "", preserve_interword_spaces: "1" })).catch(function () {});
+          }
+          var set = w.setParameters
+            ? Promise.resolve(w.setParameters({ tessedit_pageseg_mode: "7", tessedit_char_whitelist: "+÷-:xX*/=0123456789." })).catch(function () {})
+            : Promise.resolve();
+          return set.then(function () {
+            return w.recognize(crop).then(function (r) {
+              var t = (r.data && r.data.text) || "";
+              return restore().then(function () {
+                if (t.indexOf("÷") !== -1) return "div";
+                if (t.indexOf("+") !== -1) return "plus";
+                return "unknown";
+              });
+            }, function () { return restore().then(function () { return "unknown"; }); });
+          });
+        }).catch(function () { return "unknown"; });
+      }
+
+      function checkOperatorGlyph(c, best) {
+        var loc = locateOperator(c, best.layout);
+        if (!loc || !best.cnv) return Promise.resolve("unknown");
+        var crops = [];
+        var c1 = cropAround(best.cnv, loc);
+        if (c1) crops.push(c1);
+        // Second opinion: the screen-cleanup rendering of the same frame
+        // (thinning is what separates a ÷'s dots from its bar). Layout
+        // positions are fractions of the frame, so they transfer.
+        try {
+          var sc = screenCanvas(2);
+          if (sc && best.layout.w && best.layout.h) {
+            var kx = sc.width / best.layout.w, ky = sc.height / best.layout.h;
+            var c2 = cropAround(sc, { cx: loc.cx * kx, y0: loc.y0 * ky, y1: loc.y1 * ky, halfW: loc.halfW * kx });
+            if (c2) crops.push(c2);
+          }
+        } catch (e) { /* the first crop still stands */ }
+        var chain = Promise.resolve("unknown");
+        crops.forEach(function (crop) {
+          chain = chain.then(function (v) { return v !== "unknown" ? v : ocrOperatorCrop(crop); });
+        });
+        return chain;
+      }
+
+      function verifyOperators(text, best) {
+        var cands = best && best.layout ? opCandidates(text) : [];
+        if (!cands.length) return Promise.resolve({ text: text, note: "" });
+        setStatus("Double-checking the maths symbols against the picture — a ÷ can read as a + …");
+        var result = text, fixed = 0;
+        var chain = Promise.resolve();
+        cands.forEach(function (c) {
+          chain = chain.then(function () {
+            return checkOperatorGlyph(c, best).then(function (verdict) {
+              // + and ÷ are both one character, so offsets never shift.
+              if (verdict === "div") { result = result.slice(0, c.opIndex) + "÷" + result.slice(c.opIndex + 1); fixed++; }
+            });
+          });
+        });
+        return chain.then(function () {
+          return { text: result, note: fixed ? " · Checked the maths symbols against the picture: " + fixed + " symbol" + (fixed > 1 ? "s" : "") + " first read as + was really ÷ — fixed in the text below." : "" };
+        }).catch(function () { return { text: text, note: "" }; });
+      }
+
+      function finishRead(text, conf, layout, extraNote, fracFixed) {
+        lastLayout = layout || null;
+        textInput.value = text;
+        var anyOpts = splitQuestions(text).some(function (b) { return !!parseOptions(b); });
+        textMeta.textContent = "Read confidence ~" + conf + "% · " + text.length + " characters" +
+          (fracFixed ? " · Fixed " + fracFixed + " fraction misread" + (fracFixed > 1 ? "s" : "") + " (like V4 → 1/4) — worth a quick check below." : "") +
+          (extraNote || "") +
+          (anyOpts ? "" : " — no A–D choices were read in this frame. If the page has choices, fit all of them inside the green frame and scan again; a plain question (like 12 × 6) is still solved on its own below.") +
+          (conf < 60 ? " Low confidence — check the text for misreads before trusting the answers." : "");
+        setStatus("Text read. Solving each question…");
+        return solveAndShow(text);
+      }
+
       function captureAndRead() {
         if (ocrBusy || !sourceKind) return;
-        var canvas = frameCanvas(1600);
+        var canvas = frameCanvas(2000);
         if (!canvas) { setStatus("No picture yet — wait for the camera to settle and try again."); return; }
+        clearAnswerOverlay();
         ocrBusy = true;
         stage.classList.add("scanning");
         setOcrPill("READING 0%");
-        setStatus("Reading the printed text…");
+        setStatus("Reading only what's inside the frame…");
         var timedOut = new Promise(function (resolve, reject) {
-          setTimeout(function () { reject(new Error("read timed out")); }, 90000);
+          setTimeout(function () { reject(new Error("read timed out")); }, 120000);
         });
-        Promise.race([recognize(canvas), timedOut]).then(function (data) {
+        /* Every pass is SCORED (readQuality) and the best one wins. The
+           old code accepted the first pass that produced any text with any
+           "options" — which is how pure noise got shown as a question with
+           D/A/A/A garbage choices: the flipped-polarity retry never even
+           ran. Pass order: (1) the normal page pass (great for print and
+           clean screens), then, only while the score stays poor, (2) the
+           screen pass — median + adaptive threshold + thinning — and
+           (3) the screen pass thinned further, for heavy screen glow. */
+        var GOOD = 62, FLOOR = 34;
+        var best = null;
+        /* A read can be letter-tidy and still WRONG for solving: a ÷
+           read as + produces clean, confident text whose answer
+           matches none of the choices that same read just read. So
+           every pass is also scored for SOLVE CONSISTENCY — does the
+           answer its own question works out to agree with the choices
+           it read (counting the re-analysis rescue, which exists
+           precisely for a misread symbol or digit)? A consistent read
+           outranks a merely tidy one, and a read whose choices
+           disagree with its answer never ends the scan early: the
+           frame is re-read another way until question and choices
+           make sense together — the re-scan logic the user asked for.
+           A non-maths question (no calculation at all) is never
+           penalised; only a worked answer that fits NO choice is. */
+        function solveConsistency(text) {
+          var bonus = 0, bad = 0;
+          splitQuestions(text).forEach(function (b) {
+            var mc = parseOptions(b);
+            if (!mc) return;
+            var stem = cutToQuestion(mc.stem);
+            var ma = mathAnswer(stem);
+            if (!ma || ma.suspect) return;
+            if (matchMathOption(mc.options, ma.value)) bonus += 30;
+            else if (reanalyzeMath(stem, mc.options, ma)) bonus += 26;
+            else if (bestFitFromChoices(stem, mc.options)) bonus += 6;
+            else { bonus -= 8; bad++; }
+          });
+          return { bonus: bonus, bad: bad };
+        }
+        function consider(data, cnv) {
           var text = (data.text || "").trim();
           var conf = Math.round(data.confidence || 0);
-          if (!text) {
-            setStatus("Nothing readable in frame — move closer, flatten the page, and add light.");
-            buildCards([]);
-            showAnswer(0, { status: "cant", headline: "No text found in that frame", detail: "Move closer to the page, keep it flat and well lit, and scan again." });
-            return;
+          var q = readQuality(text, conf);
+          var cons = solveConsistency(text);
+          var eff = q + cons.bonus;
+          if (!best || eff > best.eff) best = { text: text, conf: conf, q: q, eff: eff, bonus: cons.bonus, bad: cons.bad, layout: layoutFromData(data, cnv), cnv: cnv };
+          return { q: q, bad: cons.bad };
+        }
+        function nothingReadable() {
+          setStatus("Couldn't read that frame clearly — hold steady, cut glare, and make sure the question and all its choices fill the frame.");
+          if (best && best.text) {
+            textInput.value = best.text;
+            textMeta.textContent = "The best read it could manage is in the box below — it wasn't clear enough to trust as an answer. Fix any wrong words there and tap Solve, or scan again.";
           }
-          textInput.value = text;
-          textMeta.textContent = "Read confidence ~" + conf + "% · " + text.length + " characters" + (conf < 60 ? " — low confidence, check the text for misreads before trusting the answers." : "");
-          setStatus("Text read. Solving each question…");
-          return solveAndShow(text);
+          buildCards([]);
+          showAnswer(0, { status: "cant", headline: "That frame didn't read clearly", detail: "Nothing in it was clear enough to trust — showing a guess here would be worse than showing none. If you're pointing at another screen: hold the camera steady, fill the frame with the question and all of its A–D choices, and keep glare off the screen. On paper: keep it flat and well lit." });
+        }
+        var sequence = recognize(canvas).then(function (data) {
+          var r1 = consider(data, canvas);
+          if (r1.q >= GOOD && !r1.bad) return null;
+          setStatus(r1.bad ? "The choices it read don't agree with the answer — re-reading the frame as a screen to check them…" : "That read was unclear — re-reading the frame as a screen (flattening the glow and screen texture)…");
+          var sc1 = screenCanvas(1);
+          if (!sc1) return null;
+          return recognize(sc1).then(function (data2) {
+            var r2 = consider(data2, sc1);
+            if (r2.q >= GOOD && !r2.bad) return null;
+            setStatus(r2.bad ? "The question and its choices still don't agree — one more screen pass, thinning the glowing letters further…" : "Still unclear — one more screen pass, thinning the glowing letters further…");
+            var sc2 = screenCanvas(2);
+            if (!sc2) return null;
+            return recognize(sc2).then(function (data3) {
+              consider(data3, sc2);
+              if (!best || !best.bad) return null;
+              // Every screen pass still leaves a question whose worked
+              // answer fits none of its own choices: re-scan the frame
+              // with two plain treatments the screen passes don't try —
+              // a hard black-and-white threshold, then the opposite
+              // polarity — before settling for the best read there is.
+              setStatus("The choices still don't agree with the answer — re-scanning the frame with a hard black-and-white pass…");
+              var bc = frameCanvas(2200, true);
+              if (!bc) return null;
+              return recognize(bc).then(function (data4) {
+                consider(data4, bc);
+                if (!best || !best.bad) return null;
+                setStatus("Still no agreement — one last re-scan with the frame's colours flipped…");
+                var fc = frameCanvas(2200, false, lastPolarity === "invert" ? "normal" : "invert");
+                if (!fc) return null;
+                return recognize(fc).then(function (data5) { consider(data5, fc); });
+              });
+            });
+          });
+        });
+        Promise.race([sequence, timedOut]).then(function () {
+          if (!best || !best.text || best.q < FLOOR) { nothingReadable(); return; }
+          // Fraction repair first (V4 → 1/4), then the ÷ check: any +
+          // between plain numbers is verified against the picture
+          // before the text is trusted enough to solve from. The check
+          // is time-boxed — a stalled symbol read falls back to the
+          // text as read (the solver's own ambiguity guard still
+          // applies) rather than wedging the scanner.
+          var rep = repairFractionOcr(best.text);
+          var verifyTimed = Promise.race([
+            verifyOperators(rep.text, best),
+            new Promise(function (resolve) { setTimeout(function () { resolve({ text: rep.text, note: "" }); }, 30000); })
+          ]);
+          return verifyTimed.then(function (v) {
+            return finishRead(v.text, best.conf, best.layout, v.note, rep.fixed);
+          });
         }).catch(function (err) {
           if (err && err.message === "read timed out") resetWorker();
           setStatus("That read didn't finish — tap Scan & solve to try again, or paste the questions below.");
@@ -594,9 +1341,16 @@
           if (!t) return;
           var optM = optRe.exec(line);
           var isExplicitQ = /^\s*question\s*\d+/i.test(line);
-          var qNumM = /^\s*(?:question\s*)?(\d{1,3})\s*[\)\.\:]\s+(.+)$/i.exec(line);
+          var qNumM = /^\s*(?:question\s*)?(\d{1,3})\s*[\)\.\:]\s*(.+)$/i.exec(line);
+          // "3.5" or a bare "12. 350" line is a number, not a question
+          // start — a question anchor's text carries letters or a "?".
+          if (qNumM && !/[A-Za-z?]/.test(qNumM[2])) qNumM = null;
 
-          if (!optM && cur && cur.hasOpts && (isExplicitQ || qNumM)) {
+          // A numbered line also starts a fresh block when the previous
+          // block is a complete question (ends "?") whose choices never
+          // appeared — two choice-less questions in one frame.
+          var prevDone = cur && !cur.hasOpts && /\?\s*$/.test(cur.lines.join(" ").trim());
+          if (!optM && cur && (cur.hasOpts || prevDone) && (isExplicitQ || qNumM)) {
             var after = isExplicitQ ? t.replace(/^\s*question\s*\d+\s*[\)\.\:\-]?\s*/i, "") : qNumM[2].trim();
             if (isExplicitQ || /\?/.test(after) || after.split(/\s+/).length >= 4) {
               // Lines collected since the last choice belong to the old
@@ -646,8 +1400,94 @@
         return (stem || "").replace(/^\s*(?:question\s*)?\d{1,3}\s*[\)\.\:]\s+/i, "").trim();
       }
 
+      /* Questions on a quiz page are anchored by their printed number —
+         "2.", "4." — the pattern the user pointed out: every question
+         starts with a number then a period. Everything in the read
+         BEFORE that anchor is page furniture: the quiz title, the
+         "4/5" progress marker, chat chrome. Left in the stem, that
+         furniture breaks solving twice over: the progress fraction
+         "4/5" is itself a solvable expression (it was being answered
+         instead of the question), and the question number becomes a
+         spurious operand ("4 × 12 = 48" for the candles question).
+         Cut the stem to its anchor and drop the number itself, so the
+         solvers only ever see the question. With no anchor, a bare
+         leading progress marker and a leading question number are
+         still stripped — both read as operands otherwise. A decimal
+         ("3.5 hours") is never an anchor: its point is followed by a
+         digit, not a capitalised word. */
+      function cutToQuestion(stem) {
+        var s = String(stem || "");
+        var re = /(?:^|\s)(?:question\s+)?(\d{1,3})\s*[\)\.]\s*(?=[A-Z"“])/gi, m;
+        while ((m = re.exec(s))) {
+          var rest = s.slice(re.lastIndex);
+          // An anchor only counts when what precedes it is page
+          // furniture — a sentence of the question itself can end in
+          // "…packs of 24." and must never be cut away as a "start".
+          // Short furniture is trusted as before. A LONG prefix is
+          // still furniture when it carries no digits of its own: the
+          // quiz title ("Multi-digit Division and Multi-step Word
+          // Problems Quiz") runs well past 40 characters, and rejecting
+          // the anchor over its length left the title — and the "3 / 5"
+          // progress marker after it — inside the stem, where the
+          // marker was then solved as the question (3 ÷ 5 = 0.6
+          // instead of Mark's change). A prefix WITH digits (beyond a
+          // progress marker, which is furniture too) is the question's
+          // own first sentence and is never cut away.
+          var prefix = s.slice(0, m.index);
+          if (prefix.indexOf("?") !== -1) continue;
+          var prefixDigits = prefix.replace(/\b\d{1,3}\s*\/\s*\d{1,3}\b/g, "");
+          if (prefix.length > 40 && /\d/.test(prefixDigits)) continue;
+          if (rest.split(/\s+/).length >= 4 || rest.indexOf("?") !== -1) return rest.trim();
+        }
+        // No anchor: still remove a progress marker ("4/5") sitting in
+        // the leading furniture, and a leading question number — both
+        // read as operands otherwise.
+        var head = s.slice(0, 60), tail = s.slice(60);
+        if (head.indexOf("?") === -1) head = head.replace(/\b\d{1,3}\s*\/\s*\d{1,3}\b/, " ");
+        var out = (head + tail)
+          .replace(/^\s*\d{1,3}\s*\/\s*\d{1,3}\s+/, "")
+          .replace(/^\s*(?:question\s+)?\d{1,3}\s*[\)\.\:]\s*(?=[A-Za-z"“])/, "")
+          .replace(/\s+/g, " ").trim();
+        return out || s.trim();
+      }
+
+      /* The question to SHOW at the top of a card. A real read carries
+         more than the question: the quiz app's own title line, its
+         "Show hint" / Back / Next chrome, and pure-noise lines the
+         reader invents out of screen texture. The old card blindly
+         showed the first three raw lines, so the header was the garbled
+         title instead of the question the user actually pointed at.
+         This drops the chrome and noise lines, then drops leading
+         sentences that carry neither a number nor the question itself
+         (page titles/headers), leaving the question sentences. */
+      function questionFocus(text) {
+        var lines = String(text || "").split(/\n/).map(function (l) { return l.trim(); }).filter(function (l) {
+          if (!l) return false;
+          if (/hint/i.test(l) && l.length < 26) return false;
+          if (/^(back|next|text view|ask anything|show hint)\b/i.test(l)) return false;
+          var hasWord = /[A-Za-z]{3,}[aeiouy]|[aeiouy][A-Za-z]{2,}/i.test(l);
+          if (!/\d/.test(l) && !hasWord && l.indexOf("?") === -1) return false;
+          return true;
+        });
+        var joined = lines.join(" ").replace(/\s+/g, " ").trim();
+        if (!joined) return String(text || "").replace(/\s+/g, " ").trim();
+        var sents = joined.match(/[^.?!]+[.?!]*/g) || [joined];
+        while (sents.length > 1) {
+          var head = sents[0];
+          if (head.indexOf("?") !== -1) break;
+          var restHasQ = /\d|\?/.test(sents.slice(1).join(" "));
+          if (!restHasQ) break;
+          var headNums = !/\d/.test(head) || ((head.match(/\d+(?:\.\d+)?/g) || []).length === 1 && /\d{1,3}\s*[.\)]?\s*$/.test(head.replace(/[.?!]\s*$/, "")));
+          if (!headNums) break;
+          sents.shift();
+        }
+        var out = sents.join(" ").replace(/\s+/g, " ").trim() || joined;
+        return out.replace(/^\s*(?:question\s*)?\d{1,3}\s*[\)\.\:]\s*/i, "").trim() || out;
+      }
+
       /* ---------------- One card per question ---------------- */
       function buildCards(blocks) {
+        clearAnswerOverlay();
         qaList.innerHTML = "";
         cards = [];
         currentBlocks = blocks.map(function (raw) { return { raw: raw, result: null }; });
@@ -671,6 +1511,9 @@
 
           var stem = document.createElement("p"); stem.className = "q-stem";
           card.appendChild(stem);
+
+          var readAs = document.createElement("p"); readAs.className = "read-as mono"; readAs.hidden = true;
+          card.appendChild(readAs);
 
           var optLabel = document.createElement("p"); optLabel.className = "qa-label options-label";
           optLabel.textContent = "CHOICES — AS PRINTED ON THE PAGE";
@@ -701,15 +1544,19 @@
           card.appendChild(answerBlock);
 
           qaList.appendChild(card);
-          cards.push({ stem: stem, optEmpty: optEmpty, list: list, badge: badge, headline: headline, detail: detail, flag: flag });
+          var entry = { stem: stem, readAs: readAs, stemText: "", optEmpty: optEmpty, list: list, badge: badge, headline: headline, detail: detail, flag: flag };
+          cards.push(entry);
 
           // Fill in this question's stem and its own printed choices.
           var raw = block.raw;
           var mc = raw ? parseOptions(raw) : null;
-          if (mc && cleanStem(mc.stem)) { stem.textContent = cleanStem(mc.stem); }
-          else if (mc && mc.options.length) { stem.textContent = "Question " + (idx + 1) + " — stem wasn't read clearly; its choices are below."; stem.classList.add("empty"); }
-          else if (raw) { stem.textContent = raw.split(/\n/).filter(function (l) { return l.trim(); }).slice(0, 3).join(" "); }
-          else { stem.textContent = "No question read yet — point the camera at a question with its choices and tap Scan & solve."; stem.classList.add("empty"); }
+          var stemStr = "";
+          if (mc && cleanStem(mc.stem)) { stemStr = questionFocus(cutToQuestion(cleanStem(mc.stem))); }
+          else if (mc && mc.options.length) { stemStr = "Question " + (idx + 1) + " — stem wasn't read clearly; its choices are below."; stem.classList.add("empty"); }
+          else if (raw) { stemStr = questionFocus(raw); }
+          else { stemStr = "No question read yet — point the camera at a question with its choices and tap Scan & solve."; stem.classList.add("empty"); }
+          stem.textContent = stemStr;
+          entry.stemText = stemStr;
           if (mc && mc.options.length) {
             optEmpty.style.display = "none";
             list.hidden = false;
@@ -752,7 +1599,9 @@
         var mc = parseOptions(currentBlocks[idx] ? currentBlocks[idx].raw : "");
         if (!mc || !mc.options.length) { card.list.hidden = true; return; }
         var maybe = {};
-        if (!res.letter && res.headline) {
+        if (res.maybe && res.maybe.length) {
+          res.maybe.forEach(function (L) { maybe[L] = 1; });
+        } else if (!res.letter && res.headline) {
           var mm = /between ([A-E]) and ([A-E])/i.exec(res.headline);
           if (mm) { maybe[mm[1].toUpperCase()] = 1; maybe[mm[2].toUpperCase()] = 1; }
         }
@@ -777,6 +1626,37 @@
         card.optEmpty.style.display = "none";
       }
 
+      /* A sentence-form question shows its working right at the question:
+         the words that became the calculation are highlighted in the
+         stem, and a READ AS line states the calculation in symbols, so
+         a wrong read is visible at a glance instead of hiding in a
+         wrong answer. */
+      function applyStemHighlight(idx, res) {
+        var card = cards[idx];
+        if (!card || !card.stem) return;
+        var plain = card.stemText || "";
+        card.stem.classList.remove("q-sentence");
+        if (card.readAs) {
+          if (res && res.readAs) { card.readAs.textContent = "READ AS: " + res.readAs; card.readAs.hidden = false; }
+          else card.readAs.hidden = true;
+        }
+        // Every solved question gets its question highlighted in the
+        // card — the user asked to SEE what was read as the question,
+        // not just the answer. Sentence-form questions additionally get
+        // the exact calculation words marked inside it.
+        if (!res || res.status !== "solved" || !plain || card.stem.classList.contains("empty")) return;
+        card.stem.classList.add("q-sentence");
+        if (!res.sentenceForm) return;
+        var span = res.hl ? findHlSpan(plain, res.hl) : null;
+        if (!span) return;
+        card.stem.textContent = "";
+        card.stem.appendChild(document.createTextNode(plain.slice(0, span[0])));
+        var mk = document.createElement("mark"); mk.className = "q-mark";
+        mk.textContent = plain.slice(span[0], span[1]);
+        card.stem.appendChild(mk);
+        card.stem.appendChild(document.createTextNode(plain.slice(span[1])));
+      }
+
       function showAnswer(idx, res) {
         var card = cards[idx];
         if (!card) return;
@@ -789,6 +1669,7 @@
         card.detail.textContent = res.detail || "";
         if (res.flag) { card.flag.textContent = res.flag; card.flag.classList.add("show"); }
         renderOptions(idx, res);
+        applyStemHighlight(idx, res);
         updateSummary();
       }
 
@@ -834,12 +1715,39 @@
         if (Number.isInteger(r) && Math.abs(r) < 1e15) return r.toLocaleString("en-US");
         return String(r);
       }
+      /* A worked answer that is a clean fraction reads as a fraction —
+         "1/4 + 1/4 = 1/2", not "= 0.5" — because the printed choices are
+         fractions too, and 0.5 does not LOOK like the 1/2 on the page. */
+      function fmtMathValue(v) {
+        if (isFinite(v) && !Number.isInteger(v)) {
+          for (var dn = 2; dn <= 16; dn++) {
+            var num = v * dn;
+            if (Math.abs(num - Math.round(num)) < 1e-9) return Math.round(num) + "/" + dn;
+          }
+        }
+        return fmtNum(v);
+      }
       function prettyExpr(expr) {
         return expr.replace(/\*/g, " × ").replace(/\//g, " ÷ ").replace(/-/g, " − ").replace(/\s+/g, " ").trim();
       }
 
       function findExpression(text) {
-        var t = " " + text.replace(/,/g, "").replace(/[×✕]/g, "*").replace(/÷/g, "/").replace(/[−–—]/g, "-") + " ";
+        // Printed multiplication is often a letter x — "12x6", "12 x 6" — as
+        // well as × or *. Normalise the digit-x-digit form to * first,
+        // otherwise the solver saw no operator at all in "What is 12x6?"
+        // and gave up. (Solve-for-x equations are handled before this runs.)
+        // The x also appears before a bracket — "4 x (3 + 5)" — where the
+        // old digit lookahead missed it, so only "(3 + 5) + 12" was found
+        // and "50 − 4 × (3 + 5) + 12" answered 20 instead of 30; and a
+        // number or bracket directly against a bracket ("4(3 + 5)") is
+        // implied multiplication too. Both are normalised here.
+        var norm = text.replace(/,/g, "")
+          .replace(/(\d)\s*[xX]\s*(?=[\d(])/g, "$1*")
+          .replace(/\)\s*[xX]\s*(?=[\d(])/g, ")*")
+          .replace(/(\d)\s*[·•]\s*(?=[\d(])/g, "$1*")
+          .replace(/(\d)\s*(?=\()/g, "$1*")
+          .replace(/\)\s*(?=\()/g, ")*");
+        var t = " " + norm.replace(/[×✕]/g, "*").replace(/÷/g, "/").replace(/[−–—]/g, "-") + " ";
         var re = /\(?\s*\d+(?:\.\d+)?\s*(?:[+\-*\/^]\s*\(?\s*\d+(?:\.\d+)?\s*\)?\s*)+/g;
         var best = null, m;
         while ((m = re.exec(t))) {
@@ -879,49 +1787,323 @@
         return null;
       }
 
+      /* ---------------- Maths in words ----------------
+         Sentence-form questions carry no symbols at all — "What is
+         twelve divided by three?", "Mia has 24 stickers. She shares
+         them equally among 4 friends." The old word patterns only knew
+         textbook phrasings ("sum of / quotient of"), so these fell
+         through to the reference lookup and came back unsolved. Number
+         words are folded to digits first, and every match reports its
+         operands and operator words so the card can highlight the exact
+         words that were turned into a calculation. */
+      var NUM_WORDS = { zero: 0, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15, sixteen: 16, seventeen: 17, eighteen: 18, nineteen: 19, twenty: 20, thirty: 30, forty: 40, fifty: 50, sixty: 60, seventy: 70, eighty: 80, ninety: 90 };
+      function wordsToDigits(t) {
+        return String(t)
+          .replace(/\b(twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety)[\s-]+(one|two|three|four|five|six|seven|eight|nine)\b/gi, function (m, ten, one) { return String(NUM_WORDS[ten.toLowerCase()] + NUM_WORDS[one.toLowerCase()]); })
+          .replace(/\b(zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety)\b/gi, function (m) { return String(NUM_WORDS[m.toLowerCase()]); });
+      }
+      function tokenValue(tok) {
+        if (/^\d/.test(tok)) { var v = parseFloat(tok); return isNaN(v) ? null : v; }
+        var parts = tok.toLowerCase().split("-"), sum = 0;
+        for (var i = 0; i < parts.length; i++) {
+          if (!Object.prototype.hasOwnProperty.call(NUM_WORDS, parts[i])) return null;
+          sum += NUM_WORDS[parts[i]];
+        }
+        return parts.length ? sum : null;
+      }
+      /* Pin down the calculation inside a sentence-form stem: the span
+         from the first operand (digits or a number word) through the
+         operator words to the second operand. Returns [start, end]
+         character offsets into the stem, or null when it can't be
+         pinned down (the caller then highlights the whole question). */
+      function findHlSpan(text, hl) {
+        if (!text || !hl) return null;
+        var re = /[A-Za-z]+(?:-[A-Za-z]+)?|\d+(?:\.\d+)?/g, toks = [], m;
+        while ((m = re.exec(text))) toks.push({ s: m.index, e: m.index + m[0].length, v: tokenValue(m[0]) });
+        var ia = -1, i, j;
+        for (i = 0; i < toks.length; i++) { if (toks[i].v !== null && Math.abs(toks[i].v - hl.a) < 1e-9) { ia = i; break; } }
+        if (ia === -1) return null;
+        var start = toks[ia].s, end = toks[ia].e, opEnd = -1;
+        if (hl.op) {
+          var opRe = new RegExp(hl.op.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\s+/g, "\\s+"), "i");
+          var om = opRe.exec(text);
+          if (om) {
+            if (om.index < start && om.index + om[0].length >= start - 2) start = om.index;
+            if (om.index >= toks[ia].s) opEnd = om.index + om[0].length;
+          }
+        }
+        if (hl.b !== null && hl.b !== undefined) {
+          var foundB = false;
+          for (j = ia + 1; j < toks.length; j++) { if (toks[j].v !== null && Math.abs(toks[j].v - hl.b) < 1e-9) { end = toks[j].e; foundB = true; break; } }
+          // "Subtract 3 from 10": the second operand is named first.
+          if (!foundB) for (j = ia - 1; j >= 0; j--) { if (toks[j].v !== null && Math.abs(toks[j].v - hl.b) < 1e-9) { start = Math.min(start, toks[j].s); break; } }
+        }
+        if (opEnd > end) end = opEnd;
+        return end > start ? [start, end] : null;
+      }
+
       function wordMath(text) {
-        var t = text.replace(/,/g, "");
+        var t = wordsToDigits(text.replace(/,/g, ""));
+        // Groups in every pattern: 1 = first number, 2 = operator words,
+        // 3 = second number. `swap` marks "subtract A from B", where the
+        // calculation runs B − A.
         var pats = [
-          [/sum of\s+(-?\d+(?:\.\d+)?)\s+and\s+(-?\d+(?:\.\d+)?)/i, function (a, b) { return a + b; }, "+"],
-          [/product of\s+(-?\d+(?:\.\d+)?)\s+and\s+(-?\d+(?:\.\d+)?)/i, function (a, b) { return a * b; }, "×"],
-          [/difference between\s+(-?\d+(?:\.\d+)?)\s+and\s+(-?\d+(?:\.\d+)?)/i, function (a, b) { return a - b; }, "−"],
-          [/quotient of\s+(-?\d+(?:\.\d+)?)\s+and\s+(-?\d+(?:\.\d+)?)/i, function (a, b) { return a / b; }, "÷"]
+          [/sum of\s+(-?\d+(?:\.\d+)?)\s+(and)\s+(-?\d+(?:\.\d+)?)/i, function (a, b) { return a + b; }, "+"],
+          [/product of\s+(-?\d+(?:\.\d+)?)\s+(and)\s+(-?\d+(?:\.\d+)?)/i, function (a, b) { return a * b; }, "×"],
+          [/difference between\s+(-?\d+(?:\.\d+)?)\s+(and)\s+(-?\d+(?:\.\d+)?)/i, function (a, b) { return a - b; }, "−"],
+          [/quotient of\s+(-?\d+(?:\.\d+)?)\s+(and)\s+(-?\d+(?:\.\d+)?)/i, function (a, b) { return a / b; }, "÷"],
+          [/(\d+(?:\.\d+)?)\s+(divided\s+by)\s+(\d+(?:\.\d+)?)/i, function (a, b) { return a / b; }, "÷"],
+          [/(?:divide|dividing)\s+(\d+(?:\.\d+)?)\s+(by)\s+(\d+(?:\.\d+)?)/i, function (a, b) { return a / b; }, "÷"],
+          [/(\d+(?:\.\d+)?)\s+(plus)\s+(\d+(?:\.\d+)?)/i, function (a, b) { return a + b; }, "+"],
+          [/(?:add|adding)\s+(\d+(?:\.\d+)?)\s+(and|to)\s+(\d+(?:\.\d+)?)/i, function (a, b) { return a + b; }, "+"],
+          [/(\d+(?:\.\d+)?)\s+(minus)\s+(\d+(?:\.\d+)?)/i, function (a, b) { return a - b; }, "−"],
+          [/(\d+(?:\.\d+)?)\s+(take\s+away)\s+(\d+(?:\.\d+)?)/i, function (a, b) { return a - b; }, "−"],
+          [/(?:subtract|subtracting)\s+(\d+(?:\.\d+)?)\s+(from)\s+(\d+(?:\.\d+)?)/i, function (a, b) { return b - a; }, "−", true],
+          [/(\d+(?:\.\d+)?)\s+(times)\s+(\d+(?:\.\d+)?)/i, function (a, b) { return a * b; }, "×"],
+          [/(\d+(?:\.\d+)?)\s+(multiplied\s+by)\s+(\d+(?:\.\d+)?)/i, function (a, b) { return a * b; }, "×"],
+          [/(?:multiply|multiplying)\s+(\d+(?:\.\d+)?)\s+(by)\s+(\d+(?:\.\d+)?)/i, function (a, b) { return a * b; }, "×"]
         ];
         for (var i = 0; i < pats.length; i++) {
           var m = pats[i][0].exec(t);
-          if (m) { var a = parseFloat(m[1]), b = parseFloat(m[2]); return { label: fmtNum(a) + " " + pats[i][2] + " " + fmtNum(b), value: pats[i][1](a, b) }; }
+          if (!m) continue;
+          var a = parseFloat(m[1]), b = parseFloat(m[3]);
+          var v = pats[i][1](a, b);
+          if (!isFinite(v)) continue;
+          var first = pats[i][3] ? b : a, second = pats[i][3] ? a : b;
+          return { label: fmtNum(first) + " " + pats[i][2] + " " + fmtNum(second), value: v, sentence: true, hl: { a: first, op: m[2], b: second } };
         }
+        var hf = /\b(half)\s+of\s+(\d+(?:\.\d+)?)/i.exec(t);
+        if (hf) { var hn = parseFloat(hf[2]); return { label: fmtNum(hn) + " ÷ 2", value: hn / 2, sentence: true, hl: { a: hn, op: "half of", b: null } }; }
+        var qt = /\b(quarter)\s+of\s+(\d+(?:\.\d+)?)/i.exec(t);
+        if (qt) { var qn = parseFloat(qt[2]); return { label: fmtNum(qn) + " ÷ 4", value: qn / 4, sentence: true, hl: { a: qn, op: "quarter of", b: null } }; }
         var sq = /(\d+(?:\.\d+)?)\s+squared/i.exec(t);
-        if (sq) { var n = parseFloat(sq[1]); return { label: fmtNum(n) + "²", value: n * n }; }
+        if (sq) { var n = parseFloat(sq[1]); return { label: fmtNum(n) + "²", value: n * n, sentence: true, hl: { a: n, op: "squared", b: null } }; }
         var sr = /square root of\s+(\d+(?:\.\d+)?)/i.exec(t);
-        if (sr) { var n2 = parseFloat(sr[1]); return { label: "√" + fmtNum(n2), value: Math.sqrt(n2) }; }
+        if (sr) { var n2 = parseFloat(sr[1]); return { label: "√" + fmtNum(n2), value: Math.sqrt(n2), sentence: true, hl: { a: n2, op: "square root of", b: null } }; }
+        return null;
+      }
+
+      /* Story problems: the numbers and the operation are spread across
+         sentences ("has 24 … shares them equally among 4 …"). These run
+         only after the symbolic engine found nothing, so a printed
+         calculation is never overridden by a story guess. The patterns
+         cover the shapes real quiz apps actually use — packing into
+         groups of N, sharing equally into N containers, and "N shelves,
+         each holds M" — because the first version only knew textbook
+         phrasings and returned NO answer for cleanly-read story
+         questions whose choices weren't in the frame. */
+      function wordProblemMath(text, strongOnly) {
+        var t = wordsToDigits(text.replace(/,/g, ""));
+        // A leading question number ("4." in "4. A farmer harvested
+        // 168…") is not one of the problem's numbers — left in, the
+        // patterns below would happily divide the question number
+        // itself by a real operand.
+        t = t.replace(/(^|\n)\s*(?:question\s*)?\d{1,3}\s*[\)\.\:]\s*/gi, "$1");
+        var share = /(\d+(?:\.\d+)?)\b[^?]*?\b((?:shared|shares|sharing|split|divided|distribute|distributed)\b[^?]*?\b(?:equally|evenly)\b[^?]*?\b(?:among|between|into|across))\s+(\d+(?:\.\d+)?)/i.exec(t);
+        if (share) {
+          var total = parseFloat(share[1]), count = parseFloat(share[3]);
+          if (count) return { label: fmtNum(total) + " ÷ " + fmtNum(count), value: total / count, sentence: true, hl: { a: total, op: share[2], b: count } };
+        }
+        // Equal sharing with ANY verb: "packed them equally into 7
+        // baskets", "placed equally into 6 boxes" — the old verb list
+        // is why the farmer question (168 ÷ 7) came back unsolved.
+        // "Evenly across" is the same shape: "a theater company has
+        // 1,242 tickets to sell evenly across 27 performances" is
+        // 1242 ÷ 27 = 46, and no pattern knew it — the question fell
+        // through to a stray fragment elsewhere in the frame.
+        var eqShare = /(\d+(?:\.\d+)?)\b[^?]*?\b(?:equally|evenly)\b[^?]*?\b(?:into|among|between|across)\s+(\d+(?:\.\d+)?)/i.exec(t);
+        if (eqShare) {
+          var et = parseFloat(eqShare[1]), ec = parseFloat(eqShare[2]);
+          if (ec) return { label: fmtNum(et) + " ÷ " + fmtNum(ec), value: et / ec, sentence: true, hl: { a: et, op: "equally", b: ec } };
+        }
+        // Packing: "packs 480 juice boxes into packs of 24" — the total
+        // split into groups OF a size is total ÷ size (480 ÷ 24 = 20).
+        var packsOf = /(\d+(?:\.\d+)?)\b[^?]*?\binto\s+(packs|groups|boxes|baskets|bags|bundles|rows|teams|piles|trays)\s+of\s+(\d+(?:\.\d+)?)/i.exec(t);
+        if (packsOf) {
+          var pt = parseFloat(packsOf[1]), ps = parseFloat(packsOf[3]);
+          if (ps) return { label: fmtNum(pt) + " ÷ " + fmtNum(ps), value: pt / ps, sentence: true, hl: { a: pt, op: packsOf[2] + " of", b: ps } };
+        }
+        // Profit: "buys 8 boxes of candles for $15 each. If each box
+        // contains 12 candles and she sells all the candles
+        // individually for $2 each, what is her total profit?" Cost is
+        // 8 × $15 = $120; the 8 × 12 = 96 candles sell for $2 each, so
+        // revenue is $192 and profit is 192 − 120 = $72. The
+        // per-container pattern below would grab 8 × 12 alone and land
+        // on a wrong choice, so a profit question is worked in full,
+        // first — all four figures must be present to fire.
+        if (/\bprofit\b/i.test(t)) {
+          var buyN = /\bbuys?\s+(\d+(?:\.\d+)?)/i.exec(t);
+          var costEach = /\bfor\s+\$?\s*(\d+(?:\.\d+)?)\s+each\b/i.exec(t);
+          var perBox = /\b(?:contains|holds|has)\s+(\d+(?:\.\d+)?)/i.exec(t);
+          var sellEach = /\bsells?\b[^.]*?\$?\s*(\d+(?:\.\d+)?)\s+each\b/i.exec(t);
+          if (buyN && costEach && perBox && sellEach) {
+            var bn = parseFloat(buyN[1]), ce = parseFloat(costEach[1]), pb = parseFloat(perBox[1]), se = parseFloat(sellEach[1]);
+            var rev = bn * pb * se, cost = bn * ce;
+            return { label: fmtNum(bn) + " × " + fmtNum(pb) + " × $" + fmtNum(se) + " − " + fmtNum(bn) + " × $" + fmtNum(ce), value: rev - cost, sentence: true, hl: { a: bn, op: "profit", b: pb } };
+          }
+        }
+        // Change from a bill: "Mark buys 4 packs of notebooks for $8
+        // each and 3 pens for $2 each. If he pays with a $50 bill, how
+        // much change should he receive?" The total cost is
+        // 4 × $8 + 3 × $2 = $38, so the change is $50 − $38 = $12.
+        // No pattern knew a purchase-with-change at all, so this
+        // question fell through to whatever stray expression the
+        // frame offered — the "3/5" progress marker, answered as 0.6,
+        // then force-fit to a choice. Every "N items for $P each"
+        // group is summed, and the amount paid is subtracted from.
+        if (/\bchange\b/i.test(t)) {
+          var paidM = /\bpays?\s+with\s+(?:a\s+)?\$?\s*(\d+(?:\.\d+)?)/i.exec(t);
+          var pairRe = /(\d+(?:\.\d+)?)\s+[a-z][^$]*?\$\s*(\d+(?:\.\d+)?)\s*each\b/gi, pairM, totalCost = 0, pairCount = 0;
+          while ((pairM = pairRe.exec(t))) { totalCost += parseFloat(pairM[1]) * parseFloat(pairM[2]); pairCount++; }
+          if (paidM && pairCount) {
+            var paidV = parseFloat(paidM[1]);
+            return { label: "$" + fmtNum(paidV) + " − $" + fmtNum(totalCost), value: paidV - totalCost, sentence: true, hl: { a: paidV, op: "pays with", b: null } };
+          }
+        }
+        // Speed: "completed a 42-kilometer marathon in 3 hours and 30
+        // minutes. What was her average speed in kilometers per hour?"
+        // is distance ÷ time with the time folded into hours:
+        // 42 ÷ 3.5 = 12. No earlier pattern knew a rate at all, so the
+        // question fell through unsolved.
+        if (/\b(average\s+)?speed\b|\bper\s+hour\b/i.test(t)) {
+          var distM = /(\d+(?:\.\d+)?)\s*(?:-\s*|\s)?(?:kilometers?|kilometres?|km|miles?|mi)\b/i.exec(t);
+          var hmM = /(\d+(?:\.\d+)?)\s*hours?\s+and\s+(\d+(?:\.\d+)?)\s*minutes?/i.exec(t);
+          var hrs = null;
+          if (hmM) hrs = parseFloat(hmM[1]) + parseFloat(hmM[2]) / 60;
+          else { var hOnly = /(\d+(?:\.\d+)?)\s*hours?/i.exec(t); if (hOnly) hrs = parseFloat(hOnly[1]); }
+          if (!hrs) { var mOnly = /(\d+(?:\.\d+)?)\s*minutes?/i.exec(t); if (mOnly) hrs = parseFloat(mOnly[1]) / 60; }
+          if (distM && hrs) {
+            var dist = parseFloat(distM[1]);
+            return { label: fmtNum(dist) + " ÷ " + fmtNum(hrs), value: dist / hrs, sentence: true, hl: { a: dist, op: "in", b: hrs } };
+          }
+        }
+        // Per-container multiplication: "8 bookshelves, and each shelf
+        // holds 45 books" is 8 × 45 — the library question's shape.
+        var eachMul = /(\d+(?:\.\d+)?)\b[^?]*?\beach\b[^?\d]*?\b(?:holds|contains|has|carries|fits)\s+(\d+(?:\.\d+)?)/i.exec(t);
+        if (eachMul) {
+          var n1 = parseFloat(eachMul[1]), n2 = parseFloat(eachMul[2]);
+          return { label: fmtNum(n1) + " × " + fmtNum(n2), value: n1 * n2, sentence: true, hl: { a: n1, op: "each", b: n2 } };
+        }
+        // "puts 168 apples into 7 baskets" (no "equally", no "of"):
+        // a total spread into N named containers is total ÷ N.
+        var intoNum = /(\d+(?:\.\d+)?)\b[^?]*?\binto\s+(\d+(?:\.\d+)?)\s*(?:baskets|boxes|bags|groups|packs|rows|teams|piles|trays|shelves)\b/i.exec(t);
+        if (intoNum) {
+          var it = parseFloat(intoNum[1]), ic = parseFloat(intoNum[2]);
+          if (ic) return { label: fmtNum(it) + " ÷ " + fmtNum(ic), value: it / ic, sentence: true, hl: { a: it, op: "into", b: ic } };
+        }
+        var groups = /(\d+(?:\.\d+)?)\b[^?]*?\b((?:groups|piles|rows|baskets|boxes)\s+of)\s+(\d+(?:\.\d+)?)/i.exec(t);
+        if (groups) {
+          var gt = parseFloat(groups[1]), gs = parseFloat(groups[3]);
+          if (gs) return { label: fmtNum(gt) + " ÷ " + fmtNum(gs), value: gt / gs, sentence: true, hl: { a: gt, op: groups[2], b: gs } };
+        }
+        var more = /(\d+(?:\.\d+)?)\b[^?]*?\b(buys|bought|gets|got|receives|received|finds|found|picks|picked|earns|earned|wins|won|collects|collected)\s+(\d+(?:\.\d+)?)\s+more\b/i.exec(t);
+        if (more) { var m1 = parseFloat(more[1]), m2 = parseFloat(more[3]); return { label: fmtNum(m1) + " + " + fmtNum(m2), value: m1 + m2, sentence: true, hl: { a: m1, op: more[2], b: m2 } }; }
+        var less = /(\d+(?:\.\d+)?)\b[^?]*?\b(gives away|gave away|gives|gave|loses|lost|eats|ate|sells|sold|uses|used|drops|dropped)\s+(\d+(?:\.\d+)?)/i.exec(t);
+        if (less) { var l1 = parseFloat(less[1]), l2 = parseFloat(less[3]); return { label: fmtNum(l1) + " − " + fmtNum(l2), value: l1 - l2, sentence: true, hl: { a: l1, op: less[2], b: l2 } }; }
+        // A strongOnly caller (mathAnswer's first pass) gets only the
+        // unmistakable shapes above — never this fallback.
+        if (strongOnly) return null;
+        // Last-resort two-number story shapes. Only fires when the text
+        // holds exactly two numbers, so extra figures in the read can
+        // never be silently folded into a guessed calculation.
+        var nums = (t.match(/\d+(?:\.\d+)?/g) || []).map(function (s) { return parseFloat(s); });
+        if (nums.length === 2) {
+          var A = nums[0], B = nums[1];
+          if (/\b(each|per|every)\b/i.test(t) && /\b(total|altogether|in all)\b/i.test(t)) {
+            return { label: fmtNum(A) + " × " + fmtNum(B), value: A * B, sentence: true, hl: { a: A, op: "each", b: B } };
+          }
+          if (/\bin each\b|\bper\b/i.test(t) && A !== B) {
+            var big = Math.max(A, B), small = Math.min(A, B);
+            if (small) return { label: fmtNum(big) + " ÷ " + fmtNum(small), value: big / small, sentence: true, hl: { a: big, op: "each", b: small } };
+          }
+          if (/\b(total|altogether|in all)\b/i.test(t)) {
+            return { label: fmtNum(A) + " + " + fmtNum(B), value: A + B, sentence: true, hl: { a: A, op: "and", b: B } };
+          }
+        }
         return null;
       }
 
       function mathAnswer(text) {
         var po = percentOf(text);
-        if (po) return { value: po.value, reason: fmtNum(po.pct) + "% of " + fmtNum(po.n) + " = " + fmtNum(po.pct) + " ÷ 100 × " + fmtNum(po.n) + " = " + fmtNum(po.value) + "." };
+        if (po) return { value: po.value, src: "pct", reason: fmtNum(po.pct) + "% of " + fmtNum(po.n) + " = " + fmtNum(po.pct) + " ÷ 100 × " + fmtNum(po.n) + " = " + fmtNum(po.value) + "." };
         var lin = solveLinear(text);
         if (lin) {
           var steps = lin.form === "a"
             ? "x = " + fmtNum(lin.c) + " ÷ " + fmtNum(lin.a) + " = " + fmtNum(lin.value) + "."
             : fmtNum(lin.a) + "x = " + fmtNum(lin.c) + (lin.b >= 0 ? " − " + fmtNum(lin.b) : " + " + fmtNum(-lin.b)) + " = " + fmtNum(lin.c - lin.b) + ", so x = " + fmtNum(lin.value) + ".";
-          return { value: lin.value, reason: "Solving for x: " + steps, isX: true };
+          return { value: lin.value, src: "linear", reason: "Solving for x: " + steps, isX: true };
         }
         var wm = wordMath(text);
-        if (wm) return { value: wm.value, reason: wm.label + " = " + fmtNum(wm.value) + "." };
+        if (wm) return { value: wm.value, src: "word", sentenceForm: true, hl: wm.hl || null, readAs: wm.label + " = " + fmtMathValue(wm.value), reason: "In words: " + wm.label + " = " + fmtMathValue(wm.value) + "." };
+        // Story shapes with unmistakable wording — sharing equally or
+        // evenly, packing into groups of a size, profit, speed, change
+        // from a bill, each-container totals — are tried BEFORE the
+        // bare-expression scan. A sentence question's frame can carry
+        // stray digit fragments from the page furniture (a progress
+        // marker, a number in the chat text under the quiz), and the
+        // expression scan would happily solve one of those instead of
+        // the question: the theater question was answered "08 − 2 = 6"
+        // that way while its own numbers (1,242 across 27) sat unread
+        // by any pattern. The weak two-number fallback inside
+        // wordProblemMath stays after the expression scan, as before.
+        var wpS = wordProblemMath(text, true);
+        if (wpS) return { value: wpS.value, src: "word", sentenceForm: true, hl: wpS.hl || null, readAs: wpS.label + " = " + fmtMathValue(wpS.value), reason: "In words: " + wpS.label + " = " + fmtMathValue(wpS.value) + "." };
         var ex = findExpression(text);
-        if (ex) return { value: ex.value, reason: prettyExpr(ex.expr) + " = " + fmtNum(ex.value) + " — division and multiplication before addition and subtraction." };
+        if (ex) {
+          // More fractions in the question than in the expression found,
+          // with no + or − in that expression ("1/4 1/4", "1/4 t 1/4"),
+          // means the operator between the fractions was lost in the
+          // read — and the "expression" is just the first fraction on its
+          // own. Its value would still match a printed choice (1/4
+          // matches 2/8) — the wrong one. Flag it instead of solving it.
+          var fracInText = (text.replace(/,/g, "").match(/\d+\s*\/\s*\d+/g) || []).length;
+          var fracInExpr = (ex.expr.match(/\d+\s*\/\s*\d+/g) || []).length;
+          if (fracInText >= 2 && fracInExpr < fracInText && ex.expr.indexOf("+") === -1 && ex.expr.indexOf("-") === -1) {
+            return { value: ex.value, src: "expr", suspect: true, reason: "The read shows more than one fraction with no + or − between them, so part of the question was lost in the scan." };
+          }
+          // Fraction arithmetic keeps its slashes and fraction answer:
+          // "1/4 + 1/4 = 1/2", not "1 ÷ 4 + 1 ÷ 4 = 0.5".
+          var isFrac = /\d+\s*\/\s*\d+/.test(ex.expr) && /[+\-]/.test(ex.expr);
+          if (isFrac) {
+            var shown = ex.expr.replace(/\*/g, " × ").replace(/-/g, " − ").replace(/\s+/g, " ").trim();
+            return { value: ex.value, src: "expr", reason: shown + " = " + fmtMathValue(ex.value) + "." };
+          }
+          return { value: ex.value, src: "expr", reason: prettyExpr(ex.expr) + " = " + fmtNum(ex.value) + " — division and multiplication before addition and subtraction." };
+        }
+        var wp = wordProblemMath(text);
+        if (wp) return { value: wp.value, src: "word", sentenceForm: true, hl: wp.hl || null, readAs: wp.label + " = " + fmtMathValue(wp.value), reason: "In words: " + wp.label + " = " + fmtMathValue(wp.value) + "." };
         return null;
       }
 
       /* ---------------- Multiple choice parsing ---------------- */
+      /* Choices are often printed two-to-a-row or all on one line
+         ("A. 24  B. 36  C. 48"), and OCR returns them that way too. The
+         line parser below only sees the FIRST marker on a line, so those
+         choices were being swallowed into the previous choice's text and
+         the question came back with too few options. Split a fresh line
+         before every marker that follows other content on the same line. */
+      function expandOptionLines(text) {
+        return String(text).replace(/([^\n\s])\s+(\(?[A-Ea-e]\s*[\)\.\:\-]\s+)/g, "$1\n$2");
+      }
+
       function parseOptions(text) {
+        text = expandOptionLines(text);
         var lines = text.split(/\n/), opts = [], stemLines = [], current = null;
         var optRe = /^\s*\(?([A-Ea-e])\s*[\)\.\:\-]\s*(.+)$/;
         var numRe = /^\s*\(?([1-5])\s*[\)\.\:\-]\s*(.+)$/;
         var usedNum = false;
         lines.forEach(function (line) {
+          // Page chrome trailing the choices ("Show hint", "Back",
+          // "Next", the quiz app's "Ask anything" box) is not part of
+          // any choice — it was being glued onto the last one, which
+          // then displayed and matched as garbage text.
+          if (opts.length && /^\s*(show hint|back|next|ask anything|text view)\b/i.test(line)) return;
+          // The quiz app's own grading lines, printed under a choice
+          // once it has been answered ("Correct! 852 - 397 = 455.",
+          // "Incorrect. This is off by 10…"), are not part of that
+          // choice — glued onto it, they poison the text it displays
+          // with and the number read out of it.
+          if (current && /^\s*(correct|incorrect)\s*[!.]/i.test(line)) return;
           var m = optRe.exec(line);
           if (m) { current = { letter: m[1].toUpperCase(), text: m[2].trim() }; opts.push(current); return; }
           var nm = numRe.exec(line);
@@ -929,7 +2111,12 @@
           // so a numbered list in the stem is not mistaken for options.
           if (nm && stemLines.join(" ").trim().length > 3 && (opts.length || /\?\s*$/.test(stemLines.join(" ").trim()) || stemLines.length)) {
             var idx = parseInt(nm[1], 10) - 1;
-            if (idx >= 0 && idx < 5 && (opts.length === 0 || usedNum)) {
+            // Numbered choices run 1, 2, 3… in order — a lone "4." line
+            // after some stem text is the next QUESTION's anchor, not
+            // choice D. (With quiz-title lines in front of it, the old
+            // rule swallowed the whole question line as an "option" and
+            // left "…Quiz 4/5" behind as the stem.)
+            if (idx === opts.length && idx < 5) {
               usedNum = true;
               current = { letter: "ABCDE"[idx], text: nm[2].trim() }; opts.push(current); return;
             }
@@ -937,7 +2124,17 @@
           if (current) { if (line.trim()) current.text += " " + line.trim(); }
           else stemLines.push(line);
         });
-        if (opts.length >= 2) return { stem: stemLines.join(" ").trim(), options: opts };
+        if (opts.length >= 2) {
+          // Chrome can also arrive glued to a choice on the same line
+          // ("$48 Show hint v …") — cut it off the choice text.
+          opts.forEach(function (o) { o.text = o.text.replace(/\s+(show hint|ask anything)\b.*$/i, "").replace(/\s+(correct|incorrect)\s*[!.].*$/i, "").trim(); });
+          // Column layouts can read A,C down one side then B,D — put the
+          // choices back in letter order when each letter appears once.
+          var seen = {}, dup = false;
+          opts.forEach(function (o) { if (seen[o.letter]) dup = true; seen[o.letter] = 1; });
+          if (!dup) opts.sort(function (a, b) { return a.letter < b.letter ? -1 : 1; });
+          return { stem: stemLines.join(" ").trim(), options: opts };
+        }
         // Inline fallback: "Question? A. 24 B. 36 C. 48"
         var marker = /(?:^|\s)([A-E])[\)\.]\s+/g, hits = [], mm;
         while ((mm = marker.exec(text))) hits.push({ letter: mm[1].toUpperCase(), start: mm.index, contentStart: marker.lastIndex });
@@ -962,12 +2159,165 @@
       function closeNum(a, b) { return Math.abs(a - b) <= Math.max(0.011, Math.abs(b) * 0.001); }
 
       function matchMathOption(opts, value) {
-        var found = null;
-        opts.forEach(function (o) {
-          var n = optionNumber(o.text);
-          if (n !== null && closeNum(n, value)) found = o;
-        });
-        return found;
+        // An exact numeric match wins outright; otherwise the FIRST close
+        // match stands. (This used to keep the LAST close match, so a later
+        // near-miss choice could override the exact one.)
+        var close = null;
+        for (var i = 0; i < opts.length; i++) {
+          var n = optionNumber(opts[i].text);
+          if (n === null) continue;
+          if (Math.abs(n - value) < 1e-9) return opts[i];
+          if (!close && closeNum(n, value)) close = opts[i];
+        }
+        return close;
+      }
+
+      /* The ÷ that read as a +: a division sign photographed off a screen
+         loses its two dots to glow and comes back as "+". When the stem is
+         one plain "A + B" and BOTH readings land on different printed
+         choices (quiz writers plant the +-answer as a distractor), the
+         text alone cannot say which symbol the page really shows. On the
+         camera path the glyph itself is re-checked against the picture
+         before solving (see verifyOperators); when there is no picture
+         verdict — pasted text, or the check came back unclear — flag it
+         with both candidates instead of confidently picking the wrong
+         one. Fraction expressions are excluded: "1/4 + 1/4" is genuinely
+         addition, and its ÷ reading matching a choice proves nothing. */
+      function plusDivAmbiguity(stem, opts, ma, hit) {
+        var ex = findExpression(stem);
+        if (!ex || !closeNum(ex.value, ma.value)) return null;
+        var m = /^\(?(\d+(?:\.\d+)?)\+(\d+(?:\.\d+)?)\)?$/.exec(ex.expr.replace(/\s+/g, ""));
+        if (!m) return null;
+        var a = parseFloat(m[1]), b = parseFloat(m[2]);
+        if (!b) return null;
+        var altVal = a / b;
+        if (Math.abs(altVal - ma.value) < 1e-9) return null;
+        var alt = matchMathOption(opts, altVal);
+        if (!alt || alt.letter === hit.letter) return null;
+        return {
+          status: "uncertain",
+          headline: "That + might really be a ÷",
+          detail: "Worked as +, the answer is " + hit.letter + " · " + hit.text + " (" + fmtNum(a) + " + " + fmtNum(b) + " = " + fmtNum(ma.value) + "). If the symbol on the page is ÷, the answer is " + alt.letter + " · " + alt.text + " (" + fmtNum(a) + " ÷ " + fmtNum(b) + " = " + fmtMathValue(altVal) + "). A ÷ photographed off a screen can lose its dots and read as +.",
+          flag: "⚠ Check the symbol in the question on the page — + and ÷ give different answers here, and both are among the choices. If it is ÷, change the + to ÷ in the text box below and tap Solve.",
+          maybe: [hit.letter, alt.letter]
+        };
+      }
+
+      /* Re-analysis against the choices — what the user asked for:
+         when the worked answer doesn't match ANY of the printed
+         choices, don't just report the mismatch; re-analyse the
+         question so the choices make sense. The usual cause is one
+         symbol misread off a screen: a ÷ whose dots were lost to glow
+         reads as + (782 + 23 = 805, when the page says 782 ÷ 23 = 34
+         and 34 IS one of the choices). Each operator in the
+         expression is swapped in turn, all the plusses are tried as
+         divisions together, and a colon is tried as a division sign.
+         Digits are re-read too, because the other systematic screen
+         error is the question's own closing "?" scanned as a 7 glued
+         onto the last number: "432 ÷ 12?" comes back as "432+127" and
+         "852 − 397?" as "852−3977", and no operator swap alone can
+         rescue those (432/127 is nothing; 852−3977 is worse). So each
+         number is also tried with its last digit dropped, on its own
+         and combined with every operator swap — "432+127" becomes
+         "432/12" = 36, "852−3977" becomes "852−397" = 455. This is
+         the options themselves arbitrating ÷ against + and a real
+         digit against a scanned one, exactly as the user asked.
+         A re-reading is only trusted when EXACTLY ONE re-read
+         calculation lands on a printed choice — two different fits
+         mean the read is too far gone to rescue and the mismatch
+         stands, honestly reported. */
+      function reanalyzeMath(stem, opts, ma) {
+        if (!ma || ma.src !== "expr") return null;
+        var base = findExpression(stem);
+        if (!base || !closeNum(base.value, ma.value)) return null;
+        var expr = base.expr.replace(/\s+/g, "");
+        var found = [], seen = {};
+        function tryValue(v, e2) {
+          if (!isFinite(v) || Math.abs(v - ma.value) < 1e-9) return;
+          var hit = matchMathOption(opts, v);
+          if (hit && !seen[hit.letter]) { seen[hit.letter] = 1; found.push({ hit: hit, expr: e2, value: v }); }
+        }
+        function tryExpr(e2) {
+          if (!e2 || e2 === expr) return;
+          try { tryValue(makeParser(e2).run(), e2); } catch (err) { /* not a readable expression */ }
+        }
+        var OPS = ["+", "-", "*", "/"];
+        function swapOps(e) {
+          for (var k = 0; k < e.length; k++) {
+            if (OPS.indexOf(e[k]) === -1) continue;
+            // Only swap an operator that sits between two operands.
+            if (!/[\d)]/.test(e[k - 1] || "") || !/[\d(]/.test(e[k + 1] || "")) continue;
+            for (var j = 0; j < OPS.length; j++) {
+              if (OPS[j] !== e[k]) tryExpr(e.slice(0, k) + OPS[j] + e.slice(k + 1));
+            }
+          }
+        }
+        swapOps(expr);
+        // All the plusses at once — a whole row of ÷ signs can lose
+        // their dots in the same glow.
+        if ((expr.match(/\+/g) || []).length > 1) tryExpr(expr.replace(/\+/g, "/"));
+        // Digit repairs: each number in the expression tried with its
+        // last digit dropped (the spurious trailing 7 from a scanned
+        // "?"), on its own and combined with every operator swap.
+        var toks = expr.match(/\d+(?:\.\d+)?|[+\-*\/()]/g) || [];
+        var numCount = 0;
+        toks.forEach(function (tk) { if (/\d/.test(tk)) numCount++; });
+        if (numCount <= 5) {
+          for (var ti = 0; ti < toks.length; ti++) {
+            if (!/^\d{2,}$/.test(toks[ti])) continue;
+            var repaired = toks.slice();
+            repaired[ti] = toks[ti].slice(0, -1);
+            var e3 = repaired.join("");
+            tryExpr(e3);
+            swapOps(e3);
+          }
+        }
+        // A colon doing duty as a division sign ("782 : 23").
+        var colon = findExpression(String(stem).replace(/(\d)\s*:\s*(?=\d)/g, "$1/"));
+        if (colon && !closeNum(colon.value, ma.value)) tryValue(colon.value, colon.expr.replace(/\s+/g, ""));
+        if (found.length !== 1) return null;
+        var f = found[0];
+        return {
+          status: "solved", letter: f.hit.letter, headline: f.hit.text,
+          detail: "As first read, " + prettyExpr(expr) + " = " + fmtNum(ma.value) + " — not one of the choices. Re-analysed against the choices: " + prettyExpr(f.expr) + " = " + fmtMathValue(f.value) + ", which is choice " + f.hit.letter + ". A symbol or a digit was most likely misread in the scan — a ÷ photographed off a screen can lose its dots and read as +, and a question's closing ? can read as an extra 7 on its last number.",
+          flag: "⚠ This answer matched only after re-analysing a symbol against the choices. If the symbol on the page really is the first-read one, fix it in the text box below and tap Solve."
+        };
+      }
+
+      /* When the choices were read but the question itself wasn't —
+         a garbled stem with clean numbers underneath — fit the stem's
+         own numbers against the choices: every pair combined with
+         +, −, ×, ÷. Only a UNIQUE fit is offered, and only as a best
+         fit (POSSIBLE), never as a confident pick: it tells the user
+         which choice the numbers point at, and to re-scan the
+         question to be sure. */
+      function bestFitFromChoices(stem, opts) {
+        var nums = (String(stem || "").replace(/,/g, "").match(/\d+(?:\.\d+)?/g) || []).map(function (s) { return parseFloat(s); });
+        if (nums.length < 2 || nums.length > 4) return null;
+        var fits = [], seen = {};
+        function tryVal(v, label) {
+          if (!isFinite(v)) return;
+          var hit = matchMathOption(opts, v);
+          if (hit && !seen[hit.letter]) { seen[hit.letter] = 1; fits.push({ hit: hit, label: label, value: v }); }
+        }
+        for (var i = 0; i < nums.length; i++) {
+          for (var j = 0; j < nums.length; j++) {
+            if (i === j) continue;
+            var a = nums[i], b = nums[j];
+            tryVal(a + b, fmtNum(a) + " + " + fmtNum(b));
+            tryVal(a - b, fmtNum(a) + " − " + fmtNum(b));
+            tryVal(a * b, fmtNum(a) + " × " + fmtNum(b));
+            if (b) tryVal(a / b, fmtNum(a) + " ÷ " + fmtNum(b));
+          }
+        }
+        if (fits.length !== 1) return null;
+        var f = fits[0];
+        return {
+          status: "uncertain", maybe: [f.hit.letter],
+          headline: "Best fit: " + f.hit.letter + " · " + f.hit.text,
+          detail: "The question itself didn't read clearly, so its numbers were re-analysed against the choices: of every combination of those numbers, only " + f.label + " = " + fmtMathValue(f.value) + " lands on a printed choice.",
+          flag: "⚠ Best fit only — the question text wasn't recognised. Re-scan it (fill the frame, hold steady) or fix its text in the box below and tap Solve to be sure."
+        };
       }
 
       /* ---------------- Dictionary ---------------- */
@@ -1611,47 +2961,109 @@
         }).catch(function () { return null; });
       }
 
+      /* True when the stem plainly IS arithmetic — digits with an operator
+         (or a fraction) between them — whether or not the maths engine
+         managed to solve it. Used to stop the reference lookup from
+         "answering" a maths question by whichever printed number its text
+         mentions most: that guesser is how a misread 12 × 6 got answered
+         with a wrong near number instead of being flagged. */
+      function looksLikeArithmetic(stem) {
+        var s = String(stem || "");
+        if (!/\d/.test(s)) return false;
+        if (/\d\s*[+\-×✕*÷\/]\s*\d/.test(s) || /\d\s*[xX]\s*\d/.test(s)) return true;
+        // A digit-x whose other operand was garbled ("12xG") is still
+        // plainly a multiplication that failed to read, not a trivia
+        // question — the x just can't be starting an English word.
+        return /\d\s*[xX](?![a-z])/.test(s);
+      }
+
       function solve(text) {
         var mc = parseOptions(text);
         if (mc) {
-          var ma = mathAnswer(mc.stem) || mathAnswer(text.split(/\n/)[0] || "");
+          // Solve from the question itself, cut to its "N." anchor —
+          // the page furniture before it (title, "4/5" progress) is
+          // never part of the maths.
+          var qStem = cutToQuestion(mc.stem);
+          var stemWeak = tokens(qStem).length < 3;
+          var ma = mathAnswer(qStem) || mathAnswer(cutToQuestion(text.split(/\n/)[0] || ""));
           if (ma) {
+            if (ma.suspect) {
+              return Promise.resolve({ status: "uncertain", headline: "Part of this question was lost in the read", detail: ma.reason, flag: "⚠ The operator between the fractions wasn't read, so any answer picked now could be the wrong one. Check the question in the text box — add the missing + or − — and solve again." });
+            }
             var hit = matchMathOption(mc.options, ma.value);
-            if (hit) return Promise.resolve({ status: "solved", letter: hit.letter, headline: hit.text, detail: ma.reason });
-            return Promise.resolve({ status: "uncertain", headline: (ma.isX ? "x = " : "") + fmtNum(ma.value) + " — not among the options", detail: ma.reason, flag: "⚠ The worked answer doesn't match any printed option. The text may have been misread — check the numbers in the text box and solve again." });
+            if (hit) {
+              if (ma.src === "expr") {
+                var amb = plusDivAmbiguity(qStem, mc.options, ma, hit);
+                if (amb) return Promise.resolve(amb);
+              }
+              return Promise.resolve({ status: "solved", letter: hit.letter, headline: hit.text, detail: ma.reason, sentenceForm: !!ma.sentenceForm, hl: ma.hl || null, readAs: ma.readAs || null });
+            }
+            // The worked answer matches NO printed choice: re-analyse
+            // the symbols against the choices (a ÷ read as + is the
+            // usual suspect), then — failing that — fit the stem's
+            // numbers against the choices before reporting a mismatch.
+            var re = reanalyzeMath(qStem, mc.options, ma);
+            if (re) return Promise.resolve(re);
+            var bf1 = bestFitFromChoices(qStem, mc.options);
+            if (bf1) return Promise.resolve(bf1);
+            return Promise.resolve({ status: "uncertain", headline: (ma.isX ? "x = " : "") + fmtMathValue(ma.value) + " — not among the options", detail: ma.reason, flag: "⚠ The worked answer doesn't match any printed option, and re-analysing the symbols against the choices found no fit either. The text may have been misread — check the numbers in the text box and solve again." });
           }
           // General knowledge, offline fact bank — instant and reliable for common questions
-          var factHit = solveMcFact(mc.stem, mc.options, mc.stem);
+          var factHit = solveMcFact(qStem, mc.options, qStem);
           if (factHit) return Promise.resolve(factHit);
           // Cybersecurity reverse style: term named, options are definitions
-          var cyberDefHit = solveMcCyberDef(mc.stem, mc.options);
+          var cyberDefHit = solveMcCyberDef(qStem, mc.options);
           if (cyberDefHit) return Promise.resolve(cyberDefHit);
-          return solveMcVocabulary(mc.stem, mc.options).then(function (v) {
+          return solveMcVocabulary(qStem, mc.options).then(function (v) {
             if (v) return v;
+            // The choices were read but the question wasn't recognised:
+            // fit the numbers that WERE read against the choices and
+            // offer the unique fit as a best fit, clearly labelled.
+            var bf2 = bestFitFromChoices(qStem, mc.options);
+            if (bf2 && (stemWeak || looksLikeArithmetic(qStem))) return bf2;
+            // Plainly arithmetic but the maths engine couldn't solve it:
+            // the numbers were almost certainly misread. Never let the
+            // reference lookup guess a printed number for it — flag it.
+            if (looksLikeArithmetic(qStem)) {
+              return { status: "uncertain", headline: "That is a maths question — but its numbers didn't read cleanly", detail: "The question and its " + mc.options.length + " options were read, but no clean calculation could be made from them, so no answer is picked rather than a guessed one.", flag: "⚠ Check the numbers in the text box below — fix any misread digit or symbol (× often reads as x, which is fine) — and tap Solve again." };
+            }
             // General knowledge, reference lookup — scores the printed options
-            return solveMcWiki(mc.stem, mc.options).then(function (w) {
+            return solveMcWiki(qStem, mc.options).then(function (w) {
               if (w) return w;
+              if (bf2) return bf2;
               return { status: "cant", headline: "Read it — no confident answer found", detail: "The question and its " + mc.options.length + " options were read and are in the text box below. It was checked as math, vocabulary and general knowledge, but no option stood out clearly — check for misread words and tap Solve again." };
             });
           });
         }
-        var ma2 = mathAnswer(text);
-        if (ma2) return Promise.resolve({ status: "solved", headline: (ma2.isX ? "x = " : "") + fmtNum(ma2.value), detail: ma2.reason });
-        var factOpen = findFact(text);
+        var openText = cutToQuestion(text);
+        var ma2 = mathAnswer(openText);
+        if (ma2) {
+          var openRes = { status: "solved", headline: (ma2.isX ? "x = " : "") + fmtMathValue(ma2.value), detail: ma2.reason, sentenceForm: !!ma2.sentenceForm, hl: ma2.hl || null, readAs: ma2.readAs || null };
+          // The question was read but its choices weren't in the
+          // frame: the worked answer stands as a SUGGESTED answer,
+          // labelled as such, instead of pretending a printed choice
+          // was picked from.
+          if (/\?/.test(openText) || /^(what|how many|how much|which|calculate|find)\b/i.test(openText.trim())) {
+            openRes.suggested = true;
+            openRes.flag = "SUGGESTED ANSWER — the question was read but its choices weren't in this frame, so this is the answer worked from the question alone. Scan again with the choices in frame and it will pick from them instead.";
+          }
+          return Promise.resolve(openRes);
+        }
+        var factOpen = findFact(openText);
         if (factOpen) {
           // "What is phishing?" style: if the question names a banked term and
           // asks for its meaning, the definition is the answer, not the term.
-          var cDef = findCyberDefTerm(text);
-          if (cDef && /what is|define|definition|meaning|describe/i.test(text) && normText(factOpen.a) === normText(cDef.t)) {
+          var cDef = findCyberDefTerm(openText);
+          if (cDef && /what is|define|definition|meaning|describe/i.test(openText) && normText(factOpen.a) === normText(cDef.t)) {
             return Promise.resolve({ status: "solved", headline: cDef.t, detail: cDef.d });
           }
           return Promise.resolve({ status: "solved", headline: factOpen.a, detail: factOpen.r });
         }
-        var cDefOpen = findCyberDefTerm(text);
-        if (cDefOpen && /what is|define|definition|meaning|describe/i.test(text)) {
+        var cDefOpen = findCyberDefTerm(openText);
+        if (cDefOpen && /what is|define|definition|meaning|describe/i.test(openText)) {
           return Promise.resolve({ status: "solved", headline: cDefOpen.t, detail: cDefOpen.d });
         }
-        var trimmed = text.trim();
+        var trimmed = openText.trim();
         var word = extractDefineWord(trimmed);
         if (word && /mean|define|definition/i.test(trimmed)) {
           return lookupWord(word).then(function (info) {
@@ -1679,6 +3091,84 @@
         });
       }
 
+      /* ---------------- Answer on the camera itself ----------------
+         After a solve, the correct choice is highlighted where it sits in
+         the frame (using the reader's own line positions) and a banner
+         pinned to the camera view states the answer and WHY it is right —
+         no scrolling down to the cards needed. The cards below still show
+         the same thing for checking and fixing misreads. */
+      var overlayBoxes = [];   // fractions of the scan frame: {fx0, fy0, fx1, fy1}
+      function clearAnswerOverlay() {
+        overlayBoxes = [];
+        hlLayer.innerHTML = ""; hlLayer.hidden = true;
+        answerBanner.innerHTML = ""; answerBanner.hidden = true;
+      }
+      function placeOverlayBoxes() {
+        var w = hlLayer.clientWidth, h = hlLayer.clientHeight;
+        if (!w || !h) return;
+        overlayBoxes.forEach(function (b, i) {
+          var el = hlLayer.children[i];
+          if (!el || !el.style) return;
+          var padX = 7, padY = 5;
+          el.style.left = Math.max(0, Math.round(b.fx0 * w - padX)) + "px";
+          el.style.top = Math.max(0, Math.round(b.fy0 * h - padY)) + "px";
+          el.style.width = Math.min(w, Math.round((b.fx1 - b.fx0) * w + padX * 2)) + "px";
+          el.style.height = Math.min(h, Math.round((b.fy1 - b.fy0) * h + padY * 2)) + "px";
+        });
+      }
+      function renderAnswerOverlay() {
+        clearAnswerOverlay();
+        var onCam = stage.classList.contains("live") || stage.classList.contains("has-photo");
+        if (!onCam || !currentBlocks.length) return;
+        var multi = currentBlocks.length > 1;
+        var rows = 0;
+        currentBlocks.forEach(function (block, idx) {
+          var res = block.result;
+          if (!res || res.status !== "solved") return;
+          var row = document.createElement("div"); row.className = "ab-row";
+          var chip = document.createElement("span"); chip.className = "ab-letter";
+          chip.textContent = res.letter || "✓";
+          var txt = document.createElement("span"); txt.className = "ab-text";
+          var bold = document.createElement("b");
+          bold.textContent = (multi ? "Q" + (idx + 1) + " · " : "") + (res.suggested ? "SUGGESTED · " : "") + (res.letter ? res.letter + " · " : "") + (res.headline || "");
+          txt.appendChild(bold);
+          if (res.detail) txt.appendChild(document.createTextNode(" — " + res.detail));
+          row.appendChild(chip); row.appendChild(txt);
+          answerBanner.appendChild(row); rows++;
+          if (lastLayout && res.letter) {
+            var mc = parseOptions(block.raw);
+            var optText = res.headline;
+            if (mc) { for (var i = 0; i < mc.options.length; i++) { if (mc.options[i].letter === res.letter) optText = mc.options[i].text; } }
+            var box = findOptionBox(lastLayout, res.letter, optText);
+            if (box) {
+              overlayBoxes.push({ fx0: box.x0 / lastLayout.w, fy0: box.y0 / lastLayout.h, fx1: box.x1 / lastLayout.w, fy1: box.y1 / lastLayout.h });
+              var el = document.createElement("div"); el.className = "hl-box";
+              var tag = document.createElement("span"); tag.className = "hl-tag";
+              tag.textContent = (multi ? "Q" + (idx + 1) + " · " : "") + res.letter;
+              el.appendChild(tag); hlLayer.appendChild(el);
+            }
+          }
+          // The question is boxed on the camera too — amber, tagged
+          // QUESTION — for EVERY solved question (it used to appear
+          // only for sentence-form ones), so the user sees WHAT was
+          // read as the question right next to the green answer box,
+          // in the same scan that produced the answer.
+          if (lastLayout) {
+            var qbox = findStemBox(lastLayout, block.raw);
+            if (qbox) {
+              overlayBoxes.push({ fx0: qbox.x0 / lastLayout.w, fy0: qbox.y0 / lastLayout.h, fx1: qbox.x1 / lastLayout.w, fy1: qbox.y1 / lastLayout.h });
+              var qel = document.createElement("div"); qel.className = "hl-box q-box";
+              var qtag = document.createElement("span"); qtag.className = "hl-tag";
+              qtag.textContent = (multi ? "Q" + (idx + 1) + " · " : "") + "QUESTION";
+              qel.appendChild(qtag); hlLayer.appendChild(qel);
+            }
+          }
+        });
+        if (rows) answerBanner.hidden = false;
+        if (overlayBoxes.length) { hlLayer.hidden = false; placeOverlayBoxes(); }
+      }
+      window.addEventListener("resize", placeOverlayBoxes);
+
       /* Solve every question found in the text — each block gets its own
          card, its own choices, and its own highlighted answer. */
       function solveAndShow(text) {
@@ -1690,10 +3180,11 @@
         });
         return Promise.all(jobs).then(function () {
           var solved = currentBlocks.filter(function (b) { return b.result && b.result.status === "solved"; }).length;
+          renderAnswerOverlay();
           if (blocks.length > 1) {
-            setStatus("Read complete — " + blocks.length + " questions found, " + solved + " solved. Each answer is picked out under its own question below.");
+            setStatus("Read complete — " + blocks.length + " questions found, " + solved + " solved. Each answer is highlighted on the camera and picked out under its own question below.");
           } else {
-            setStatus(solved ? "Solved — the answer is picked out below." : "Read complete — see below.");
+            setStatus(solved ? "Solved — the answer is highlighted on the camera and picked out below." : "Read complete — see below.");
           }
         });
       }
@@ -1702,6 +3193,7 @@
         var t = textInput.value.trim();
         if (!t) { textMeta.textContent = "The text box is empty — capture a read, upload a photo, or type a question first."; return; }
         textMeta.textContent = "";
+        lastLayout = null;   // typed/pasted text has no camera positions to highlight
         solveAndShow(t);
       });
       $("clearBtn").addEventListener("click", function () {
@@ -1712,6 +3204,17 @@
       var SAMPLES = {
         multi: "1. What is the capital of France?\nA. London\nB. Berlin\nC. Paris\nD. Madrid\n2. Which planet is known as the Red Planet?\nA. Venus\nB. Mars\nC. Jupiter\nD. Saturn\n3. What is 15% of 240?\nA. 24\nB. 36\nC. 48\nD. 60",
         mc: "What is 15% of 240?\nA. 24\nB. 36\nC. 48\nD. 60",
+        mcx: "What is 12x6?\nA. 64\nB. 70\nC. 72\nD. 76",
+        frac: "3. What is 1/4 + 1/4?\nA. 2/8\nB. 2/2\nC. 1/8\nD. 1/2",
+        words: "What is twelve divided by three?\nA. 3\nB. 4\nC. 6\nD. 9",
+        story: "Mia has 24 stickers. She shares them equally among 4 friends. How many stickers does each friend get?\nA. 4\nB. 5\nC. 6\nD. 8",
+        "story-packs": "A factory packs 480 juice boxes into packs of 24. How many total packs are created?",
+        "story-baskets": "4. A farmer harvested 168 apples and packed them equally into 7 baskets. How many apples are in each basket?",
+        "story-shelves": "2. A library has 8 bookshelves, and each shelf holds 45 books. How many books are there in total on these shelves?\nA. 350\nB. 380\nC. 360\nD. 320",
+        "story-candles": "4. A store owner buys 8 boxes of candles for $15 each. If each box contains 12 candles and she sells all the candles individually for $2 each, what is her total profit?\nA. $72\nB. $60\nC. $96\nD. $48",
+        "story-speed": "5. A runner completed a 42-kilometer marathon in 3 hours and 30 minutes. What was her average speed in kilometers per hour?\nA. 11 km/h\nB. 12 km/h\nC. 14 km/h\nD. 10.5 km/h",
+        "story-change": "3. Mark buys 4 packs of notebooks for $8 each and 3 pens for $2 each. If he pays with a $50 bill, how much change should he receive?\nA. $12\nB. $10\nC. $14\nD. $8",
+        "story-theater": "2. A theater company has 1,242 tickets to sell evenly across 27 performances. How many tickets are available per performance?\nA. 42\nB. 48\nC. 52\nD. 46",
         geography: "What is the capital of France?\nA. London\nB. Berlin\nC. Paris\nD. Madrid",
         science: "Which planet is known as the Red Planet?\nA. Venus\nB. Mars\nC. Jupiter\nD. Saturn",
         vocab: "What does the word \"rapid\" mean?\nA. Very slow\nB. Happening quickly\nC. Extremely loud\nD. Full of color",
@@ -1722,6 +3225,7 @@
         btn.addEventListener("click", function () {
           textInput.value = SAMPLES[btn.getAttribute("data-sample")] || "";
           textMeta.textContent = "Sample text — tap Solve this text, or edit it first.";
+          lastLayout = null;   // samples have no camera positions to highlight
           solveAndShow(textInput.value);
         });
       });
@@ -1747,7 +3251,11 @@
         stage.classList.add("scanning");
         recognize(canvas).then(function (data) {
           var fullText = (data.text || "").trim();
+          // Same garbage guard as the manual scan: a read too poor to
+          // trust never becomes a card of fake questions and choices.
+          if (fullText && readQuality(fullText, Math.round(data.confidence || 0)) < 34) fullText = "";
           if (fullText) {
+            lastLayout = layoutFromData(data, canvas);
             textInput.value = fullText;
             var hasMc = splitQuestions(fullText).some(function (b) { return !!parseOptions(b); });
             if (fullText === lastAutoText && fullText !== lastAutoSolvedText && hasMc) {
