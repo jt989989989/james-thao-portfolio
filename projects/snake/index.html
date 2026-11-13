@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Snake — James Thao Portfolio</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; background: #222; overflow: hidden;
+    font-family: -apple-system, "Segoe UI", Arial, sans-serif;
+    -webkit-tap-highlight-color: transparent; }
+  #wrap { position: relative; width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center; }
+  canvas { display: block; background: #1b2b1b; touch-action: none; }
+  #hud { position: absolute; top: 10px; left: 0; right: 0; text-align: center;
+    color: #fff; font-size: 15px; font-weight: bold;
+    text-shadow: 0 2px 0 rgba(0,0,0,.35); pointer-events: none; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="game" width="400" height="400"></canvas>
+  <div id="hud">Swipe or use arrow keys to steer</div>
+</div>
+<script>
+"use strict";
+// Snake — plain shapes and flat colours only.
+// No copied art, sprites, or trademarked assets: the snake is green
+// squares, the food is a red square, the board is a flat dark grid.
+
+// ---- pure game logic (no DOM) so it can be tested headlessly ----
+var COLS = 20;
+var ROWS = 20;
+var START_SPEED_MS = 150;   // ms per step at start
+var MIN_SPEED_MS = 70;      // fastest the snake ever gets
+var SPEED_STEP_MS = 4;      // ms faster per food eaten
+
+function createGame() {
+  return {
+    state: "ready", // ready | playing | over
+    snake: [{ x: 10, y: 10 }, { x: 9, y: 10 }, { x: 8, y: 10 }],
+    dir: { x: 1, y: 0 },
+    queuedDir: null,
+    food: { x: 15, y: 10 },
+    score: 0,
+    best: 0,
+    speedMs: START_SPEED_MS
+  };
+}
+
+function randomFood(snake) {
+  // Pick a free cell; the board is never full in practice, but guard anyway.
+  var free = [];
+  for (var x = 0; x < COLS; x++) {
+    for (var y = 0; y < ROWS; y++) {
+      var occupied = false;
+      for (var i = 0; i < snake.length; i++) {
+        if (snake[i].x === x && snake[i].y === y) { occupied = true; break; }
+      }
+      if (!occupied) free.push({ x: x, y: y });
+    }
+  }
+  if (free.length === 0) return null;
+  return free[Math.floor(Math.random() * free.length)];
+}
+
+function isOpposite(a, b) {
+  return a.x === -b.x && a.y === -b.y;
+}
+
+function setDirection(game, dir) {
+  // Ignore reversals (running into yourself) and zero vectors.
+  if (!dir || (dir.x === 0 && dir.y === 0)) return false;
+  if (isOpposite(dir, game.dir)) return false;
+  // Queue it: applied on the next step so fast double-turns can't
+  // reverse the snake within a single tick.
+  if (game.queuedDir && isOpposite(dir, game.queuedDir)) return false;
+  game.queuedDir = { x: dir.x, y: dir.y };
+  return true;
+}
+
+// Advance one step. Returns "ate", "moved", "died-wall", "died-self",
+// or "not-playing" when the game isn't running.
+function step(game) {
+  if (game.state !== "playing") return "not-playing";
+  if (game.queuedDir) {
+    game.dir = game.queuedDir;
+    game.queuedDir = null;
+  }
+  var head = game.snake[0];
+  var next = { x: head.x + game.dir.x, y: head.y + game.dir.y };
+
+  // Wall collision.
+  if (next.x < 0 || next.x >= COLS || next.y < 0 || next.y >= ROWS) {
+    game.state = "over";
+    return "died-wall";
+  }
+  // Self collision (the tail cell moves away this step unless we eat,
+  // so it is safe to move into it — check against the body minus tail).
+  var eating = (next.x === game.food.x && next.y === game.food.y);
+  var bodyToCheck = eating ? game.snake : game.snake.slice(0, -1);
+  for (var i = 0; i < bodyToCheck.length; i++) {
+    if (bodyToCheck[i].x === next.x && bodyToCheck[i].y === next.y) {
+      game.state = "over";
+      return "died-self";
+    }
+  }
+
+  game.snake.unshift(next);
+  if (eating) {
+    game.score++;
+    if (game.score > game.best) game.best = game.score;
+    if (game.speedMs > MIN_SPEED_MS) {
+      game.speedMs = Math.max(MIN_SPEED_MS, game.speedMs - SPEED_STEP_MS);
+    }
+    var f = randomFood(game.snake);
+    if (f) game.food = f;
+    return "ate";
+  }
+  game.snake.pop();
+  return "moved";
+}
+
+function startGame(game) {
+  var fresh = createGame();
+  fresh.best = game.best;
+  fresh.state = "playing";
+  return fresh;
+}
+
+// Expose the logic for headless tests (harmless in the browser).
+var Snake = {
+  COLS: COLS, ROWS: ROWS,
+  createGame: createGame, randomFood: randomFood,
+  setDirection: setDirection, step: step, startGame: startGame
+};
+
+// ---- browser / rendering layer ----
+var canvas = document.getElementById("game");
+var ctx = canvas.getContext("2d");
+var hud = document.getElementById("hud");
+var CELL = 400 / COLS;
+
+function resize() {
+  var scale = Math.min(window.innerWidth / 400, window.innerHeight / 400);
+  canvas.style.width = Math.floor(400 * scale) + "px";
+  canvas.style.height = Math.floor(400 * scale) + "px";
+}
+window.addEventListener("resize", resize);
+resize();
+
+var game = createGame();
+try { game.best = parseInt(localStorage.getItem("snake-best") || "0", 10) || 0; }
+catch (e) { game.best = 0; }
+
+function saveBest() {
+  try { localStorage.setItem("snake-best", String(game.best)); } catch (e) {}
+}
+
+function tap() {
+  if (game.state === "ready") {
+    game = startGame(game);
+  } else if (game.state === "over") {
+    game = startGame(game);
+  }
+}
+
+function draw() {
+  // Board.
+  ctx.fillStyle = "#1b2b1b";
+  ctx.fillRect(0, 0, 400, 400);
+  // Faint checkerboard so the grid reads on a phone.
+  ctx.fillStyle = "#1e3120";
+  for (var gx = 0; gx < COLS; gx++) {
+    for (var gy = 0; gy < ROWS; gy++) {
+      if ((gx + gy) % 2 === 0) ctx.fillRect(gx * CELL, gy * CELL, CELL, CELL);
+    }
+  }
+
+  // Food: flat red square.
+  ctx.fillStyle = "#e53935";
+  ctx.fillRect(game.food.x * CELL + 2, game.food.y * CELL + 2, CELL - 4, CELL - 4);
+
+  // Snake: head a brighter green, body flat green.
+  for (var i = game.snake.length - 1; i >= 0; i--) {
+    var s = game.snake[i];
+    ctx.fillStyle = i === 0 ? "#8bc34a" : "#4caf50";
+    ctx.fillRect(s.x * CELL + 1, s.y * CELL + 1, CELL - 2, CELL - 2);
+  }
+
+  // Score.
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 20px Arial, sans-serif";
+  ctx.textAlign = "left";
+  ctx.fillText("Score: " + game.score, 10, 26);
+  ctx.textAlign = "right";
+  ctx.fillText("Best: " + game.best, 390, 26);
+
+  if (game.state === "ready") {
+    ctx.fillStyle = "rgba(0,0,0,.45)";
+    ctx.fillRect(40, 140, 320, 130);
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 30px Arial, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("SNAKE", 200, 185);
+    ctx.font = "16px Arial, sans-serif";
+    ctx.fillText("Swipe or use arrow keys to steer", 200, 218);
+    ctx.fillText("Eat the red squares — don't hit the", 200, 242);
+    ctx.fillText("walls or yourself. Tap to start.", 200, 262);
+  }
+
+  if (game.state === "over") {
+    saveBest();
+    ctx.fillStyle = "rgba(0,0,0,.55)";
+    ctx.fillRect(50, 140, 300, 150);
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 30px Arial, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("GAME OVER", 200, 185);
+    ctx.font = "20px Arial, sans-serif";
+    ctx.fillText("Score: " + game.score, 200, 222);
+    ctx.fillText("Best: " + game.best, 200, 250);
+    ctx.font = "16px Arial, sans-serif";
+    ctx.fillText("Tap / click / Space to play again", 200, 276);
+  }
+
+  hud.textContent = game.state === "over"
+    ? "Game over — tap to play again"
+    : (game.state === "ready" ? "Tap to start — swipe or arrow keys to steer"
+      : "Score: " + game.score + "  ·  Best: " + game.best);
+}
+
+// Game loop driven by a timer so speed can ramp up as you eat.
+var timer = null;
+function schedule() {
+  clearTimeout(timer);
+  timer = setTimeout(function () {
+    if (game.state === "playing") {
+      step(game);
+      if (game.state === "over") saveBest();
+    }
+    draw();
+    schedule();
+  }, game.state === "playing" ? game.speedMs : 200);
+}
+
+var KEYS = {
+  ArrowUp: { x: 0, y: -1 }, KeyW: { x: 0, y: -1 },
+  ArrowDown: { x: 0, y: 1 }, KeyS: { x: 0, y: 1 },
+  ArrowLeft: { x: -1, y: 0 }, KeyA: { x: -1, y: 0 },
+  ArrowRight: { x: 1, y: 0 }, KeyD: { x: 1, y: 0 }
+};
+window.addEventListener("keydown", function (e) {
+  if (e.code === "Space" || e.code === "Enter") { e.preventDefault(); tap(); return; }
+  var d = KEYS[e.code];
+  if (d) { e.preventDefault(); setDirection(game, d); }
+});
+
+// Swipe to steer; a plain tap starts / restarts.
+var touchStart = null;
+canvas.addEventListener("touchstart", function (e) {
+  var t = e.changedTouches[0];
+  touchStart = { x: t.clientX, y: t.clientY };
+  e.preventDefault();
+}, { passive: false });
+canvas.addEventListener("touchend", function (e) {
+  var t = e.changedTouches[0];
+  if (!touchStart) { tap(); return; }
+  var dx = t.clientX - touchStart.x;
+  var dy = t.clientY - touchStart.y;
+  touchStart = null;
+  if (Math.max(Math.abs(dx), Math.abs(dy)) < 24) { tap(); return; }
+  if (Math.abs(dx) > Math.abs(dy)) {
+    setDirection(game, { x: dx > 0 ? 1 : -1, y: 0 });
+  } else {
+    setDirection(game, { x: 0, y: dy > 0 ? 1 : -1 });
+  }
+  e.preventDefault();
+}, { passive: false });
+canvas.addEventListener("pointerdown", function (e) {
+  if (e.pointerType === "mouse") tap();
+});
+canvas.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+
+draw();
+schedule();
+</script>
+</body>
+</html>
