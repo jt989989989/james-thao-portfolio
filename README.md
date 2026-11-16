@@ -32,6 +32,7 @@ This repository is my project index for programming and IT roles. Each project i
 | [Local Chatbot](projects/local-chatbot/) | Simple offline chatbot — keyword/intent matching over a built-in knowledge base about All Stars Automations and my portfolio; answers services, booking, pricing (never invents a price), projects, and contact; demo mode included | Python (stdlib only) | AI / automation |
 | [Expense Tracker CLI](projects/expense-tracker/) | Swift CLI expense tracker — add expenses, list them, totals by category and month; data persists to a local JSON file; money as Decimal for exact totals; demo mode with fictional samples | Swift 6.4.1, Swift Package Manager | Tools / finance |
 | [Excel Report Automator](projects/excel-report-automator/) | I turn messy spreadsheet exports into clean, presentation-ready workbooks — dedupe, blank-row removal, whitespace and date cleanup, formatted sheets, and pivot summaries I compute with pandas (not native Excel PivotTables); demo mode included | Python, openpyxl + pandas | Tools / Excel |
+| [Financial Modeling Lab](projects/financial-modeling-lab/) | I built this to learn financial modeling by actually building one — a linked three-statement model, DCF valuation, and 2026–2030 forecast for a fictional coffee company, every number a live Excel formula | Python, openpyxl | Finance / Excel |
 
 ## How to run them
 
@@ -164,6 +165,12 @@ pip install -r requirements.txt
 python -m unittest discover -s tests -v
 python excel_report_automator.py --demo
 # Clean a file: python excel_report_automator.py messy.xlsx --pivot-rows Category --pivot-cols Month --pivot-values Amount
+
+# Financial Modeling Lab — 5 unit tests; builds a linked three-statement + DCF workbook
+cd ../financial-modeling-lab
+pip install -r requirements.txt
+python -m unittest discover -s tests -v
+python financial_model.py --verify
 ```
 
 ## Notes
