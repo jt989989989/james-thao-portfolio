@@ -5,18 +5,24 @@ import { defineCustomElements } from '@ionic/core/loader';
 import './style.css';
 import {
   CATEGORIES,
+  COLOUR_GAME_BONUS_COINS,
+  COLOUR_ROUNDS,
   MEMORY_WIN_COINS,
   SHOP,
   STAR_TAP_COINS,
   STORAGE_KEY,
   addTask,
   applyDailyReset,
+  awardColourGameWin,
+  awardColourPick,
   awardMemoryWin,
   buyOrEquip,
   categoryById,
+  createColourRound,
   createDefaultState,
   createMemoryDeck,
   finishFocusSession,
+  isColourPickCorrect,
   isMemoryMatch,
   migrateState,
   needsDailyReset,
@@ -34,10 +40,11 @@ function loadState() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return createDefaultState();
     const parsed = JSON.parse(raw);
-    if (!parsed || (parsed.version !== 1 && parsed.version !== 2) || !Array.isArray(parsed.tasks)) {
+    if (!parsed || (parsed.version !== 1 && parsed.version !== 2 && parsed.version !== 3) || !Array.isArray(parsed.tasks)) {
       return createDefaultState();
     }
-    // v1 saves keep working: v2 fields (streak, categories) are filled in.
+    // v1/v2 saves keep working: newer fields (streak, categories, colour
+    // stats) are filled in by migrateState.
     const state = migrateState(parsed);
     if (needsDailyReset(state)) applyDailyReset(state);
     return state;
@@ -86,6 +93,8 @@ function hairSvg(style, color) {
       return `<path d="M45 95 L58 52 L74 78 L90 48 L106 76 L122 50 L138 78 L152 58 L158 100 Q150 62 100 58 Q52 62 45 95 Z" fill="${color}"/>`;
     case 'long':
       return `<path d="M42 170 L42 105 Q42 52 100 52 Q158 52 158 105 L158 170 L142 170 L142 108 Q142 72 100 72 Q58 72 58 108 L58 170 Z" fill="${color}"/>`;
+    case 'ponytail':
+      return `<path d="M44 108 Q40 52 100 50 Q160 52 156 108 Q146 74 100 72 Q54 74 44 108 Z" fill="${color}"/><ellipse cx="160" cy="132" rx="13" ry="36" fill="${color}"/><rect x="150" y="92" width="20" height="9" rx="4" fill="#f2c94c"/>`;
     default: // short
       return `<path d="M44 108 Q40 52 100 50 Q160 52 156 108 Q146 74 100 72 Q54 74 44 108 Z" fill="${color}"/>`;
   }
@@ -97,6 +106,10 @@ function hatSvg(hat) {
       return `<path d="M48 78 Q50 42 100 40 Q150 42 152 78 L152 84 L48 84 Z" fill="#e63946"/><rect x="40" y="80" width="120" height="10" rx="5" fill="#c1121f"/>`;
     case 'beanie':
       return `<path d="M52 82 Q50 40 100 38 Q150 40 148 82 L148 88 L52 88 Z" fill="#4dabff"/><rect x="50" y="80" width="100" height="12" rx="6" fill="#2f6fb2"/><circle cx="100" cy="38" r="9" fill="#ffffff"/>`;
+    case 'party':
+      return `<path d="M76 64 L100 8 L124 64 Z" fill="#ff6b6b"/><circle cx="100" cy="8" r="7" fill="#f2c94c"/><circle cx="92" cy="42" r="4" fill="#ffffff"/><circle cx="108" cy="50" r="4" fill="#4dabff"/>`;
+    case 'wizard':
+      return `<path d="M62 66 L100 2 L138 66 Z" fill="#9775fa"/><rect x="52" y="62" width="96" height="10" rx="5" fill="#6a3fb5"/><circle cx="100" cy="34" r="5" fill="#f2c94c"/>`;
     case 'crown':
       return `<path d="M58 78 L58 44 L80 62 L100 38 L120 62 L142 44 L142 78 Z" fill="#f2c94c" stroke="#b8860b" stroke-width="2"/>`;
     default:
@@ -108,6 +121,10 @@ function accessorySvg(acc) {
   switch (acc) {
     case 'glasses':
       return `<circle cx="78" cy="112" r="16" fill="none" stroke="#222" stroke-width="4"/><circle cx="122" cy="112" r="16" fill="none" stroke="#222" stroke-width="4"/><line x1="94" y1="112" x2="106" y2="112" stroke="#222" stroke-width="4"/>`;
+    case 'sunglasses':
+      return `<circle cx="78" cy="112" r="16" fill="#222"/><circle cx="122" cy="112" r="16" fill="#222"/><line x1="94" y1="112" x2="106" y2="112" stroke="#222" stroke-width="4"/><circle cx="72" cy="106" r="4" fill="#ffffff"/><circle cx="116" cy="106" r="4" fill="#ffffff"/>`;
+    case 'heart':
+      return `<path d="M158 170 C146 160 142 150 150 146 C154 144 158 148 158 152 C158 148 162 144 166 146 C174 150 170 160 158 170 Z" fill="#ff6b6b" stroke="#c0392b" stroke-width="1"/>`;
     case 'star':
       return `<path d="M158 158 l4 9 10 1 -7 7 2 10 -9 -5 -9 5 2 -10 -7 -7 10 -1 Z" fill="#f2c94c" stroke="#b8860b" stroke-width="1"/>`;
     case 'headphones':
@@ -282,7 +299,7 @@ function renderProgress() {
       ? `🔥 ${streak.count}-day streak!${streak.best > streak.count ? ` Best: ${streak.best} days.` : ' Keep it going tomorrow!'}`
       : 'Finish a quest today to start your streak! 🔥';
   $('#stats-line').textContent =
-    `Quests finished: ${state.stats.tasksDone} · Games won: ${state.stats.gamesWon} · Stars tapped: ${state.stats.starsTapped} · Focus sessions: ${state.stats.timersFinished}`;
+    `Quests finished: ${state.stats.tasksDone} · Games won: ${state.stats.gamesWon} · Stars tapped: ${state.stats.starsTapped} · Focus sessions: ${state.stats.timersFinished} · Colour Match right: ${state.stats.colourCorrect || 0} of ${state.stats.colourPlayed || 0}`;
 }
 
 function escapeHtml(text) {
@@ -404,6 +421,59 @@ function endStarGame() {
   toast(`You tapped ${starGame.taps} stars and earned ${earned} coins!`, 'success');
 }
 
+// ---------- colour match ----------
+// v3: read the colour word, tap the button in that colour. 10 rounds;
+// +2 coins per right tap, +10 bonus for finishing the game.
+const colourGame = { playing: false, round: 0, correct: 0, current: null };
+
+function renderColour() {
+  const target = $('#colour-target');
+  const options = $('#colour-options');
+  const status = $('#colour-status');
+  if (!colourGame.playing) {
+    target.textContent = 'Press Start and match the colour!';
+    options.innerHTML = '';
+    status.textContent = `${COLOUR_ROUNDS} rounds · +2 coins for every right tap · finish all ${COLOUR_ROUNDS} for a +${COLOUR_GAME_BONUS_COINS} bonus!`;
+    $('#colour-start').textContent = 'Start game';
+    return;
+  }
+  target.textContent = `Tap the ${colourGame.current.target.name.toUpperCase()} button!`;
+  options.innerHTML = '';
+  for (const colour of colourGame.current.options) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'colour-btn';
+    btn.style.background = colour.color;
+    btn.setAttribute('aria-label', `${colour.name} button`);
+    btn.addEventListener('click', () => pickColour(colour.id));
+    options.append(btn);
+  }
+  status.textContent = `Round ${colourGame.round} of ${COLOUR_ROUNDS} · ${colourGame.correct} right so far`;
+  $('#colour-start').textContent = 'Playing…';
+}
+
+function pickColour(id) {
+  if (!colourGame.playing || !colourGame.current) return;
+  const right = isColourPickCorrect(colourGame.current, id);
+  awardColourPick(state, right);
+  if (right) colourGame.correct += 1;
+  save();
+  renderCoins();
+  if (colourGame.round >= COLOUR_ROUNDS) {
+    colourGame.playing = false;
+    const bonus = awardColourGameWin(state);
+    save();
+    renderCoins();
+    renderProgress();
+    renderColour();
+    toast(`Colour Match done! ${colourGame.correct} of ${COLOUR_ROUNDS} right — +${bonus} bonus coins!`, 'success');
+    return;
+  }
+  colourGame.round += 1;
+  colourGame.current = createColourRound();
+  renderColour();
+}
+
 // ---------- wire up ----------
 function init() {
   renderCoins();
@@ -520,6 +590,17 @@ function init() {
     $('#star-score').textContent = `Stars tapped: ${starGame.taps} · ${starGame.left}s left`;
     placeStar();
   });
+
+  // Colour Match.
+  $('#colour-start').addEventListener('click', () => {
+    if (colourGame.playing) return;
+    colourGame.playing = true;
+    colourGame.round = 1;
+    colourGame.correct = 0;
+    colourGame.current = createColourRound();
+    renderColour();
+  });
+  renderColour();
 
   // Reset everything (two taps to confirm, so little fingers can't do it by accident).
   let resetArmed = false;

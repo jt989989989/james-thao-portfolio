@@ -6,8 +6,8 @@
     <meta name="description" content="ADHD My Way — an Ionic app that helps children under 12 focus on daily tasks, earn coins, customise an avatar, and play mini games. Everything stays on the device." />
     <title>ADHD My Way</title>
     <link rel="icon" type="image/svg+xml" href="./logo-star.svg" />
-    <script type="module" crossorigin src="./assets/index-C5nymNey.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-DqEGlcVZ.css">
+    <script type="module" crossorigin src="./assets/index-8PzIlHAI.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-DQA--rnj.css">
   </head>
   <body>
     <ion-app>
@@ -104,6 +104,19 @@
                 <div class="memory-grid" id="memory-grid"></div>
                 <p id="memory-status">Pairs found: 0 of 6</p>
                 <ion-button id="memory-again" expand="block" fill="outline">Shuffle &amp; play again</ion-button>
+              </ion-card-content>
+            </ion-card>
+
+            <ion-card>
+              <ion-card-header>
+                <ion-card-title>Colour Match</ion-card-title>
+                <ion-card-subtitle>Read the colour word, then tap the button in that colour. 10 rounds — +2 coins per right tap, +10 bonus for finishing!</ion-card-subtitle>
+              </ion-card-header>
+              <ion-card-content>
+                <p class="colour-target" id="colour-target">Press Start and match the colour!</p>
+                <div class="colour-options" id="colour-options"></div>
+                <p class="colour-status" id="colour-status">10 rounds · +2 coins for every right tap · finish all 10 for a +10 bonus!</p>
+                <ion-button id="colour-start" expand="block" color="tertiary">Start game</ion-button>
               </ion-card-content>
             </ion-card>
 

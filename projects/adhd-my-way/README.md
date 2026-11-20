@@ -8,8 +8,9 @@ An **Ionic** mobile app that helps children under 12 focus on their daily tasks 
 coins, a customisable avatar, and mini games to keep it fun.
 
 > **Day 1 of the 100-day programming challenge** (8 Nov 2026). v1 launch.
-> Roadmap: v2 focus timer + task categories + streaks · v3 new mini game + more
-> avatar items · v4 weekly rewards / achievements + summary screen.
+> Roadmap: v2 focus timer + task categories + streaks (done) · v3 new mini game
+> (Colour Match) + more avatar items (done, 20 Nov 2026) · v4 weekly rewards /
+> achievements + summary screen.
 >
 > **Update (8 Nov 2026)** — phone-friendly layout (the app now sits in a
 > centred phone-width column on wide screens, with bigger tap targets) and
@@ -21,6 +22,14 @@ coins, a customisable avatar, and mini games to keep it fun.
 > chips and a group picker when adding a quest), and daily streaks (a day
 > counts when at least one quest is finished; the best streak is tracked).
 > Saved v1 data carries over — coins, quests and avatar are kept.
+>
+> **Update — v3 (20 Nov 2026, Day 1 of the restarted challenge)** — a third
+> mini game, **Colour Match** (read the colour word, tap the button in that
+> colour — 10 rounds, +2 coins per right tap, +10 bonus for finishing), and
+> more avatar shop items (Golden skin, ponytail hair, purple hair, party hat,
+> wizard hat, heart badge, sunglasses). Saved v1/v2 data carries over —
+> coins, quests, avatar and streaks are kept, and the new colour stats start
+> at zero.
 
 ## What it does
 
@@ -36,12 +45,15 @@ coins, a customisable avatar, and mini games to keep it fun.
   5 / 10 / 15 minutes, and press start. Finishing the timer ticks that quest off
   (+10 coins) and adds a **+5 coin** focus bonus. It also works with no quest picked.
 - **Avatar shop** — coins buy avatar customisations: skin colours, hair styles and
-  colours, hats (cap, beanie, gold crown) and accessories (star badge, glasses,
-  headphones). The avatar is drawn from plain shapes and colours.
-- **Mini games** (both earn coins):
+  colours (including a ponytail and purple hair), hats (cap, beanie, party hat,
+  wizard hat, gold crown) and accessories (star badge, heart badge, glasses,
+  sunglasses, headphones). The avatar is drawn from plain shapes and colours.
+- **Mini games** (all earn coins):
   - **Memory Match** — flip cards, find all 6 shape pairs, win **20 coins**.
   - **Tap the Star** — tap the star as many times as you can in 30 seconds,
     **+2 coins** per tap.
+  - **Colour Match** — read the colour word, then tap the button in that colour.
+    10 rounds, **+2 coins** per right tap and a **+10 coin** bonus for finishing.
 - **Everything persists on the device** via `localStorage` — coins, quests,
   avatar and shop purchases survive closing the app.
 
@@ -83,8 +95,9 @@ open www/index.html
 
 ```bash
 npm test
-# 14 tests: task coins, daily reset, shop purchases, memory deck, rewards,
-# quest categories, daily streaks, per-quest focus sessions, v1 save migration
+# 22 tests: task coins, daily reset, shop purchases, memory deck, rewards,
+# quest categories, daily streaks, per-quest focus sessions, v1/v2 save
+# migration, colour-match rounds and rewards, v3 shop items
 ```
 
 ## Project structure
@@ -102,7 +115,7 @@ adhd-my-way/
 │   ├── logic.js          # pure rules (coins, tasks, shop, decks) — tested
 │   └── style.css         # bright, simple, kid-friendly styling
 ├── tests/
-│   └── logic.test.js     # 9 Node tests for src/logic.js
+│   └── logic.test.js     # 22 Node tests for src/logic.js
 └── www/                  # production build output (built by running npm run build)
 ```
 

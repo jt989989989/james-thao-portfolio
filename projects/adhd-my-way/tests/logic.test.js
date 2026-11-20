@@ -2,6 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   CATEGORIES,
+  COLOUR_GAME_BONUS_COINS,
+  COLOUR_MATCH_COINS,
+  COLOUR_ROUNDS,
+  COLOUR_WORDS,
   MEMORY_WIN_COINS,
   SHOP,
   STAR_TAP_COINS,
@@ -9,13 +13,17 @@ import {
   TIMER_BONUS_COINS,
   addTask,
   applyDailyReset,
+  awardColourGameWin,
+  awardColourPick,
   awardMemoryWin,
   awardStarTaps,
   awardTimerFinish,
   buyOrEquip,
+  createColourRound,
   createDefaultState,
   createMemoryDeck,
   finishFocusSession,
+  isColourPickCorrect,
   isMemoryMatch,
   migrateState,
   needsDailyReset,
@@ -211,12 +219,122 @@ test('v2: migrating a v1 save keeps coins and adds streak + categories', () => {
     stats: { tasksDone: 3, gamesWon: 0, starsTapped: 0, timersFinished: 1 },
   };
   const s = migrateState(v1);
-  assert.equal(s.version, 2);
+  assert.equal(s.version, 3);
   assert.equal(s.coins, 45);
   assert.equal(s.streak.count, 0);
   assert.equal(s.streak.best, 0);
   assert.equal(s.streak.lastActiveDate, null);
+  assert.equal(s.stats.colourPlayed, 0);
+  assert.equal(s.stats.colourCorrect, 0);
   assert.ok(s.tasks.every((t) => typeof t.category === 'string' && t.category.length > 0));
   assert.equal(s.tasks[0].done, false);
   assert.equal(s.tasks[1].done, true);
+});
+
+test('v3: default state is version 3 with colour stats at zero', () => {
+  const s = createDefaultState();
+  assert.equal(s.version, 3);
+  assert.equal(s.stats.colourPlayed, 0);
+  assert.equal(s.stats.colourCorrect, 0);
+});
+
+test('v3: colour round has 4 distinct options including the target', () => {
+  for (let i = 0; i < 50; i += 1) {
+    const round = createColourRound();
+    assert.equal(round.options.length, 4);
+    const ids = round.options.map((c) => c.id);
+    assert.equal(new Set(ids).size, 4, 'options must be distinct colours');
+    assert.ok(ids.includes(round.target.id), 'options must include the target');
+    assert.ok(COLOUR_WORDS.some((c) => c.id === round.target.id));
+  }
+});
+
+test('v3: colour round is deterministic with a seeded random', () => {
+  // Tiny seeded generator: same seed, same round.
+  const seeded = (seed) => {
+    let value = seed;
+    return () => {
+      value = (value * 1103515245 + 12345) % 2147483648;
+      return value / 2147483648;
+    };
+  };
+  const a = createColourRound(seeded(42));
+  const b = createColourRound(seeded(42));
+  assert.equal(a.target.id, b.target.id);
+  assert.deepEqual(a.options.map((c) => c.id), b.options.map((c) => c.id));
+  const c = createColourRound(seeded(7));
+  assert.ok(c.target.id !== a.target.id || JSON.stringify(c.options) !== JSON.stringify(a.options));
+});
+
+test('v3: colour picks pay 2 coins when right, 0 when wrong, and count stats', () => {
+  const s = createDefaultState();
+  const round = { target: { id: 'red', name: 'Red', color: '#ff6b6b' }, options: [] };
+  assert.equal(isColourPickCorrect(round, 'red'), true);
+  assert.equal(isColourPickCorrect(round, 'blue'), false);
+  assert.equal(isColourPickCorrect(null, 'red'), false);
+  assert.equal(awardColourPick(s, true), COLOUR_MATCH_COINS);
+  assert.equal(s.coins, COLOUR_MATCH_COINS);
+  assert.equal(s.stats.colourCorrect, 1);
+  assert.equal(s.stats.colourPlayed, 1);
+  assert.equal(awardColourPick(s, false), 0);
+  assert.equal(s.coins, COLOUR_MATCH_COINS);
+  assert.equal(s.stats.colourCorrect, 1);
+  assert.equal(s.stats.colourPlayed, 2);
+});
+
+test('v3: finishing a colour game pays the bonus and counts a game won', () => {
+  const s = createDefaultState();
+  assert.equal(COLOUR_ROUNDS, 10);
+  assert.equal(awardColourGameWin(s), COLOUR_GAME_BONUS_COINS);
+  assert.equal(s.coins, COLOUR_GAME_BONUS_COINS);
+  assert.equal(s.stats.gamesWon, 1);
+});
+
+test('v3: shop has the new avatar items at the right prices', () => {
+  const byId = Object.fromEntries(SHOP.map((i) => [i.id, i]));
+  assert.equal(SHOP.length, 27);
+  assert.equal(byId['skin-5'].value, '#e8b06a');
+  assert.equal(byId['hair-ponytail'].slot, 'hairStyle');
+  assert.equal(byId['hair-ponytail'].price, 25);
+  assert.equal(byId['hair-purple'].price, 0);
+  assert.equal(byId['hat-party'].price, 45);
+  assert.equal(byId['hat-wizard'].price, 80);
+  assert.equal(byId['acc-heart'].price, 30);
+  assert.equal(byId['acc-sunglasses'].price, 70);
+  const ids = SHOP.map((i) => i.id);
+  assert.equal(new Set(ids).size, ids.length);
+});
+
+test('v3: buying the wizard hat costs 80 coins and equips it', () => {
+  const s = createDefaultState();
+  s.coins = 100;
+  const bought = buyOrEquip(s, 'hat-wizard');
+  assert.equal(bought.ok, true);
+  assert.equal(bought.action, 'bought');
+  assert.equal(s.coins, 20);
+  assert.equal(s.avatar.hat, 'wizard');
+  const again = buyOrEquip(s, 'hat-wizard');
+  assert.equal(again.action, 'already-equipped');
+  assert.equal(s.coins, 20);
+});
+
+test('v3: migrating a v2 save keeps coins and streak and adds colour stats', () => {
+  const v2 = {
+    version: 2,
+    coins: 60,
+    date: '2026-11-19',
+    tasks: [{ id: 't1', title: 'Brush my teeth', category: 'morning', coins: 10, custom: false, done: true }],
+    avatar: { skin: '#f6c89f', hairStyle: 'short', hairColor: '#5b3a1e', hat: 'none', accessory: 'none' },
+    owned: ['skin-1'],
+    streak: { count: 3, best: 5, lastActiveDate: '2026-11-19' },
+    stats: { tasksDone: 4, gamesWon: 1, starsTapped: 12, timersFinished: 2 },
+  };
+  const s = migrateState(v2);
+  assert.equal(s.version, 3);
+  assert.equal(s.coins, 60);
+  assert.equal(s.streak.count, 3);
+  assert.equal(s.streak.best, 5);
+  assert.equal(s.stats.colourPlayed, 0);
+  assert.equal(s.stats.colourCorrect, 0);
+  assert.equal(s.stats.gamesWon, 1);
 });

@@ -25,6 +25,22 @@ export const TASK_COINS = 10; // coins earned for finishing one daily task
 export const MEMORY_WIN_COINS = 20; // coins for winning Memory Match
 export const STAR_TAP_COINS = 2; // coins per star tapped
 export const TIMER_BONUS_COINS = 5; // coins for finishing a focus timer
+export const COLOUR_MATCH_COINS = 2; // coins per correct Colour Match tap
+export const COLOUR_GAME_BONUS_COINS = 10; // bonus for finishing all Colour Match rounds
+export const COLOUR_ROUNDS = 10; // rounds in one Colour Match game
+
+// Colour Match (v3): read the colour word, tap the button in that colour.
+// Words are the challenge — the word is shown in plain dark text, so a
+// child has to read it, not just match the ink colour.
+export const COLOUR_WORDS = [
+  { id: 'red', name: 'Red', color: '#ff6b6b' },
+  { id: 'blue', name: 'Blue', color: '#4dabff' },
+  { id: 'green', name: 'Green', color: '#51cf66' },
+  { id: 'yellow', name: 'Yellow', color: '#f2c94c' },
+  { id: 'purple', name: 'Purple', color: '#9775fa' },
+  { id: 'orange', name: 'Orange', color: '#fb8c00' },
+  { id: 'pink', name: 'Pink', color: '#ff8fab' },
+];
 
 export const DEFAULT_TASKS = [
   { id: 't1', title: 'Brush my teeth', category: 'morning', coins: TASK_COINS, custom: false },
@@ -43,26 +59,33 @@ export const SHOP = [
   { id: 'skin-2', slot: 'skin', name: 'Honey', value: '#e0a878', price: 0 },
   { id: 'skin-3', slot: 'skin', name: 'Cocoa', value: '#8d5524', price: 0 },
   { id: 'skin-4', slot: 'skin', name: 'Cream', value: '#ffdbac', price: 0 },
+  { id: 'skin-5', slot: 'skin', name: 'Golden', value: '#e8b06a', price: 0 },
   // Hair styles
   { id: 'hair-short', slot: 'hairStyle', name: 'Short hair', value: 'short', price: 0 },
   { id: 'hair-curly', slot: 'hairStyle', name: 'Curly hair', value: 'curly', price: 15 },
   { id: 'hair-spiky', slot: 'hairStyle', name: 'Spiky hair', value: 'spiky', price: 15 },
   { id: 'hair-long', slot: 'hairStyle', name: 'Long hair', value: 'long', price: 20 },
+  { id: 'hair-ponytail', slot: 'hairStyle', name: 'Ponytail', value: 'ponytail', price: 25 },
   // Hair colours (free)
   { id: 'hair-brown', slot: 'hairColor', name: 'Brown hair', value: '#5b3a1e', price: 0 },
   { id: 'hair-black', slot: 'hairColor', name: 'Black hair', value: '#222222', price: 0 },
   { id: 'hair-blonde', slot: 'hairColor', name: 'Blonde hair', value: '#f2c94c', price: 0 },
   { id: 'hair-red', slot: 'hairColor', name: 'Red hair', value: '#c0392b', price: 0 },
+  { id: 'hair-purple', slot: 'hairColor', name: 'Purple hair', value: '#9775fa', price: 0 },
   // Hats
   { id: 'hat-none', slot: 'hat', name: 'No hat', value: 'none', price: 0 },
   { id: 'hat-cap', slot: 'hat', name: 'Red cap', value: 'cap', price: 30 },
   { id: 'hat-beanie', slot: 'hat', name: 'Blue beanie', value: 'beanie', price: 40 },
+  { id: 'hat-party', slot: 'hat', name: 'Party hat', value: 'party', price: 45 },
+  { id: 'hat-wizard', slot: 'hat', name: 'Wizard hat', value: 'wizard', price: 80 },
   { id: 'hat-crown', slot: 'hat', name: 'Gold crown', value: 'crown', price: 100 },
   // Accessories
   { id: 'acc-none', slot: 'accessory', name: 'No accessory', value: 'none', price: 0 },
   { id: 'acc-star', slot: 'accessory', name: 'Star badge', value: 'star', price: 25 },
+  { id: 'acc-heart', slot: 'accessory', name: 'Heart badge', value: 'heart', price: 30 },
   { id: 'acc-glasses', slot: 'accessory', name: 'Cool glasses', value: 'glasses', price: 50 },
   { id: 'acc-headphones', slot: 'accessory', name: 'Headphones', value: 'headphones', price: 60 },
+  { id: 'acc-sunglasses', slot: 'accessory', name: 'Sunglasses', value: 'sunglasses', price: 70 },
 ];
 
 export const MEMORY_SHAPES = [
@@ -84,7 +107,7 @@ export function yesterdayString(date = new Date()) {
 
 export function createDefaultState(date = new Date()) {
   return {
-    version: 2,
+    version: 3,
     coins: 0,
     date: todayString(date),
     tasks: DEFAULT_TASKS.map((t) => ({ ...t, done: false })),
@@ -98,12 +121,25 @@ export function createDefaultState(date = new Date()) {
     owned: SHOP.filter((item) => item.price === 0).map((item) => item.id),
     // v2 streak: consecutive days with at least one quest finished.
     streak: { count: 0, best: 0, lastActiveDate: null },
-    stats: { tasksDone: 0, gamesWon: 0, starsTapped: 0, timersFinished: 0 },
+    stats: { tasksDone: 0, gamesWon: 0, starsTapped: 0, timersFinished: 0, colourPlayed: 0, colourCorrect: 0 },
   };
 }
 
-// Bring a saved v1 state up to v2 without losing coins, quests or avatar:
-// adds the streak record and a category for any quest that lacks one.
+// Fill in any stats keys an older save is missing (v1/v2 saves have no
+// colour stats); never wipes a count that is already there.
+function ensureStats(state) {
+  if (!state.stats || typeof state.stats !== 'object') {
+    state.stats = { tasksDone: 0, gamesWon: 0, starsTapped: 0, timersFinished: 0 };
+  }
+  for (const [key, fallback] of Object.entries({ tasksDone: 0, gamesWon: 0, starsTapped: 0, timersFinished: 0, colourPlayed: 0, colourCorrect: 0 })) {
+    if (typeof state.stats[key] !== 'number') state.stats[key] = fallback;
+  }
+  return state.stats;
+}
+
+// Bring a saved v1/v2 state up to v3 without losing coins, quests or avatar:
+// adds the streak record, a category for any quest that lacks one, and the
+// v3 colour-game stats.
 export function migrateState(state) {
   if (!state || typeof state !== 'object') return createDefaultState();
   if (!state.streak || typeof state.streak !== 'object') {
@@ -116,7 +152,8 @@ export function migrateState(state) {
       if (!categoryById(task.category)) task.category = validCategory(task.category);
     }
   }
-  state.version = 2;
+  ensureStats(state);
+  state.version = 3;
   return state;
 }
 
@@ -274,4 +311,46 @@ export function finishFocusSession(state, taskId = null, date = new Date()) {
   }
   const bonus = awardTimerFinish(state);
   return { ok: true, coins: bonus + taskCoins, bonus, taskDone, taskTitle };
+}
+
+// ---------- v3: Colour Match ----------
+// One round: a target colour word plus 4 colour buttons to choose from
+// (the target plus 3 distractors, shuffled). The word is the challenge —
+// the buttons are plain colours, so the child has to read the word.
+export function createColourRound(random = Math.random) {
+  const target = COLOUR_WORDS[Math.floor(random() * COLOUR_WORDS.length)];
+  const others = COLOUR_WORDS.filter((c) => c.id !== target.id);
+  for (let i = others.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(random() * (i + 1));
+    [others[i], others[j]] = [others[j], others[i]];
+  }
+  const options = [target, ...others.slice(0, 3)];
+  for (let i = options.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(random() * (i + 1));
+    [options[i], options[j]] = [options[j], options[i]];
+  }
+  return { target, options };
+}
+
+export function isColourPickCorrect(round, colourId) {
+  return !!round && !!round.target && round.target.id === colourId;
+}
+
+// A correct tap earns COLOUR_MATCH_COINS; a wrong tap earns nothing.
+// Every tap is counted, so the stats line can show how a child is doing.
+export function awardColourPick(state, correct) {
+  ensureStats(state);
+  state.stats.colourPlayed += 1;
+  if (!correct) return 0;
+  state.stats.colourCorrect += 1;
+  state.coins += COLOUR_MATCH_COINS;
+  return COLOUR_MATCH_COINS;
+}
+
+// Finishing all COLOUR_ROUNDS rounds pays a bonus and counts as a game won.
+export function awardColourGameWin(state) {
+  ensureStats(state);
+  state.coins += COLOUR_GAME_BONUS_COINS;
+  state.stats.gamesWon += 1;
+  return COLOUR_GAME_BONUS_COINS;
 }
