@@ -15,7 +15,14 @@ Right now it can solve simple math problems and a few cybersecurity questions fo
 - **Re-scans until it makes sense** — a read is scored on whether the answer it works out agrees with the printed choices. If the answer fits no choice, the frame is re-read (screen-cleanup pass, hard black-and-white, flipped colours) until the question and the choices agree, instead of stopping at a wrong answer.
 - **Tells division from addition using the choices** — a ÷ photographed off a screen can lose its dots and read as +. When the first reading doesn't match any choice, I re-analyse the symbols against the choices, including retrying each number with its last digit dropped (a closing "?" can scan as a "7"). A rescue is only trusted when exactly one re-reading lands on a choice; if both readings match different choices, I flag it instead of guessing.
 - **Highlighted answer with an explanation** — when I understand the question, the chosen option is highlighted on the camera and on its choice, with an explanation that states both readings when one was corrected (e.g. "As first read, 432+127 = 559 — not one of the choices. Re-analysed: 432 ÷ 12 = 36, which is choice B").
-- **Suggested answers** — when a question is read but its choices aren't in the frame, the worked answer is shown labelled SUGGESTED ANSWER instead of nothing.
+- **Suggested answers** — when a question is read but its choices aren't in the frame, the worked answer is shown labelled SUGGESTED ANSWER instead of nothing. When I can't confirm an answer at all, I offer my best guess instead — an amber chip on the camera banner and an amber dashed box on the suggested choice, tagged "SUGGESTED ANSWER — BEST GUESS, NOT CONFIRMED", so a guess can never be mistaken for a confirmed green answer. The suggestion shows on the camera itself, not just in the cards below.
+- **Teach me (correct the scan)** — each card says what I detected. Select lines in the "TEXT IT READ" box and mark them as the question or as the choices A–D, and I re-solve from your correction.
+- **Web lookup fallback** — when a question with choices can't be solved on the phone, I look it up on Wikipedia (free, no key), score each printed choice against what I find, and handle "NOT" questions by picking the choice the reference doesn't back. Every answer is labelled "WORKED OUT ON THIS PHONE" or "ANSWER FROM A WEB LOOKUP". Maths never leaves the phone.
+- **Column filter** — I work out which column the question and its choices sit in and ignore the rest of the frame, so papers on the desk beside the phone and stray symbols never reach the question, the choices, or the camera boxes.
+- **Fill-in repair** — if the read comes back garbled ("Whig ib the rote Mhcramon…"), I swap the unrecognised words for the closest ones I know and show the filled-in question on the card ("FILLED IN AS: …"). A clean read is never rewritten.
+- **Shuffle-safe answers** — I match answers by the choice text, never the letter. If the quiz shuffles Ho-Oh from C to B, my answer follows it to B.
+- **Tap to focus** — turn it on first, then tap the question on the camera to read only a band around your tap (enlarged), then tap the middle of the choices to read only those. Your taps show on the camera as amber "TAP · QUESTION" and blue "TAP · CHOICES" markers. If a choices tap finds fewer than three choices, I retry it in black-and-white on my own.
+- **Choice-strip re-read** — a read only counts as finished when it actually carries the choices. If the full-frame passes still miss them, I crop to just the choice rows, enlarge them, and read those on their own, merging the A–D choices back in with their camera positions.
 - **Several questions in one frame** — if the camera sees more than one question at once, each gets its own card and its own answer, numbered or unnumbered. A summary line reports what it found, e.g. "3 QUESTIONS IN THIS FRAME · 3 SOLVED".
 - **Math** — arithmetic, fractions, percent-of, expressions with brackets, and simple solve-for-x, worked out on the spot.
 - **General knowledge and cybersecurity** — open questions answered from built-in fact banks (capitals, planets, science, history, and more), plus Security+ and CISSP question banks covering Security+ topics and all 8 CISSP domains.
@@ -29,7 +36,22 @@ Everything runs on-device in the browser. No API key, no accounts, no network ca
 - Story problems are still hit-or-miss. Some solve cleanly, some come back only as a suggestion, and some don't solve at all. My next update adds process of elimination with better logic: using the printed choices to narrow down the right answer.
 - The cybersecurity bank is prototype knowledge only. It is not a claim that I hold CISSP — I hold CompTIA Security+.
 
-## What changed — Nov 12, 2026 (this update)
+## What changed — Nov 17–20, 2026 (this update)
+
+Everything below is what I fixed and added since the Nov 12 version, testing against the same quiz app on my phone:
+
+- **Teach mode** — I can now correct what the scanner saw: select lines in the "TEXT IT READ" box and mark them as the question or as the choices A–D, and I re-solve from the correction. A correction that still resembles the scan keeps the camera layout, so the fixed answer highlights on the camera.
+- **Web lookup fallback** — when a question with choices can't be solved on the phone, I look it up on Wikipedia (free, no key) and score each printed choice. "NOT" questions pick the choice the reference doesn't back. Answers are labelled "WORKED OUT ON THIS PHONE" or "ANSWER FROM A WEB LOOKUP". The AI version that answers anything comes later.
+- **Anchor repair** — questions are now found by a strict anchor (number + period, e.g. "3."), and choices by their A–D letters, so the QUESTION box no longer runs through the choices to the bottom of the frame and hint text after choice D can't spawn a phantom block.
+- **Column filter + choice-strip re-read** — I keep only the column the question and choices sit in, so desk papers and symbol scraps never reach the text box or the camera boxes. A read only counts as finished when it carries the choices; if the full-frame passes miss them, I crop to just the choice rows, enlarge them, and read those on their own.
+- **Fill-in-the-blank repair** — a garbled read is repaired word by word from the question's own choices and my built-in banks, and the filled-in question is shown on the card ("FILLED IN AS: …"). My exact garbled read "Whig ib the rote Mhcramon is NOT a Dragon-type?" now comes back as a proper question and solves to D · Charizard.
+- **Suggested answers on the camera** — when I can't confirm an answer, I offer my best guess: amber chip in the camera banner, amber dashed box on the suggested choice, clearly tagged as a guess. It shows on the camera itself, not just in the cards below.
+- **Shuffle-safe matching** — I match answers by choice text, never by letter, so a shuffled retake still finds the right choice.
+- **Tap to focus** — turn it on, tap the question on the camera to read only a band around your tap, then tap the middle of the choices to read only those. Amber "TAP · QUESTION" and blue "TAP · CHOICES" markers show where you touched; works with a finger or a mouse.
+
+Verified on my phone's quiz screens: the Pokémon "NOT a Dragon-type?" question answers D · Charizard, and the first-episode rainbow question ("which legendary Pokémon does Ash catch a glimpse of flying across the rainbow?") answers C · Ho-Oh. The native iPhone version of this tool is in [printed-text-reader-hud-ios](../printed-text-reader-hud-ios/) — it uses Apple's Vision instead of the browser reader, which reads photographed screens far better.
+
+## What changed — Nov 12, 2026
 
 Everything below is what I fixed and added today, testing against a real quiz app on my phone:
 

@@ -30,6 +30,8 @@
         --hud-ink: #e6fff3;
         --hud-dim: #9fd8bf;
         --hud-line: rgba(47, 230, 168, 0.55);
+        --info: #1d6fb8;
+        --info-line: rgba(29, 111, 184, 0.55);
       }
       @media (prefers-color-scheme: dark) {
         :root {
@@ -46,6 +48,8 @@
           --correct-bg: #0d2f21;
           --correct-line: #2fe6a8;
           --correct-ink: #d9ffee;
+          --info: #6bc7ff;
+          --info-line: rgba(107, 199, 255, 0.55);
         }
       }
       * { box-sizing: border-box; }
@@ -200,6 +204,27 @@
         box-shadow: 0 0 0 1px rgba(3, 12, 9, 0.35), 0 0 18px rgba(255, 196, 107, 0.30);
       }
       .hl-box.q-box .hl-tag { background: #ffc46b; color: #2c1e04; }
+      /* Every choice the reader located is outlined in blue the moment
+         it is seen — solved or not — so the user can SEE that the
+         scanner has found the multiple-choice section. The correct
+         choice's outline is replaced by the solid green answer box. */
+      .hl-box.seen-box {
+        border: 2px dashed rgba(107, 199, 255, 0.95);
+        background: rgba(107, 199, 255, 0.10);
+        box-shadow: 0 0 0 1px rgba(3, 12, 9, 0.35);
+      }
+      .hl-box.seen-box .hl-tag { background: #6bc7ff; color: #07263c; font-size: 10px; padding: 1px 6px; }
+      /* A SUGGESTED answer gets its own box — amber and dashed, so it
+         can never be mistaken for the solid green of a confirmed answer
+         or the solid amber of the question box: this is a best guess. */
+      .hl-box.guess-box {
+        border: 3px dashed #ffc46b;
+        background: rgba(255, 196, 107, 0.15);
+        box-shadow: 0 0 0 1px rgba(3, 12, 9, 0.35), 0 0 18px rgba(255, 196, 107, 0.30);
+      }
+      .hl-box.guess-box .hl-tag { background: #ffc46b; color: #2c1e04; }
+      .hud-pill[hidden] { display: none; }
+      .hud-pill.choices { border-color: rgba(107, 199, 255, 0.55); color: #bfe6ff; }
       .answer-banner {
         position: absolute; left: 14px; right: 14px; bottom: 52px; z-index: 6;
         background: rgba(3, 14, 10, 0.9);
@@ -219,6 +244,28 @@
         font-weight: 800; font-size: 14px; border-radius: 6px;
       }
       .ab-text b { color: var(--accent-bright); font-weight: 700; }
+      .ab-letter.guess { background: #ffc46b; color: #2c1e04; }
+      .ab-row.guess .ab-text b { color: #ffc46b; }
+
+      /* ---------- Tap-to-focus: point at the question, then the choices ---------- */
+      .stage.tap-on { cursor: crosshair; }
+      .stage.tap-on video, .stage.tap-on img.photo { cursor: crosshair; }
+      .focus-layer { position: absolute; inset: 52px 14px 56px; z-index: 5; pointer-events: none; }
+      .focus-layer[hidden] { display: none; }
+      .focus-box { position: absolute; border-radius: 8px; pointer-events: none; }
+      .focus-box.q { border: 3px solid #ffc46b; background: rgba(255,196,107,.12); box-shadow: 0 0 0 1px rgba(3,12,9,.35), 0 0 18px rgba(255,196,107,.30); }
+      .focus-box.c { border: 3px solid #6bc7ff; background: rgba(107,199,255,.10); box-shadow: 0 0 0 1px rgba(3,12,9,.35), 0 0 18px rgba(107,199,255,.28); }
+      .focus-box .focus-tag { position: absolute; top: -11px; left: -3px; font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 11px; font-weight: 700; letter-spacing: .06em; border-radius: 5px; padding: 2px 7px; white-space: nowrap; }
+      .focus-box.q .focus-tag { background: #ffc46b; color: #2c1e04; }
+      .focus-box.c .focus-tag { background: #6bc7ff; color: #07263c; }
+      .tap-dot { position: absolute; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; border: 3px solid #fff; background: rgba(47,230,168,.85); box-shadow: 0 0 0 2px rgba(3,12,9,.5), 0 0 16px rgba(47,230,168,.7); pointer-events: none; }
+      @media (prefers-reduced-motion: no-preference) { .tap-dot { animation: tapPulse .7s ease-out 1; } @keyframes tapPulse { from { transform: scale(.6); opacity: 1; } to { transform: scale(1.6); opacity: .85; } } }
+      .tap-bar { position: absolute; left: 14px; right: 14px; top: 52px; z-index: 7; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; background: rgba(3,14,10,.92); border: 1px solid var(--accent-bright); border-radius: 10px; padding: 9px 10px; color: var(--hud-ink); backdrop-filter: blur(3px); }
+      .tap-bar[hidden] { display: none; }
+      .tap-bar strong { font-size: 13.5px; line-height: 1.35; flex: 1 1 180px; }
+      .tap-bar strong span { color: var(--accent-bright); }
+      .tap-bar button { min-height: 34px; padding: 6px 10px; font-size: 12.5px; border-radius: 8px; background: rgba(255,255,255,.08); color: var(--hud-ink); border-color: rgba(47,230,168,.45); }
+      .tap-bar button:hover { border-color: var(--accent-bright); }
 
       /* ---------- Controls: one compact bar ---------- */
       .controls { display: flex; flex-wrap: wrap; gap: 9px; }
@@ -362,6 +409,19 @@
       }
       textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
       .text-meta { font-size: 12.5px; color: var(--muted); margin: 8px 0 0; min-height: 16px; }
+      .detect-meta { font-size: 12.5px; font-weight: 600; color: var(--accent); margin: 8px 0 0; min-height: 16px; }
+      .detect-meta.warn { color: var(--amber); }
+      .src-tag {
+        display: none; margin: 0 0 10px; width: fit-content;
+        font-size: 10.5px; letter-spacing: 0.08em; font-weight: 600;
+        padding: 4px 9px; border-radius: 999px;
+        border: 1px solid var(--line); color: var(--muted);
+      }
+      .src-tag.show { display: inline-block; }
+      .src-tag.web { border-color: var(--info-line); color: var(--info); }
+      .src-tag.device { border-color: var(--correct-line); color: var(--accent); }
+      .src-tag.guess { border-color: var(--amber); color: var(--amber); }
+      .teach-note { font-size: 12.5px; color: var(--muted); line-height: 1.5; margin: 10px 0 0; }
       .btn-row { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 10px; }
       .btn-row button.primary { flex: 0 1 auto; }
       .sample-row { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 12px; align-items: center; }
@@ -389,17 +449,19 @@
 
         <div class="stage-placeholder" id="placeholder">
           <h1>Point at the questions.<br />It solves each one.</h1>
-          <p>Fit the whole question <em>and</em> all of its A–D choices inside the green frame — the scan reads only what is inside that frame, nothing outside it. The scanner reads each question as one piece of writing, works out what it is asking, and highlights the best answer from that question's own choices right on the camera, with the reason why.</p>
+          <p>Fit the whole question <em>and</em> all of its A–D choices inside the green frame — the scan reads only what is inside that frame, nothing outside it. Anything else with words inside the frame (a paper on the desk, the edge of another page) gets photographed too, so fill the frame with the quiz itself where you can — the scanner keeps only the column the question and its choices sit in and throws the rest away. The scanner reads each question as one piece of writing, works out what it is asking, and highlights the best answer from that question's own choices right on the camera, with the reason why.</p>
           <div class="steps">
             <span><b>1</b>&nbsp; START CAMERA</span>
-            <span><b>2</b>&nbsp; FIT QUESTION + ALL CHOICES IN THE FRAME</span>
+            <span><b>2</b>&nbsp; FIT QUESTION + ALL CHOICES IN THE FRAME — OR USE TAP TO FOCUS</span>
             <span><b>3</b>&nbsp; ANSWER HIGHLIGHTED ON THE CAMERA</span>
           </div>
+          <p style="font-size:13px">Easier with tap-to-focus: turn it on below, tap the question on the camera to read just that, then tap the choices to read just those. Nothing else in the frame is read.</p>
         </div>
 
         <div class="hud-top">
           <span class="hud-pill" id="modePill"><span class="dot"></span>QUESTION SOLVER</span>
           <span class="hud-pill mono" id="ocrPill">READER IDLE</span>
+          <span class="hud-pill mono choices" id="choicesPill" hidden>CHOICES —</span>
         </div>
 
         <div class="frame-corners" id="scanFrame"><i></i><i></i><i></i><i></i><span class="frame-tag mono">ONLY TEXT INSIDE THIS FRAME IS READ</span></div>
@@ -407,6 +469,13 @@
 
         <div class="hud-status mono" id="hudStatus">Camera off — start the camera, upload a photo, or paste a question below.</div>
 
+        <div class="focus-layer" id="focusLayer" hidden></div>
+        <div class="tap-bar" id="tapBar" hidden>
+          <strong id="tapPrompt">Tap-to-focus: <span>tap the question</span> on the camera</strong>
+          <button type="button" id="tapRestartBtn">Restart</button>
+          <button type="button" id="tapSolveOnlyBtn" hidden>Solve question only</button>
+          <button type="button" id="tapOffBtn">Exit tap mode</button>
+        </div>
         <div class="hl-layer" id="hlLayer" hidden></div>
         <div class="answer-banner" id="answerBanner" hidden></div>
       </section>
@@ -421,6 +490,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
           Scan &amp; solve
         </button>
+        <button type="button" class="toggle" id="tapBtn" aria-pressed="false" disabled>Tap to focus</button>
         <button type="button" class="toggle" id="autoBtn" aria-pressed="false" disabled>Auto-scan</button>
         <button type="button" id="uploadBtn">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/></svg>
@@ -428,7 +498,7 @@
         </button>
         <input type="file" id="fileInput" accept="image/*" hidden />
       </div>
-      <p class="controls-note" id="controlsNote">Reading happens on this device — the camera image is never uploaded. Only the text inside the green frame is read: fit each question with all of its A–D choices inside it (move back a little rather than in close, so the choices fit too). Pointing at another screen? If the first read comes back unclear, the scan automatically re-reads the frame with a screen-cleanup pass that flattens glow and screen texture — hold steady and fill the frame. Every answer below is one of that question's own printed choices. Questions asked in words are solved too ("What is twelve divided by three?", "Mia shares 24 stickers equally among 4 friends") — and a story problem is answered even when its choices aren't in the frame ("A factory packs 480 juice boxes into packs of 24", "8 shelves, each holds 45 books"), with the worked answer shown right on the camera. The card highlights the question it read, and for word questions it marks the words it turned into a calculation and shows what it read them as. And because a ÷ can scan as a + when its dots are lost in screen glow, any + in a maths question is double-checked against the picture itself before it is trusted. Each question is anchored on its printed number ("2."), so that number is never treated as part of the maths, and anything read before it — the quiz title, the "4/5" progress marker — is ignored. If a question is read but its choices aren't in the frame, you still get a suggested answer worked from the question alone, labelled as a suggestion. And if the worked answer doesn't match any of that question's choices, the symbols and digits are re-analysed against the choices before anything is reported — a ÷ that read as + and a ? that read as an extra 7 are both retried the way the choices support (432 + 127 is re-read as 432 ÷ 12 when 36 is one of the choices). If the question and its choices still don't agree, the scan re-reads the frame with different treatments — a hard black-and-white pass, then flipped colours — and keeps whichever read makes them agree. So the answer the choices point to is the one you see, highlighted on the camera with the working that picked it shown on the highlighted choice.</p>
+      <p class="controls-note" id="controlsNote">Reading happens on this device — the camera image is never uploaded. <strong>Tap to focus:</strong> turn it on, then tap the question on the camera (finger or mouse) to read only that area, then tap the choices to read only those — the two reads are combined and solved, with the answer highlighted on the camera as usual. Only the text inside the green frame is read in a normal scan: fit each question with all of its A–D choices inside it (move back a little rather than in close, so the choices fit too). Why did a scan used to pick up other text? Everything inside the frame is photographed — including papers on the desk beside the phone — and the reader returns all of it; the scanner now rebuilds the read from the words' positions and keeps only the lines that line up with the question's own column, so print beside the quiz no longer lands in the text box or the question. And a read is no longer called finished on the question alone: if the question read but its choices didn't, the scan keeps going — screen passes first, then a pass that crops to just the choice rows and reads those enlarged on their own — before it settles. Pointing at another screen? If the first read comes back unclear, the scan automatically re-reads the frame with a screen-cleanup pass that flattens glow and screen texture — hold steady and fill the frame. Every answer below is one of that question's own printed choices. Questions asked in words are solved too ("What is twelve divided by three?", "Mia shares 24 stickers equally among 4 friends") — and a story problem is answered even when its choices aren't in the frame ("A factory packs 480 juice boxes into packs of 24", "8 shelves, each holds 45 books"), with the worked answer shown right on the camera. The card highlights the question it read, and for word questions it marks the words it turned into a calculation and shows what it read them as. And because a ÷ can scan as a + when its dots are lost in screen glow, any + in a maths question is double-checked against the picture itself before it is trusted. The scanner is taught two anchors, the same way: a question begins at its printed number followed by a period ("2.") — and still counts when the scan loses that thin full stop ("2 Which…") — and its choices begin at the lettered lines that follow — A. B. C. D. — each choice keeping the letter printed beside it, in whatever order those lines arrive. The answers may shuffle around between attempts — the same answer can sit under a different letter on a retake — so the scanner never answers by letter or by position: it works out the answer's text (Ho-Oh, 36, Paris) from the question, then reports whatever letter that text is printed under in the scan in front of it, and highlights that choice where it actually sits. So the question is only the lines between its number and the first choice line, the choices are the lettered run after it, and everything else in the frame is left out: the quiz title and the "4/5" progress marker above the number, the hint text and the Back/Next buttons below the last choice, and any other print that happens to share the frame is never mistaken for the question or its choices. The question number itself is never treated as part of the maths. If a question is read but its choices aren't in the frame, you still get a suggested answer worked from the question alone, labelled as a suggestion. And if the question itself comes back garbled — words misread so it doesn't quite make sense — the scanner fills in the blanks: each word it doesn't recognise is swapped for the closest word it does know (from the question's own choices and its built-in banks), the card shows the filled-in question it used, and the solvers try again on that. If an answer still can't be confirmed after all that, the scanner offers its best guess as a SUGGESTED answer instead of nothing: on the camera it appears in the answer banner with an amber chip and the suggested choice is boxed in amber dashes (never the solid green of a confirmed answer), and on the card it is tagged SUGGESTED ANSWER — BEST GUESS, NOT CONFIRMED. And if the worked answer doesn't match any of that question's choices, the symbols and digits are re-analysed against the choices before anything is reported — a ÷ that read as + and a ? that read as an extra 7 are both retried the way the choices support (432 + 127 is re-read as 432 ÷ 12 when 36 is one of the choices). If the question and its choices still don't agree, the scan re-reads the frame with different treatments — a hard black-and-white pass, then flipped colours — and keeps whichever read makes them agree. So the answer the choices point to is the one you see, highlighted on the camera with the working that picked it shown on the highlighted choice. Every choice the scanner can see is outlined in blue on the camera as soon as it is found — solved or not — and a CHOICES SEEN pill at the top of the camera lists the letters it found, so you can tell it has located the multiple-choice section before it answers; the correct choice then gets the solid green box. On the live camera each scan first grabs a few frames in a burst and reads the sharpest one, because a shaky grab smears the letters — hold the phone steady (or brace it) and more questions read correctly the first time. And if a question and its choices still don't agree after every re-read, the scanner grabs a fresh frame and scans the question again before settling. If a read still gets the question or its choices wrong, you can teach it: in the text box below, select the lines that really are the question — or the lines that really are the choices — and tap the matching Mark button; it re-solves from your correction and keeps the answer highlighted on the camera. And when a question with choices can't be solved from what's on the phone (maths, the built-in fact and security banks, definitions), the scanner looks it up on Wikipedia — free, no account — checks each printed choice against what it finds, and labels that card "ANSWER FROM A WEB LOOKUP" so it's clear the answer was looked up, not calculated; maths is always worked out on the phone itself.</p>
 
       <!-- ===== One card per question: its stem, its printed choices, its answer ===== -->
       <p class="results-summary mono" id="resultsSummary" hidden></p>
@@ -436,13 +506,17 @@
 
       <!-- ===== Text it read: check a misread, fix it, re-solve ===== -->
       <section class="text-card">
-        <p class="card-title">TEXT IT READ</p>
+        <p class="card-title">TEXT IT READ — CORRECT IT &amp; RE-SOLVE</p>
         <textarea id="textInput" placeholder="The questions and their choices will appear here after a scan. You can also paste questions yourself — one or several at a time — then tap Solve. Each question gets its own answer below."></textarea>
+        <p class="detect-meta mono" id="detectMeta"></p>
         <p class="text-meta mono" id="textMeta"></p>
         <div class="btn-row">
           <button type="button" class="primary" id="solveBtn">Solve this text</button>
+          <button type="button" id="markQBtn">Mark selection as the question</button>
+          <button type="button" id="markChoicesBtn">Mark selection as choices A–D</button>
           <button type="button" id="clearBtn">Clear</button>
         </div>
+        <p class="teach-note">Scanner put the question or the choices in the wrong place? Select the lines above that really are the question — or the lines that really are the choices — and tap the matching Mark button. It re-solves from your correction and keeps the answer highlighted on the camera.</p>
         <div class="sample-row">
           <span class="sample-label">Try a sample:</span>
           <button type="button" data-sample="mc">Math</button>
@@ -460,6 +534,7 @@
           <button type="button" data-sample="geography">Geography</button>
           <button type="button" data-sample="science">Science</button>
           <button type="button" data-sample="vocab">Vocabulary</button>
+          <button type="button" data-sample="pokemon-shuffled">Pokémon · shuffled answers</button>
           <button type="button" data-sample="multi">Three questions at once</button>
           <button type="button" data-sample="cyber-port">Cybersecurity · ports</button>
           <button type="button" data-sample="cissp-rbac">CISSP · access control</button>
@@ -473,9 +548,10 @@
 
       var stage = $("stage"), video = $("video"), photoImg = $("photoImg"), scanFrame = $("scanFrame");
       var modePill = $("modePill"), ocrPill = $("ocrPill"), hudStatus = $("hudStatus");
+      var choicesPill = $("choicesPill");
       var qaList = $("qaList"), resultsSummary = $("resultsSummary");
       var hlLayer = $("hlLayer"), answerBanner = $("answerBanner");
-      var textInput = $("textInput"), textMeta = $("textMeta");
+      var textInput = $("textInput"), textMeta = $("textMeta"), detectMeta = $("detectMeta");
       /* One entry per question found in the frame: its raw text block and,
          once solved, its result. cards[i] holds the DOM refs for block i. */
       var currentBlocks = [];
@@ -483,6 +559,7 @@
       var lastAutoText = "", lastAutoSolvedText = "";
       var camBtn = $("camBtn"), camBtnLabel = $("camBtnLabel"), captureBtn = $("captureBtn"),
           autoBtn = $("autoBtn"), uploadBtn = $("uploadBtn"), fileInput = $("fileInput");
+      var tapBtn = $("tapBtn"), tapBar = $("tapBar"), tapPrompt = $("tapPrompt"), focusLayer = $("focusLayer");
 
       var stream = null;          // camera stream
       var sourceKind = null;      // 'video' | 'image' | null
@@ -525,7 +602,8 @@
             camBtnLabel.textContent = "Stop camera";
             captureBtn.disabled = false;
             autoBtn.disabled = false;
-            setStatus("Camera on. Fit a whole question and all of its A–D choices inside the green frame, then tap Scan & solve.");
+            if (tapBtn) tapBtn.disabled = false;
+            setStatus("Camera on. Fit a whole question and all of its A–D choices inside the green frame, then tap Scan & solve — or turn on Tap to focus and tap the question, then the choices.");
           })
           .catch(function () {
             setStatus("Camera permission wasn't granted — upload a photo or paste the text instead.");
@@ -540,8 +618,9 @@
         modePill.classList.remove("on");
         camBtnLabel.textContent = "Start camera";
         setAutoScan(false);
+        if (typeof setTapMode === "function") setTapMode(false);
         if (!stage.classList.contains("has-photo")) {
-          captureBtn.disabled = true; autoBtn.disabled = true;
+          captureBtn.disabled = true; autoBtn.disabled = true; if (tapBtn) tapBtn.disabled = true;
           setStatus("Camera off — start the camera, upload a photo, or paste text.");
         }
       }
@@ -558,7 +637,8 @@
           stage.classList.add("has-photo");
           captureBtn.disabled = false;
           autoBtn.disabled = false;
-          setStatus("Photo loaded — reading it now.");
+          if (tapBtn) tapBtn.disabled = false;
+          setStatus("Photo loaded — reading it now. You can also turn on Tap to focus and tap the question, then the choices, on the photo.");
           captureAndRead();
         };
         photoImg.src = url;
@@ -775,6 +855,86 @@
         return c;
       }
 
+      /* ---------------- Choice-strip pass: read ONLY the choice rows ----------------
+         Why the choices specifically kept vanishing: they are the
+         faintest text in the frame — white letters on light-grey pill
+         buttons — and every whole-frame treatment is a compromise that
+         sacrifices them first (a global threshold merges white text
+         INTO its light pill; the whole frame's polarity vote is swung
+         by the desk around the phone). So when a read has the question
+         but not its choices, the scan stops compromising: it crops
+         just the band from the question down to the bottom of the
+         frame, scales that band up on its own, and thresholds it with
+         a much smaller neighbourhood — small enough that a pill's own
+         grey is the background its white letters are judged against.
+         stripFrac records which slice of the frame the strip covers,
+         so its line positions can be mapped back onto the camera. */
+      var stripFrac = { y0: 0, y1: 1 };
+      function choiceStripCanvas(y0f, y1f) {
+        var src = sourceKind === "image" ? photoImg : video;
+        var sw = sourceKind === "image" ? photoImg.naturalWidth : video.videoWidth;
+        var sh = sourceKind === "image" ? photoImg.naturalHeight : video.videoHeight;
+        if (!sw || !sh) return null;
+        var crop = scanCropRect(sw, sh);
+        var sy = crop.sy + crop.sh * y0f, shgt = crop.sh * (y1f - y0f);
+        if (shgt < 40) return null;
+        stripFrac = { y0: y0f, y1: y1f };
+        var outW = Math.min(1900, Math.max(1200, Math.round(crop.sw)));
+        var scale = outW / crop.sw;
+        var w = Math.round(crop.sw * scale), h = Math.round(shgt * scale);
+        var c = document.createElement("canvas");
+        c.width = w; c.height = h;
+        var ctx = c.getContext("2d");
+        ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, w, h);
+        ctx.drawImage(src, crop.sx, sy, crop.sw, shgt, 0, 0, w, h);
+        var img;
+        try { img = ctx.getImageData(0, 0, w, h); } catch (e) { return c; }
+        var d = img.data, n = w * h, i, x, y;
+        var g = new Float32Array(n);
+        for (i = 0; i < n; i++) g[i] = 0.299 * d[i * 4] + 0.587 * d[i * 4 + 1] + 0.114 * d[i * 4 + 2];
+        var med = new Float32Array(n);
+        var win = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+        for (y = 0; y < h; y++) {
+          var yUp = y > 0 ? y - 1 : 0, yDn = y < h - 1 ? y + 1 : h - 1;
+          for (x = 0; x < w; x++) {
+            var xL = x > 0 ? x - 1 : 0, xR = x < w - 1 ? x + 1 : w - 1;
+            win[0] = g[yUp * w + xL]; win[1] = g[yUp * w + x]; win[2] = g[yUp * w + xR];
+            win[3] = g[y * w + xL];   win[4] = g[y * w + x];   win[5] = g[y * w + xR];
+            win[6] = g[yDn * w + xL]; win[7] = g[yDn * w + x]; win[8] = g[yDn * w + xR];
+            win.sort(function (a, b) { return a - b; });
+            med[y * w + x] = win[4];
+          }
+        }
+        var iw = w + 1;
+        var ii = new Float64Array(iw * (h + 1));
+        for (y = 0; y < h; y++) {
+          var rowSum = 0;
+          for (x = 0; x < w; x++) {
+            rowSum += med[y * w + x];
+            ii[(y + 1) * iw + x + 1] = ii[y * iw + x + 1] + rowSum;
+          }
+        }
+        // Smaller block + lower bar than the whole-frame screen pass:
+        // a choice pill is a small neighbourhood, and its white text
+        // only has to beat the pill's own grey, not the frame's.
+        var block = Math.max(25, Math.round(w / 26));
+        if (block % 2 === 0) block++;
+        var rad = (block - 1) / 2, C = 8;
+        var out = new Uint8Array(n);
+        for (y = 0; y < h; y++) {
+          var y0 = y - rad < 0 ? 0 : y - rad, y1 = y + rad + 1 > h ? h : y + rad + 1;
+          for (x = 0; x < w; x++) {
+            var x0 = x - rad < 0 ? 0 : x - rad, x1 = x + rad + 1 > w ? w : x + rad + 1;
+            var sum = ii[y1 * iw + x1] - ii[y0 * iw + x1] - ii[y1 * iw + x0] + ii[y0 * iw + x0];
+            var mean = sum / ((y1 - y0) * (x1 - x0));
+            out[y * w + x] = med[y * w + x] > mean + C ? 0 : 255;
+          }
+        }
+        for (i = 0; i < n; i++) { d[i * 4] = out[i]; d[i * 4 + 1] = out[i]; d[i * 4 + 2] = out[i]; }
+        ctx.putImageData(img, 0, 0);
+        return c;
+      }
+
       /* ---------------- Read quality: never trust garbage ----------------
          Word salad can still "parse" — the failed live read produced four
          choices labelled D/A/A/A out of noise — so "some text with some
@@ -923,6 +1083,11 @@
          text; it is cleared whenever text is solved without a camera read
          (pasted text, samples), where there is nothing to point at. */
       var lastLayout = null;
+      /* The exact text that produced lastLayout. When the user corrects
+         that text in the box and re-solves, a close match keeps the
+         layout — so the corrected answer is still highlighted on the
+         camera — while wholly new text clears it. */
+      var layoutText = null;
       function layoutFromData(data, canvas) {
         if (!data || !canvas || !canvas.width || !canvas.height) return null;
         var lines = [];
@@ -942,9 +1107,107 @@
         }
         return lines.length ? { lines: lines, w: canvas.width, h: canvas.height } : null;
       }
-      /* Find the read line that holds a given printed choice: the line that
-         starts with the choice's letter marker and contains its text.
-         Returns the box to highlight — narrowed to just that choice when
+      /* ---------------- Keep only the quiz's own column ----------------
+         The live failure behind "it's scanning wrong items": the reader
+         returns EVERY line in the cropped frame — the quiz on the phone
+         in the middle AND the papers on the desk beside it, the letter
+         scraps it invents out of screen texture — and the old code
+         solved from that whole dump (data.text) verbatim, so side text
+         at the same height was glued into the question line ("…Dragon-
+         type? | . i A. Flygon >a =u ny") and the text box filled with
+         other people's words. The user is right that there are no other
+         QUESTIONS — but there is other PRINT inside the frame, and the
+         reader cannot tell it apart by words alone. It can by PLACE:
+         the question and its choice rows share one column — the same
+         left edge, the same width, stacked in a run — while desk print
+         sits beside that column and symbol scraps share nothing with
+         anything. So the text that gets solved (and shown in the box)
+         is rebuilt from the line POSITIONS: find the column the
+         question sits in, keep the lines that belong to it, trim any
+         merged line back to the words inside it, and drop the rest. A
+         printed page that fills the frame has no separate column —
+         its lines are all frame-wide — and is kept whole, as before. */
+      function mainColumn(layout) {
+        if (!layout || !layout.lines || !layout.lines.length || !layout.w) return null;
+        var W = layout.w, cand = [];
+        layout.lines.forEach(function (ln) {
+          if ((ln.text || "").replace(/[^A-Za-z0-9]/g, "").length >= 3) cand.push(ln);
+        });
+        if (cand.length < 3) return null;
+        var narrow = cand.filter(function (ln) { return (ln.x1 - ln.x0) <= W * 0.74; });
+        if (narrow.length < 2) return null;
+        var seed = null;
+        narrow.forEach(function (ln) {
+          if (!seed && ((ln.text || "").indexOf("?") !== -1 || /^\s*(?:question\s*)?\d{1,3}\s*[\)\.\:]/.test(ln.text || ""))) seed = ln;
+        });
+        if (!seed) seed = narrow.slice().sort(function (a, b) { return b.text.trim().split(/\s+/).length - a.text.trim().split(/\s+/).length; })[0];
+        var cx0 = seed.x0 - W * 0.05, cx1 = seed.x1 + W * 0.05, changed = true, guard = 0;
+        while (changed && guard++ < 6) {
+          changed = false;
+          narrow.forEach(function (ln) {
+            var ov = Math.min(ln.x1, cx1) - Math.max(ln.x0, cx0);
+            if (ov >= Math.max(1, ln.x1 - ln.x0) * 0.3) {
+              var nx0 = Math.min(cx0, ln.x0 - W * 0.02), nx1 = Math.max(cx1, ln.x1 + W * 0.02);
+              if (nx0 < cx0 || nx1 > cx1) { cx0 = nx0; cx1 = nx1; changed = true; }
+            }
+          });
+        }
+        if (cx1 - cx0 > W * 0.8) return null;   // the "column" is the whole frame — nothing to filter
+        return [Math.max(0, cx0), Math.min(W, cx1)];
+      }
+      function textFromLayout(layout) {
+        if (!layout || !layout.lines || !layout.lines.length) return null;
+        var col = mainColumn(layout), W = layout.w || 0;
+        var lines = layout.lines.slice().sort(function (a, b) { return (a.y0 - b.y0) || (a.x0 - b.x0); });
+        var out = [];
+        lines.forEach(function (ln) {
+          var raw = (ln.text || "").trim();
+          if (!raw) return;
+          var isOpt = /^\s*\(?[A-Ea-e]\s*[\)\.\:\-,]/.test(raw);
+          // Symbol scraps ("k % ¢", "| : 4 |") are the reader inventing
+          // letters out of screen texture and desk clutter — a real
+          // question or choice line always carries a word or a number.
+          if (raw.replace(/[^A-Za-z0-9]/g, "").length < 3 && !isOpt) return;
+          if (!isOpt && raw.replace(/[^A-Za-z]/g, "").length < 2 && raw.replace(/[^0-9]/g, "").length < 2) return;
+          var lw = Math.max(1, ln.x1 - ln.x0);
+          if (col) {
+            if (lw > (col[1] - col[0]) * 1.45) {
+              // One merged line spanning the quiz AND whatever sits
+              // beside it: keep only the words that fall inside the
+              // quiz's column, drop the rest of the line.
+              if (ln.words && ln.words.length) {
+                var kept = ln.words.filter(function (wd) {
+                  var wc = (wd.x0 + wd.x1) / 2;
+                  return wc >= col[0] - W * 0.02 && wc <= col[1] + W * 0.02;
+                }).map(function (wd) { return wd.text; }).join(" ").trim();
+                if (kept.replace(/[^A-Za-z0-9]/g, "").length >= 3) out.push(kept);
+              }
+              return;
+            }
+            var ov = Math.min(ln.x1, col[1]) - Math.max(ln.x0, col[0]);
+            if (ov < lw * 0.3) return;   // beside the quiz, not part of it
+          }
+          out.push(raw);
+        });
+        var text = out.join("\n").trim();
+        return text.length >= 6 ? text : null;
+      }
+      /* How many choices a text actually carries — the count the scan
+         sequence now insists on before it calls a read finished. */
+      function choicesInText(text) {
+        var n = 0;
+        splitQuestions(text || "").forEach(function (b) {
+          var mc = parseOptions(b);
+          if (mc && mc.options.length > n) n = mc.options.length;
+        });
+        return n;
+      }
+      /* Find the read line that holds a given printed choice, matching
+         by the choice's TEXT first and its letter marker only as a
+         tiebreak: the answers may shuffle around, so the same choice
+         can sit under a different letter on a retake, and the line
+         carrying its words is the choice wherever it sits. Returns
+         the box to highlight — narrowed to just that choice when
          two choices share one printed line ("A. 64  B. 70"). */
       function findOptionBox(layout, letter, optText) {
         if (!layout || !layout.lines.length || !letter) return null;
@@ -962,15 +1225,38 @@
             var toks = target.split(" ").filter(function (w) { return w.length; });
             var hit = 0;
             toks.forEach(function (w) { if ((" " + t + " ").indexOf(" " + w + " ") !== -1) hit++; });
-            if (toks.length && hit === toks.length) score += 3; else score += hit;
+            // Every word of the choice present is a full text match —
+            // worth more than the letter marker's 4, so the choice's
+            // own words outrank a line that merely carries its letter.
+            if (toks.length && hit === toks.length) score += 5; else score += hit;
           }
           if (score > bestScore) { bestScore = score; best = ln; }
         });
         // The letter marker alone is not enough when the choice's text is
         // known: the line's content must agree with it too, otherwise a
-        // misread line could get highlighted as the answer.
+        // misread line could get highlighted as the answer. And the text
+        // alone IS enough: after a shuffle the same choice sits under a
+        // different letter, so a line carrying all of the choice's words
+        // is that choice whatever marker the reader put on it.
         if (!best || bestScore < (target ? 5 : 4)) return null;
         var box = { x0: best.x0, y0: best.y0, x1: best.x1, y1: best.y1 };
+        // A line the reader merged across the whole frame (the choice
+        // plus whatever print sits beside the phone at the same
+        // height) must not draw a frame-wide box: narrow it to the
+        // span of words that are actually this choice — its letter
+        // marker through its last matching word.
+        if (best.words.length >= 2 && layout.w && (best.x1 - best.x0) > layout.w * 0.5) {
+          var toks2 = target ? target.split(" ") : [];
+          var fIdx = -1, lIdx = -1;
+          best.words.forEach(function (wd, j) {
+            var wt = normText(wd.text);
+            var isMark = /^[\(]?[A-E][\)\.\:\-]?$/i.test((wd.text || "").trim());
+            if (isMark || (wt && toks2.indexOf(wt) !== -1)) { if (fIdx === -1) fIdx = j; lIdx = j; }
+          });
+          if (fIdx !== -1 && lIdx >= fIdx && best.words[lIdx].x1 > best.words[fIdx].x0) {
+            box.x0 = best.words[fIdx].x0; box.x1 = best.words[lIdx].x1;
+          }
+        }
         // Two choices on one line: narrow the box to this choice's words,
         // from its letter marker up to (not including) the next marker.
         if (best.words.length >= 2) {
@@ -994,16 +1280,50 @@
          overlap the stem's, excluding lines that are printed choices.
          Lines scoring 2+ are unioned (a stem can wrap); otherwise the
          single best line stands, if it shares at least one stem word. */
+      /* The stem as the anchors define it: the lines before the
+         first lettered choice line. Used when the full choice
+         parse fails — the fallback used to be the WHOLE read,
+         choices and hint and all, so every line in the frame
+         shared words with "the stem" and the QUESTION box below
+         swallowed the entire frame. */
+      function anchoredStemText(raw) {
+        var out = [];
+        var lines = String(raw || "").split(/\n/);
+        for (var i = 0; i < lines.length; i++) {
+          if (/^\s*\(?[A-Ea-e]\s*[\)\.\:\-,]\s*\S/.test(lines[i])) break;
+          out.push(lines[i]);
+        }
+        return out.join(" ");
+      }
+
       function findStemBox(layout, raw) {
         if (!layout || !layout.lines.length) return null;
         var mc = parseOptions(raw || "");
-        var stem = mc ? mc.stem : String(raw || "");
+        var stem = mc ? mc.stem : anchoredStemText(raw || "");
+        // The geometric form of the same anchor rule: the question
+        // ends where the first lettered choice line begins, so no
+        // line at or below that line can belong to the question
+        // box — whatever words it happens to share with the stem.
+        var cutoffY = null;
+        layout.lines.forEach(function (ln) {
+          if (cutoffY === null && /^\s*\(?[A-Ea-e]\s*[\)\.\:\-]/.test(ln.text || "")) cutoffY = ln.y0;
+        });
         var stemToks = {};
         tokens(stem).forEach(function (w) { stemToks[w] = 1; });
         (stem.match(/\d+(?:\.\d+)?/g) || []).forEach(function (n) { stemToks[n] = 1; });
+        // Same column rule as the text: a line from beside the quiz
+        // (a paper on the desk) can share words with the stem — "the",
+        // "of" — and used to stretch the QUESTION box across the
+        // whole frame to cover it. It is not part of the question.
+        var colS = mainColumn(layout);
         var scored = [];
         layout.lines.forEach(function (ln) {
+          if (cutoffY !== null && ln.y0 >= cutoffY - 1) return;
           if (/^\s*\(?[A-Ea-e]\s*[\)\.\:\-]/.test(ln.text || "")) return;
+          if (colS) {
+            var lc = (ln.x0 + ln.x1) / 2;
+            if (lc < colS[0] - layout.w * 0.03 || lc > colS[1] + layout.w * 0.03) return;
+          }
           var seen = {}, score = 0;
           (String(ln.text || "").toLowerCase().match(/[a-z]+|\d+(?:\.\d+)?/g) || []).forEach(function (w) {
             if (stemToks[w] && !seen[w]) { seen[w] = 1; score++; }
@@ -1021,6 +1341,12 @@
             box.x1 = Math.max(box.x1, s.ln.x1); box.y1 = Math.max(box.y1, s.ln.y1);
           }
         });
+        // A stem line the reader merged with print beside the phone
+        // is wider than the quiz itself — pull the box back to the
+        // quiz's column rather than framing the whole desk.
+        if (box && colS && (box.x1 - box.x0) > (colS[1] - colS[0]) * 1.3) {
+          box.x0 = Math.max(box.x0, colS[0]); box.x1 = Math.min(box.x1, colS[1]);
+        }
         return box;
       }
 
@@ -1168,6 +1494,7 @@
 
       function finishRead(text, conf, layout, extraNote, fracFixed) {
         lastLayout = layout || null;
+        layoutText = layout ? text : null;
         textInput.value = text;
         var anyOpts = splitQuestions(text).some(function (b) { return !!parseOptions(b); });
         textMeta.textContent = "Read confidence ~" + conf + "% · " + text.length + " characters" +
@@ -1179,15 +1506,78 @@
         return solveAndShow(text);
       }
 
+      /* ---------------- Camera stability: read the sharpest frame ----------------
+         The user asked whether the misreads could be the camera moving —
+         they could: the old scan read ONE instantaneous frame, so a
+         shake mid-grab smeared the letters and every later pass was
+         polishing a blur. Sharpness is measurable (variance of the
+         Laplacian: crisp text edges score high, motion blur collapses
+         them), so a live scan now grabs a short BURST of frames and
+         reads the sharpest of them, and says so when even the best
+         grab looks shaky. A photo has only one frame to give, so it
+         is read as-is. */
+      function frameSharpness(canvas) {
+        if (!canvas || !canvas.width || !canvas.height) return 0;
+        var tw = 320, th = Math.max(2, Math.round(canvas.height * tw / canvas.width));
+        var tmp = document.createElement("canvas");
+        tmp.width = tw; tmp.height = th;
+        var tctx = tmp.getContext("2d");
+        tctx.drawImage(canvas, 0, 0, tw, th);
+        var d;
+        try { d = tctx.getImageData(0, 0, tw, th).data; } catch (e) { return 0; }
+        var g = new Float32Array(tw * th), i, x, y;
+        for (i = 0; i < tw * th; i++) g[i] = 0.299 * d[i * 4] + 0.587 * d[i * 4 + 1] + 0.114 * d[i * 4 + 2];
+        var sum = 0, sum2 = 0, n = 0, lap;
+        for (y = 1; y < th - 1; y++) {
+          for (x = 1; x < tw - 1; x++) {
+            lap = 4 * g[y * tw + x] - g[y * tw + x - 1] - g[y * tw + x + 1] - g[(y - 1) * tw + x] - g[(y + 1) * tw + x];
+            sum += lap; sum2 += lap * lap; n++;
+          }
+        }
+        if (!n) return 0;
+        var mean = sum / n;
+        return sum2 / n - mean * mean;
+      }
+      var SHARP_OK = 110, SHARP_BLURRY = 32;
+      function grabSharpestFrame() {
+        var first = frameCanvas(2000);
+        if (!first) return Promise.resolve(null);
+        if (sourceKind !== "video") return Promise.resolve({ canvas: first, shaky: false });
+        var bestC = first, bestS = frameSharpness(first);
+        if (bestS >= SHARP_OK) return Promise.resolve({ canvas: bestC, shaky: false });
+        var grabs = 1;
+        return new Promise(function (resolve) {
+          (function next() {
+            if (grabs >= 3 || bestS >= SHARP_OK) { resolve({ canvas: bestC, shaky: bestS < SHARP_BLURRY }); return; }
+            setTimeout(function () {
+              var c = frameCanvas(2000);
+              grabs++;
+              if (c) { var s = frameSharpness(c); if (s > bestS) { bestS = s; bestC = c; } }
+              next();
+            }, 240);
+          })();
+        });
+      }
+
       function captureAndRead() {
         if (ocrBusy || !sourceKind) return;
-        var canvas = frameCanvas(2000);
-        if (!canvas) { setStatus("No picture yet — wait for the camera to settle and try again."); return; }
         clearAnswerOverlay();
         ocrBusy = true;
         stage.classList.add("scanning");
         setOcrPill("READING 0%");
-        setStatus("Reading only what's inside the frame…");
+        setStatus(sourceKind === "video"
+          ? "Grabbing a few frames and keeping the sharpest — hold the phone steady…"
+          : "Reading only what's inside the frame…");
+        grabSharpestFrame().then(function (grab) {
+        if (!grab || !grab.canvas) {
+          ocrBusy = false;
+          stage.classList.remove("scanning");
+          setOcrPill("READER READY");
+          setStatus("No picture yet — wait for the camera to settle and try again.");
+          return;
+        }
+        var canvas = grab.canvas;
+        if (grab.shaky) setStatus("That looked shaky — reading the sharpest frame it could grab. Bracing the phone against something solid helps the question and its choices read cleanly.");
         var timedOut = new Promise(function (resolve, reject) {
           setTimeout(function () { reject(new Error("read timed out")); }, 120000);
         });
@@ -1230,59 +1620,184 @@
           return { bonus: bonus, bad: bad };
         }
         function consider(data, cnv) {
-          var text = (data.text || "").trim();
+          var layout = layoutFromData(data, cnv);
+          // Solve from the quiz's own column, not the reader's raw
+          // dump of the whole frame — see textFromLayout. The layout
+          // itself is kept whole; the box finders apply the same
+          // column rule when they place the highlights.
+          var filtered = layout ? textFromLayout(layout) : null;
+          var text = (filtered || (data.text || "")).trim();
           var conf = Math.round(data.confidence || 0);
           var q = readQuality(text, conf);
           var cons = solveConsistency(text);
           var eff = q + cons.bonus;
-          if (!best || eff > best.eff) best = { text: text, conf: conf, q: q, eff: eff, bonus: cons.bonus, bad: cons.bad, layout: layoutFromData(data, cnv), cnv: cnv };
+          if (!best || eff > best.eff) best = { text: text, conf: conf, q: q, eff: eff, bonus: cons.bonus, bad: cons.bad, layout: layout, cnv: cnv };
           return { q: q, bad: cons.bad };
+        }
+        /* Rows below the question that LOOK like choice pills in the
+           layout — wide, stacked, not app chrome — even when their
+           text came back as fragments. Their presence means the frame
+           DOES hold choices the read hasn't captured yet, so a tidy
+           question-only read must not end the scan. */
+        function pillSuspect(layout) {
+          if (!layout || !layout.lines || !layout.w) return false;
+          var qy = null;
+          layout.lines.forEach(function (ln) {
+            if (qy === null && ((ln.text || "").indexOf("?") !== -1 || /^\s*(?:question\s*)?\d{1,3}\s*[\)\.\:]/.test(ln.text || ""))) qy = ln.y0;
+          });
+          if (qy === null) return false;
+          var rows = 0;
+          layout.lines.forEach(function (ln) {
+            if (ln.y0 > qy + 6 && (ln.x1 - ln.x0) >= layout.w * 0.18 && (ln.text || "").trim().length >= 1
+              && !/^\s*(show hint|hide hint|back|next|text view|ask anything)\b/i.test(ln.text || "")) rows++;
+          });
+          return rows >= 3;
+        }
+        function solveAlone(text) {
+          try {
+            return splitQuestions(text).some(function (b) {
+              var mc = parseOptions(b);
+              var ma = mathAnswer(mc ? cutToQuestion(mc.stem) : b);
+              return !!ma && !ma.suspect;
+            });
+          } catch (e) { return false; }
+        }
+        /* A read is FINISHED only when it is good AND it carries the
+           choices — or, for a plain calculation with no pill rows in
+           sight, when it is very good and solves on its own. The old
+           rule stopped at "good" alone: a garbled-but-wordy question
+           with NO choices scored over the bar (its word salad still
+           had vowels and a "?"), so the screen passes — the ones that
+           can actually read white-on-pill choice text — never ran,
+           and the scan reported "question found, no choices" while
+           the choices sat in plain view. That is the exact failure
+           the user kept reporting. */
+        function settled() {
+          if (!best || best.q < GOOD || best.bad) return false;
+          if (choicesInText(best.text) >= 3) return true;
+          return best.q >= 78 && solveAlone(best.text) && !pillSuspect(best.layout);
+        }
+        /* The choice-strip pass, as a scan step: crop from the
+           question line to the bottom of the frame, read just that
+           band on its own, and — if it yields the choices the
+           whole-frame reads missed — merge them onto the best stem.
+           The merged read's layout keeps the stem's own lines and
+           maps the strip's choice lines back into frame coordinates,
+           so the blue outlines and the green answer box still land
+           on the pills in the camera view. */
+        function stripPass() {
+          if (!best || !best.layout || !best.layout.h) return Promise.resolve(null);
+          if (best.text.indexOf("?") === -1 || choicesInText(best.text) >= 3) return Promise.resolve(null);
+          var ql = null;
+          best.layout.lines.forEach(function (ln) {
+            if (!ql && ((ln.text || "").indexOf("?") !== -1 || /^\s*(?:question\s*)?\d{1,3}\s*[\)\.\:]/.test(ln.text || ""))) ql = ln;
+          });
+          var y0f = ql ? Math.max(0.04, Math.min(0.55, ql.y0 / best.layout.h - 0.01)) : 0.22;
+          var strip = choiceStripCanvas(y0f, 0.97);
+          if (!strip) return Promise.resolve(null);
+          setStatus("The question read but its choices didn't — reading just the choice rows on their own, enlarged…");
+          return recognize(strip).then(function (data) {
+            var sLayout = layoutFromData(data, strip);
+            var sText = ((sLayout && textFromLayout(sLayout)) || (data.text || "")).trim();
+            var parsed = parseOptions(sText) || recoverUnmarkedOptions(sText);
+            if (!parsed || parsed.options.length < 3) return null;
+            if (choicesInText(best.text) >= parsed.options.length) return null;
+            var stemLines = [], optRe = /^\s*\(?[A-Ea-e]\s*[\)\.\:\-,]\s*\S/, chromeRe = /^\s*(show hint|hide hint|back|next|text view|ask anything)\b/i;
+            best.text.split(/\n/).forEach(function (l) {
+              if (optRe.test(l)) return;
+              if (chromeRe.test(l)) return;
+              if (l.trim()) stemLines.push(l.trim());
+            });
+            var stemText = stemLines.length ? stemLines.join("\n") : (parsed.stem || "");
+            var merged = (stemText ? stemText + "\n" : "") + parsed.options.map(function (o) { return o.letter + ". " + o.text; }).join("\n");
+            var mLayout = null;
+            if (sLayout && best.layout) {
+              var bw = best.layout.w, bh = best.layout.h, ySpan = stripFrac.y1 - stripFrac.y0;
+              var mLines = best.layout.lines.filter(function (ln) { return ln.y0 < stripFrac.y0 * bh + bh * 0.02; });
+              sLayout.lines.forEach(function (ln) {
+                var isChoiceLine = parsed.options.some(function (o) {
+                  return normText(ln.text).indexOf(normText(o.text).split(" ")[0] || "\u0000") !== -1 || /^\s*\(?[A-Ea-e]\s*[\)\.\:\-,]/.test(ln.text || "");
+                });
+                if (!isChoiceLine) return;
+                mLines.push({
+                  text: ln.text,
+                  x0: Math.round(ln.x0 / strip.width * bw), x1: Math.round(ln.x1 / strip.width * bw),
+                  y0: Math.round((stripFrac.y0 + (ln.y0 / strip.height) * ySpan) * bh),
+                  y1: Math.round((stripFrac.y0 + (ln.y1 / strip.height) * ySpan) * bh),
+                  words: (ln.words || []).map(function (wd) { return { text: wd.text, x0: Math.round(wd.x0 / strip.width * bw), x1: Math.round(wd.x1 / strip.width * bw) }; })
+                });
+              });
+              if (mLines.length) mLayout = { lines: mLines, w: bw, h: bh };
+            }
+            var conf = Math.round(data.confidence || best.conf || 0);
+            var q = readQuality(merged, conf);
+            var cons = solveConsistency(merged);
+            best = { text: merged, conf: conf, q: q, eff: q + cons.bonus, bonus: cons.bonus, bad: cons.bad, layout: mLayout || best.layout, cnv: best.cnv };
+            return null;
+          }).catch(function () { return null; });
         }
         function nothingReadable() {
           setStatus("Couldn't read that frame clearly — hold steady, cut glare, and make sure the question and all its choices fill the frame.");
           if (best && best.text) {
             textInput.value = best.text;
             textMeta.textContent = "The best read it could manage is in the box below — it wasn't clear enough to trust as an answer. Fix any wrong words there and tap Solve, or scan again.";
+            updateDetectSummary();
           }
           buildCards([]);
-          showAnswer(0, { status: "cant", headline: "That frame didn't read clearly", detail: "Nothing in it was clear enough to trust — showing a guess here would be worse than showing none. If you're pointing at another screen: hold the camera steady, fill the frame with the question and all of its A–D choices, and keep glare off the screen. On paper: keep it flat and well lit." });
+          showAnswer(0, { status: "cant", headline: "That frame didn't read clearly", detail: "Nothing in it was clear enough to trust — showing a guess here would be worse than showing none. If you're pointing at another screen: hold the camera steady, fill the frame with the question and all of its A–D choices, keep glare off the screen, and move any other printed pages out of the frame — anything inside it can be read. On paper: keep it flat and well lit." });
         }
-        var sequence = recognize(canvas).then(function (data) {
-          var r1 = consider(data, canvas);
-          if (r1.q >= GOOD && !r1.bad) return null;
-          setStatus(r1.bad ? "The choices it read don't agree with the answer — re-reading the frame as a screen to check them…" : "That read was unclear — re-reading the frame as a screen (flattening the glow and screen texture)…");
+        function pass(cnv) { return recognize(cnv).then(function (d) { return consider(d, cnv); }); }
+        var sequence = pass(canvas).then(function () {
+          if (settled()) return null;
+          setStatus(best && best.bad ? "The choices it read don't agree with the answer — re-reading the frame as a screen to check them…" : "That read was unclear — re-reading the frame as a screen (flattening the glow and screen texture)…");
           var sc1 = screenCanvas(1);
           if (!sc1) return null;
-          return recognize(sc1).then(function (data2) {
-            var r2 = consider(data2, sc1);
-            if (r2.q >= GOOD && !r2.bad) return null;
-            setStatus(r2.bad ? "The question and its choices still don't agree — one more screen pass, thinning the glowing letters further…" : "Still unclear — one more screen pass, thinning the glowing letters further…");
-            var sc2 = screenCanvas(2);
-            if (!sc2) return null;
-            return recognize(sc2).then(function (data3) {
-              consider(data3, sc2);
-              if (!best || !best.bad) return null;
-              // Every screen pass still leaves a question whose worked
-              // answer fits none of its own choices: re-scan the frame
-              // with two plain treatments the screen passes don't try —
-              // a hard black-and-white threshold, then the opposite
-              // polarity — before settling for the best read there is.
-              setStatus("The choices still don't agree with the answer — re-scanning the frame with a hard black-and-white pass…");
-              var bc = frameCanvas(2200, true);
-              if (!bc) return null;
-              return recognize(bc).then(function (data4) {
-                consider(data4, bc);
-                if (!best || !best.bad) return null;
-                setStatus("Still no agreement — one last re-scan with the frame's colours flipped…");
-                var fc = frameCanvas(2200, false, lastPolarity === "invert" ? "normal" : "invert");
-                if (!fc) return null;
-                return recognize(fc).then(function (data5) { consider(data5, fc); });
-              });
-            });
+          return pass(sc1);
+        }).then(function () {
+          if (settled()) return null;
+          setStatus(best && best.bad ? "The question and its choices still don't agree — one more screen pass, thinning the glowing letters further…" : "Still unclear — one more screen pass, thinning the glowing letters further…");
+          var sc2 = screenCanvas(2);
+          if (!sc2) return null;
+          return pass(sc2);
+        }).then(function () {
+          if (settled()) return null;
+          // The whole-frame passes still haven't produced the choices:
+          // read the choice rows on their own before anything else is
+          // settled for (see stripPass).
+          return stripPass();
+        }).then(function () {
+          if (!best || !best.bad) return null;
+          // Every pass still leaves a question whose worked answer
+          // fits none of its own choices: re-scan the frame with two
+          // plain treatments the screen passes don't try — a hard
+          // black-and-white threshold, then the opposite polarity —
+          // before settling for the best read there is.
+          setStatus("The choices still don't agree with the answer — re-scanning the frame with a hard black-and-white pass…");
+          var bc = frameCanvas(2200, true);
+          if (!bc) return null;
+          return pass(bc).then(function () {
+            if (!best || !best.bad) return null;
+            setStatus("Still no agreement — one last re-scan with the frame's colours flipped…");
+            var fc = frameCanvas(2200, false, lastPolarity === "invert" ? "normal" : "invert");
+            if (!fc) return null;
+            return pass(fc);
           });
         });
         Promise.race([sequence, timedOut]).then(function () {
           if (!best || !best.text || best.q < FLOOR) { nothingReadable(); return; }
+          /* The choices were found but the question STILL doesn't agree
+             with them after every treatment of this frame: on a live
+             camera, re-scan with a FRESH frame — a steadier moment can
+             read digits the first grab smeared — and keep whichever
+             read makes the question and its choices agree. */
+          var rescan = (best.bad && sourceKind === "video")
+            ? (setStatus("The choices it found still don't line up with the question — re-scanning with a fresh frame…"),
+               grabSharpestFrame().then(function (g2) {
+                 if (!g2 || !g2.canvas) return null;
+                 return recognize(g2.canvas).then(function (d2) { consider(d2, g2.canvas); });
+               }).catch(function () { return null; }))
+            : Promise.resolve(null);
+          return rescan.then(function () {
           // Fraction repair first (V4 → 1/4), then the ÷ check: any +
           // between plain numbers is verified against the picture
           // before the text is trusted enough to solve from. The check
@@ -1297,6 +1812,7 @@
           return verifyTimed.then(function (v) {
             return finishRead(v.text, best.conf, best.layout, v.note, rep.fixed);
           });
+          });
         }).catch(function (err) {
           if (err && err.message === "read timed out") resetWorker();
           setStatus("That read didn't finish — tap Scan & solve to try again, or paste the questions below.");
@@ -1307,8 +1823,229 @@
           stage.classList.remove("scanning");
           setOcrPill("READER READY");
         });
+        });
       }
       captureBtn.addEventListener("click", captureAndRead);
+
+      /* ---------------- Tap-to-focus: tap the question, then the choices ----------------
+         The user asked for pointing to help the camera focus: a tap
+         (finger or mouse) tells the scanner "read HERE, ignore the
+         rest". A web page cannot steer the phone lens, but it can
+         steer the reader's attention — and that is what was failing:
+         the whole frame was read at once, so desk print and screen
+         furniture competed with the question and its faint choice
+         pills. In tap mode each tap crops a band around the point,
+         enlarges ONLY that band, and reads it on its own: first the
+         question, then the choices. The two reads are combined and
+         solved exactly like a full-frame read, and their line
+         positions are mapped back into frame coordinates so the
+         question box, the blue choice outlines and the green (or
+         amber suggested) answer box still land on the camera where
+         the words actually sit — matched by choice TEXT, so a
+         shuffle between the two taps cannot misplace the answer. */
+      var tapMode = false;
+      var tapStep = "question"; // "question" | "choices" | "done"
+      var tapQ = null;          // { text, layout } in frame-normalised coords
+      var tapC = null;          // { text, layout }
+      var tapRegions = {};      // { question: {x0,y0,x1,y1}, choices: {...} } fractions of the scan frame
+
+      function setTapPrompt() {
+        if (!tapBar) return;
+        var solveOnly = $("tapSolveOnlyBtn");
+        if (tapStep === "question") {
+          tapPrompt.innerHTML = "Tap-to-focus: <span>tap the question</span> on the camera";
+          if (solveOnly) solveOnly.hidden = true;
+        } else if (tapStep === "choices") {
+          tapPrompt.innerHTML = "Question read ✓ — now <span>tap the choices</span> (tap the middle of the A–D list)";
+          if (solveOnly) solveOnly.hidden = false;
+        } else {
+          tapPrompt.innerHTML = "Tap-to-focus: <span>done</span> — tap Restart to point at a new question";
+          if (solveOnly) solveOnly.hidden = true;
+        }
+      }
+      function drawFocusBoxes() {
+        if (!focusLayer) return;
+        focusLayer.innerHTML = "";
+        var any = false;
+        [["question", "q", "TAP · QUESTION"], ["choices", "c", "TAP · CHOICES"]].forEach(function (cfg) {
+          var r = tapRegions[cfg[0]];
+          if (!r) return;
+          any = true;
+          var el = document.createElement("div");
+          el.className = "focus-box " + cfg[1];
+          el.style.left = (r.x0 * 100) + "%"; el.style.top = (r.y0 * 100) + "%";
+          el.style.width = ((r.x1 - r.x0) * 100) + "%"; el.style.height = ((r.y1 - r.y0) * 100) + "%";
+          var tag = document.createElement("span"); tag.className = "focus-tag"; tag.textContent = cfg[2];
+          el.appendChild(tag); focusLayer.appendChild(el);
+        });
+        focusLayer.hidden = !any;
+      }
+      function resetTapState() {
+        tapStep = "question"; tapQ = null; tapC = null; tapRegions = {};
+        drawFocusBoxes(); setTapPrompt();
+      }
+      function setTapMode(on) {
+        tapMode = !!on;
+        if (tapBtn) tapBtn.setAttribute("aria-pressed", tapMode ? "true" : "false");
+        stage.classList.toggle("tap-on", tapMode);
+        if (tapBar) tapBar.hidden = !tapMode;
+        if (tapMode) {
+          if (autoScan) setAutoScan(false);
+          resetTapState();
+          clearAnswerOverlay();
+          setStatus("Tap-to-focus on. Tap the question on the camera — only the area around your tap will be read.");
+        } else {
+          resetTapState();
+          if (focusLayer) { focusLayer.innerHTML = ""; focusLayer.hidden = true; }
+          if (sourceKind) setStatus("Tap-to-focus off. Scan & solve reads the whole green frame again.");
+        }
+      }
+      if (tapBtn) tapBtn.addEventListener("click", function () { setTapMode(!tapMode); });
+      var tapOffBtn = $("tapOffBtn"); if (tapOffBtn) tapOffBtn.addEventListener("click", function (e) { e.stopPropagation(); setTapMode(false); });
+      var tapRestartBtn = $("tapRestartBtn"); if (tapRestartBtn) tapRestartBtn.addEventListener("click", function (e) { e.stopPropagation(); resetTapState(); clearAnswerOverlay(); setStatus("Tap-to-focus restarted. Tap the question on the camera."); });
+      var tapSolveOnlyBtn = $("tapSolveOnlyBtn"); if (tapSolveOnlyBtn) tapSolveOnlyBtn.addEventListener("click", function (e) { e.stopPropagation(); finishTapSolve(); });
+
+      function tapRegionFor(fx, fy, step) {
+        // Full width of the frame (the question and its choices share
+        // one column), a vertical band centred on the tap: shorter
+        // for the question, taller for the stacked choice rows.
+        var half = step === "question" ? 0.17 : 0.30;
+        var y0 = Math.max(0, Math.min(1 - half * 2, fy - half - (step === "question" ? 0.05 : 0)));
+        var y1 = Math.min(1, y0 + half * 2);
+        if (y1 - y0 < half * 2) y0 = Math.max(0, y1 - half * 2);
+        return { x0: 0, y0: y0, x1: 1, y1: y1 };
+      }
+      function tapRegionCanvas(region, binary) {
+        var src = sourceKind === "image" ? photoImg : video;
+        var sw = sourceKind === "image" ? photoImg.naturalWidth : video.videoWidth;
+        var sh = sourceKind === "image" ? photoImg.naturalHeight : video.videoHeight;
+        if (!sw || !sh) return null;
+        var crop = scanCropRect(sw, sh);
+        var sx = crop.sx + crop.sw * region.x0, sy = crop.sy + crop.sh * region.y0;
+        var cw = crop.sw * (region.x1 - region.x0), ch = crop.sh * (region.y1 - region.y0);
+        if (cw < 20 || ch < 20) return null;
+        var outW = Math.min(2200, Math.max(1500, Math.round(cw)));
+        var scale = outW / cw;
+        var c = document.createElement("canvas");
+        c.width = Math.round(cw * scale); c.height = Math.round(ch * scale);
+        var ctx = c.getContext("2d");
+        ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, c.width, c.height);
+        ctx.drawImage(src, sx, sy, cw, ch, 0, 0, c.width, c.height);
+        prepForOcr(ctx, c.width, c.height, !!binary, "auto");
+        return c;
+      }
+      function transformTapLayout(layout, canvas, region) {
+        if (!layout || !canvas || !canvas.width) return null;
+        var W = 1000, H = 1000;
+        function tx(x) { return Math.round((region.x0 + (x / canvas.width) * (region.x1 - region.x0)) * W); }
+        function ty(y) { return Math.round((region.y0 + (y / canvas.height) * (region.y1 - region.y0)) * H); }
+        var lines = layout.lines.map(function (ln) {
+          return { text: ln.text, x0: tx(ln.x0), y0: ty(ln.y0), x1: tx(ln.x1), y1: ty(ln.y1),
+            words: (ln.words || []).map(function (wd) { return { text: wd.text, x0: tx(wd.x0), x1: tx(wd.x1) }; }) };
+        });
+        return { lines: lines, w: W, h: H };
+      }
+      function readTapRegion(region, step) {
+        var c1 = tapRegionCanvas(region, false);
+        if (!c1) return Promise.resolve(null);
+        return recognize(c1).then(function (d1) {
+          var lay1 = layoutFromData(d1, c1);
+          var txt1 = ((lay1 && textFromLayout(lay1)) || (d1.text || "")).trim();
+          var score1 = step === "choices" ? choicesInText(txt1) * 100 + readQuality(txt1, Math.round(d1.confidence || 0)) : readQuality(txt1, Math.round(d1.confidence || 0));
+          // Choices are the faint white-on-pill text: if the first
+          // treatment found fewer than 3, try the hard black/white
+          // treatment of the same band and keep the better read.
+          if (step === "choices" && choicesInText(txt1) >= 3) return { text: txt1, layout: transformTapLayout(lay1, c1, region), conf: Math.round(d1.confidence || 0) };
+          if (step === "question" && score1 >= 62) return { text: txt1, layout: transformTapLayout(lay1, c1, region), conf: Math.round(d1.confidence || 0) };
+          var c2 = tapRegionCanvas(region, true);
+          if (!c2) return { text: txt1, layout: transformTapLayout(lay1, c1, region), conf: Math.round(d1.confidence || 0) };
+          return recognize(c2).then(function (d2) {
+            var lay2 = layoutFromData(d2, c2);
+            var txt2 = ((lay2 && textFromLayout(lay2)) || (d2.text || "")).trim();
+            var score2 = step === "choices" ? choicesInText(txt2) * 100 + readQuality(txt2, Math.round(d2.confidence || 0)) : readQuality(txt2, Math.round(d2.confidence || 0));
+            return score2 > score1 ? { text: txt2, layout: transformTapLayout(lay2, c2, region), conf: Math.round(d2.confidence || 0) }
+                                   : { text: txt1, layout: transformTapLayout(lay1, c1, region), conf: Math.round(d1.confidence || 0) };
+          }).catch(function () { return { text: txt1, layout: transformTapLayout(lay1, c1, region), conf: Math.round(d1.confidence || 0) }; });
+        });
+      }
+      function finishTapSolve() {
+        if (!tapQ || !tapQ.text) return;
+        var combined = tapQ.text.trim();
+        if (tapC && tapC.text) {
+          var mc = parseOptions(tapC.text) || recoverUnmarkedOptions(tapC.text);
+          if (mc && mc.options.length) {
+            // Keep the choices exactly as the choices tap read them,
+            // each under its own printed letter (never by position).
+            var stemOnly = combined;
+            var existing = parseOptions(stemOnly);
+            if (existing && existing.stem) stemOnly = existing.stem;
+            combined = stemOnly.trim() + "\n" + mc.options.map(function (o) { return o.letter + ". " + o.text; }).join("\n");
+          } else {
+            combined = combined + "\n" + tapC.text.trim();
+          }
+        }
+        var lines = [];
+        if (tapQ.layout) lines = lines.concat(tapQ.layout.lines);
+        if (tapC && tapC.layout) lines = lines.concat(tapC.layout.lines);
+        lastLayout = lines.length ? { lines: lines, w: 1000, h: 1000 } : null;
+        layoutText = lastLayout ? combined : null;
+        textInput.value = combined;
+        tapStep = "done"; setTapPrompt();
+        setStatus(tapC ? "Tap-to-focus read complete — solving the question from your two taps…" : "Solving from the question tap only — you'll get a worked or suggested answer; tap Restart to add the choices.");
+        textMeta.textContent = "Read by tap-to-focus: the question from your first tap" + (tapC ? " and the choices from your second tap. Nothing outside the two tapped areas was read." : " only.");
+        solveAndShow(combined);
+      }
+      function handleTap(clientX, clientY) {
+        if (!tapMode || ocrBusy || !sourceKind) return;
+        var fr = scanFrame.getBoundingClientRect();
+        if (!fr.width || clientX < fr.left || clientX > fr.right || clientY < fr.top || clientY > fr.bottom) {
+          setStatus("Tap inside the green frame — tap the " + (tapStep === "choices" ? "choices" : "question") + " itself.");
+          return;
+        }
+        if (tapStep === "done") { resetTapState(); clearAnswerOverlay(); }
+        var fx = (clientX - fr.left) / fr.width, fy = (clientY - fr.top) / fr.height;
+        var step = tapStep;
+        var region = tapRegionFor(fx, fy, step);
+        tapRegions[step] = region;
+        drawFocusBoxes();
+        // Tap dot at the exact point, inside the focus layer.
+        if (focusLayer) {
+          var dot = document.createElement("div"); dot.className = "tap-dot";
+          dot.style.left = (fx * 100) + "%"; dot.style.top = (fy * 100) + "%";
+          focusLayer.appendChild(dot);
+        }
+        ocrBusy = true; stage.classList.add("scanning"); setOcrPill("READING 0%");
+        setStatus(step === "question" ? "Reading just the question area around your tap…" : "Reading just the choices area around your tap…");
+        readTapRegion(region, step).then(function (res) {
+          if (!res || !res.text || res.text.replace(/[^A-Za-z0-9]/g, "").length < 3) {
+            setStatus("That tap didn't read clearly — tap again, right on the " + (step === "question" ? "question words" : "middle choice") + ", and hold steady.");
+            return;
+          }
+          if (step === "question") {
+            tapQ = res; tapStep = "choices"; setTapPrompt();
+            setStatus("Question read: “" + res.text.replace(/\s+/g, " ").slice(0, 90) + "” — now tap the choices.");
+          } else {
+            tapC = res;
+            var n = choicesInText(res.text);
+            var rec = n < 2 ? (parseOptions(res.text) || recoverUnmarkedOptions(res.text)) : null;
+            if (n < 2 && !(rec && rec.options.length >= 2)) {
+              setStatus("The choices tap read text but no A–D choices were found in it. Tap again on the middle of the choice list — or tap “Solve question only” for a suggested answer.");
+              tapStep = "choices"; setTapPrompt();
+              return;
+            }
+            finishTapSolve();
+          }
+        }).catch(function () {
+          setStatus("That tap didn't finish reading — tap again.");
+        }).then(function () {
+          ocrBusy = false; stage.classList.remove("scanning"); setOcrPill("READER READY");
+        });
+      }
+      stage.addEventListener("click", function (e) {
+        if (!tapMode) return;
+        if (e.target && e.target.closest && e.target.closest(".tap-bar")) return;
+        handleTap(e.clientX, e.clientY);
+      });
 
       /* ---------------- Splitting a frame into separate questions ----------------
          A frame can hold several questions. Split the read text into one
@@ -1319,15 +2056,185 @@
            • an "A." choice appears after the current block already has
              choices — the plain lines collected since the last choice
              are the next question's stem. */
+      /* ---------------- Anchor segmentation ----------------
+         The anchors the user taught the scanner, applied as one
+         strict pass before the line-by-line splitter below:
+           • a QUESTION begins at its printed number followed by a
+             period — "1.", "3." — the same anchor that already
+             kept the question number out of the maths;
+           • its CHOICES begin at the lettered lines that follow —
+             A. B. C. D. — each choice keeping the letter printed
+             beside it, in whatever order those lines arrive: the
+             answers may shuffle around between attempts, so no
+             choice is ever identified by the position it was
+             expected in, only by its own letter and its text.
+         Everything in the frame OUTSIDE those anchors is not part
+         of the question: the quiz title and the "3 / 10" progress
+         marker above the number, the hint paragraph and the
+         Back/Next buttons below the last choice, stray print that
+         happens to share the frame. The old splitter had no such
+         discipline, so that furniture was glued into the stem,
+         trailed onto the last choice, or split off as a phantom
+         second question — while the choices sitting in plain view
+         were reported as not found. This pass cuts the read on
+         the anchors alone: the question is only the lines between
+         its number and the "A." line, the choices are the lettered
+         run after it, and what follows the last choice is left
+         out. It returns null when the read carries no number
+         anchor at all, so unnumbered text (pasted questions, the
+         samples) keeps the older splitting below. */
+      function anchorSegment(text) {
+        var rawLines = String(text || "").split(/\n/);
+        var letterRe = /^\s*\(?([A-Ea-e])\s*[\)\.\:\-,]\s*(.+)$/;
+        var bareRe = /^\s*\(?([A-Ea-e])\s+(.+)$/;
+        var chromeRe = /^\s*(show hint|hide hint|back|next|text view|ask anything)\b/i;
+
+        function qAnchor(line) {
+          if (/^\s*question\s*\d+/i.test(line)) return { rest: line.replace(/^\s*question\s*\d+\s*[\)\.\:\-]?\s*/i, "") };
+          var m = /^\s*(?:question\s*)?(\d{1,3})\s*([\)\.\:])(\s*)(.+)$/.exec(line);
+          if (m) {
+            if (m[2] === "." && !m[3] && /^\d/.test(m[4])) return null;   // "3.5" is a decimal, not a question
+            if (!/[A-Za-z?]/.test(m[4])) return null;
+            return { rest: m[4].trim() };
+          }
+          // The anchor can sit mid-line, behind the quiz title on
+          // the same printed line ("…Gauntlet 3. In the very
+          // first…") — with the same guards cutToQuestion uses:
+          // the words in front must be furniture (no digits of
+          // their own beyond a progress marker, no "?").
+          var mm = /^(.*?)(\d{1,3})\s*\.\s*([A-Z"“].*)$/.exec(line);
+          if (mm && mm[1].indexOf("?") === -1 && !/\d/.test(mm[1].replace(/\b\d{1,3}\s*\/\s*\d{1,3}\b/g, ""))) {
+            var rest = mm[3].trim();
+            if (rest.split(/\s+/).length >= 4 || rest.indexOf("?") !== -1) return { rest: rest };
+          }
+          // The full stop after the number is the thinnest mark on
+          // the line and the first thing a screen read loses — the
+          // user's latest read came back "1 Which of the following…"
+          // with no stop at all, and every anchor above missed it,
+          // so the furniture lines in front of it stayed glued to
+          // the question. A small number opening a line with a
+          // question word and a full sentence after it is the same
+          // anchor, stop or no stop. (A story problem's own numbers
+          // are never at a line start followed by a question word,
+          // and the number must be a plausible question number.)
+          var bm = /^\s*(\d{1,2})\s+((?:Which|What|Who|Whose|When|Where|Why|How|In|If|The|A|An|Select|Choose)\b[\s\S]*)$/.exec(line);
+          if (bm) {
+            var bn = parseInt(bm[1], 10);
+            if (bn >= 1 && bn <= 30 && bm[2].trim().split(/\s+/).length >= 4) return { rest: bm[2].trim() };
+          }
+          return null;
+        }
+        /* The choice line for a letter this question hasn't used
+           yet — in WHATEVER order the letters arrive. The answers
+           may shuffle around: a retake of the same quiz can put
+           the same choice under a different letter, and a column
+           layout can hand the reader the choices out of order, so
+           the run is collected by the letter printed on each line,
+           never by the position the scanner expected it in. (The
+           solvers likewise pick an answer by its TEXT and report
+           whatever letter that text sits under in this read.)
+           A letter whose punctuation the reader dropped
+           ("A Flygon") still counts: as the run's first choice
+           only when a following line carries another choice's
+           marker the same way (so a stem line that merely starts
+           with the word "A" never starts the choices), and later
+           in the run whenever its letter is one not yet seen, on
+           a short line. */
+        function choiceAnchor(i, seenLetters, bareRun) {
+          var m = letterRe.exec(rawLines[i]);
+          if (m && !seenLetters[m[1].toUpperCase()]) return { bare: false, letter: m[1].toUpperCase() };
+          var b = bareRe.exec(rawLines[i]);
+          if (!b || seenLetters[b[1].toUpperCase()] || b[2].trim().length > 42) return null;
+          var letter = b[1].toUpperCase();
+          if (bareRun || Object.keys(seenLetters).length) return { bare: true, letter: letter };
+          for (var j = i + 1; j < rawLines.length; j++) {
+            if (!rawLines[j].trim()) continue;
+            var nm = letterRe.exec(rawLines[j]) || bareRe.exec(rawLines[j]);
+            return (nm && nm[1].toUpperCase() !== letter) ? { bare: true, letter: letter } : null;
+          }
+          return null;
+        }
+
+        var starts = [];
+        rawLines.forEach(function (l, i) { if (qAnchor(l)) starts.push(i); });
+        if (!starts.length) return null;
+
+        var blocks = [];
+        // Lines in front of the first number anchor are furniture
+        // and are dropped — unless they carry a question or
+        // choices of their own (an unnumbered question read ahead
+        // of the numbered one), which the older splitter handles.
+        var preamble = rawLines.slice(0, starts[0]).join("\n").trim();
+        if (preamble && (preamble.indexOf("?") !== -1 || /^\s*\(?[A-Ea-e]\s*[\)\.\:\-,]/m.test(preamble))) {
+          splitQuestions(preamble).forEach(function (b) { blocks.push(b); });
+        }
+        for (var s = 0; s < starts.length; s++) {
+          var segStart = starts[s], segEnd = (s + 1 < starts.length) ? starts[s + 1] : rawLines.length;
+          var stem = [qAnchor(rawLines[segStart]).rest];
+          var choices = [];     // the lettered run, plus wrapped lines that belong to it
+          var pending = [];     // plain lines after the choices began, not yet placed
+          var want = 0;         // how many choices the run has collected so far
+          var seenLetters = {}; // the letters those choices arrived under — any order
+          var bareRun = false, chrome = false;
+          function flushPending() {
+            if (choices.length && pending.length) choices = choices.concat(pending);
+            pending = [];
+          }
+          for (var i = segStart + 1; i < segEnd; i++) {
+            var line = rawLines[i], t = line.trim();
+            if (!t) { if (want > 0) pending.push(line); continue; }
+            if (want > 0 && chromeRe.test(line)) { chrome = true; pending = []; continue; }
+            if (chrome) continue;   // the hint's own sentences and app chrome sit after the choices — never part of them
+            var ca = choiceAnchor(i, seenLetters, bareRun);
+            if (ca) {
+              if (ca.bare) bareRun = true;
+              seenLetters[ca.letter] = 1;
+              flushPending();
+              choices.push(line);
+              want++;
+              continue;
+            }
+            // A lettered "A." that REPEATS a letter this question
+            // already has, once choices have begun: the next
+            // question starts here even without a number, and the
+            // plain lines collected since the last choice are its
+            // stem — the older splitter's restart rule, kept. An
+            // "A." arriving for the first time late in the run is
+            // a shuffled choice of THIS question and was already
+            // collected by choiceAnchor above.
+            var ra = letterRe.exec(line);
+            if (want > 0 && ra && ra[1].toUpperCase() === "A" && seenLetters["A"]) {
+              blocks.push(stem.concat(choices).join("\n").trim());
+              stem = pending; choices = [line]; pending = [];
+              want = 1; seenLetters = { A: 1 }; bareRun = false; chrome = false;
+              continue;
+            }
+            if (want === 0) stem.push(line);
+            else pending.push(line);
+          }
+          // Plain lines left after the last choice are kept only
+          // as a wrapped tail of that choice — short, and carrying
+          // no question of their own. A hint paragraph or a stray
+          // line of other print ends here instead of becoming the
+          // last choice's text or a phantom extra question.
+          if (pending.length && choices.length && !/\?/.test(pending.join(" "))) flushPending();
+          var blockText = stem.concat(choices).join("\n").trim();
+          if (blockText) blocks.push(blockText);
+        }
+        return blocks.length ? blocks : null;
+      }
+
       function splitQuestions(text) {
+        var anchored = anchorSegment(text);
+        if (anchored) return anchored;
         var lines = String(text || "").split(/\n/);
         var blocks = [];
         var cur = null;      // { lines:[], hasOpts:bool }
         var pending = [];    // plain lines seen after choices started, uncommitted
-        var optRe = /^\s*\(?([A-Ea-e])\s*[\)\.\:\-]\s*(.+)$/;
+        var optRe = /^\s*\(?([A-Ea-e])\s*[\)\.\:\-,]\s*(.+)$/;
 
         function startBlock(initialLines) {
-          cur = { lines: initialLines ? initialLines.slice() : [], hasOpts: false };
+          cur = { lines: initialLines ? initialLines.slice() : [], hasOpts: false, letters: {} };
           blocks.push(cur);
           pending = [];
         }
@@ -1363,18 +2270,24 @@
           if (optM) {
             var letter = optM[1].toUpperCase();
             if (!cur) startBlock([]);
-            if (cur.hasOpts && letter === "A") {
-              // Choices are starting over: the pending lines are the stem
-              // of the next question.
+            if (cur.hasOpts && letter === "A" && cur.letters["A"]) {
+              // Choices are starting over — an "A." repeating a letter
+              // this block already has: the pending lines are the stem
+              // of the next question. (An "A." arriving late, after B
+              // and C, is a shuffled choice of THIS question — the
+              // answers may shuffle around — and is collected below,
+              // not mistaken for a restart.)
               var stemLines = pending;
               startBlock(stemLines);
               cur.lines.push(line);
               cur.hasOpts = true;
+              cur.letters["A"] = 1;
               return;
             }
             flushPending();
             cur.lines.push(line);
             cur.hasOpts = true;
+            cur.letters[letter] = 1;
             return;
           }
           // Plain line: stem text before choices, or uncommitted after them
@@ -1529,6 +2442,8 @@
           var answerBlock = document.createElement("div"); answerBlock.className = "answer-block";
           var aLabel = document.createElement("p"); aLabel.className = "qa-label"; aLabel.textContent = "ANSWER";
           answerBlock.appendChild(aLabel);
+          var srcTag = document.createElement("p"); srcTag.className = "src-tag mono";
+          answerBlock.appendChild(srcTag);
           var row = document.createElement("div"); row.className = "answer-row";
           var badge = document.createElement("div"); badge.className = "letter-badge"; badge.textContent = "?";
           row.appendChild(badge);
@@ -1544,7 +2459,7 @@
           card.appendChild(answerBlock);
 
           qaList.appendChild(card);
-          var entry = { stem: stem, readAs: readAs, stemText: "", optEmpty: optEmpty, list: list, badge: badge, headline: headline, detail: detail, flag: flag };
+          var entry = { stem: stem, readAs: readAs, stemText: "", optEmpty: optEmpty, list: list, badge: badge, headline: headline, detail: detail, flag: flag, srcTag: srcTag };
           cards.push(entry);
 
           // Fill in this question's stem and its own printed choices.
@@ -1580,13 +2495,16 @@
         }
         var total = currentBlocks.length;
         var solved = currentBlocks.filter(function (b) { return b.result && b.result.status === "solved"; }).length;
+        var suggested = currentBlocks.filter(function (b) { return b.result && b.result.status === "suggested"; }).length;
         var pendingCount = currentBlocks.filter(function (b) { return !b.result; }).length;
         var parts = [];
         parts.push(total === 1 ? "1 QUESTION IN THIS FRAME" : total + " QUESTIONS IN THIS FRAME");
         if (pendingCount) parts.push("SOLVING…");
         else {
           parts.push(solved === 1 ? "1 SOLVED" : solved + " SOLVED");
-          if (total - solved > 0) parts.push((total - solved) + " NEED" + (total - solved === 1 ? "S" : "") + " A CHECK");
+          if (suggested) parts.push(suggested === 1 ? "1 SUGGESTED (BEST GUESS)" : suggested + " SUGGESTED (BEST GUESSES)");
+          var check = total - solved - suggested;
+          if (check > 0) parts.push(check + " NEED" + (check === 1 ? "S" : "") + " A CHECK");
         }
         resultsSummary.textContent = parts.join(" · ");
         resultsSummary.hidden = false;
@@ -1611,10 +2529,14 @@
           var lt = document.createElement("span"); lt.className = "opt-letter"; lt.textContent = o.letter;
           var tx = document.createElement("span"); tx.className = "opt-text"; tx.textContent = o.text;
           li.appendChild(lt); li.appendChild(tx);
-          if (res.letter && o.letter === res.letter) {
+          if (res.letter && o.letter === res.letter && res.status === "solved") {
             li.className = "correct";
             var tag = document.createElement("span"); tag.className = "opt-tag"; tag.textContent = "✓ CORRECT";
             li.appendChild(tag);
+          } else if (res.letter && o.letter === res.letter && res.status === "suggested") {
+            li.className = "maybe";
+            var tagS = document.createElement("span"); tagS.className = "opt-tag"; tagS.textContent = "SUGGESTED — BEST GUESS";
+            li.appendChild(tagS);
           } else if (maybe[o.letter]) {
             li.className = "maybe";
             var tag2 = document.createElement("span"); tag2.className = "opt-tag"; tag2.textContent = "POSSIBLE";
@@ -1637,14 +2559,18 @@
         var plain = card.stemText || "";
         card.stem.classList.remove("q-sentence");
         if (card.readAs) {
-          if (res && res.readAs) { card.readAs.textContent = "READ AS: " + res.readAs; card.readAs.hidden = false; }
+          // A question that read garbled was filled in before solving —
+          // show the filled-in wording it was actually solved from, so
+          // the repair is visible and checkable, never silent.
+          if (res && res.filledIn) { card.readAs.textContent = "FILLED IN AS: " + res.filledIn; card.readAs.hidden = false; }
+          else if (res && res.readAs) { card.readAs.textContent = "READ AS: " + res.readAs; card.readAs.hidden = false; }
           else card.readAs.hidden = true;
         }
         // Every solved question gets its question highlighted in the
         // card — the user asked to SEE what was read as the question,
         // not just the answer. Sentence-form questions additionally get
         // the exact calculation words marked inside it.
-        if (!res || res.status !== "solved" || !plain || card.stem.classList.contains("empty")) return;
+        if (!res || (res.status !== "solved" && res.status !== "suggested") || !plain || card.stem.classList.contains("empty")) return;
         card.stem.classList.add("q-sentence");
         if (!res.sentenceForm) return;
         var span = res.hl ? findHlSpan(plain, res.hl) : null;
@@ -1663,6 +2589,15 @@
         if (currentBlocks[idx]) currentBlocks[idx].result = res;
         card.badge.classList.remove("show");
         card.flag.classList.remove("show");
+        // Where the answer came from, stated plainly on the card: worked
+        // out on the phone (maths, the built-in banks, a taught
+        // correction) or found by the web lookup fallback.
+        if (card.srcTag) {
+          if (res.status === "suggested") { card.srcTag.textContent = "SUGGESTED ANSWER — BEST GUESS, NOT CONFIRMED"; card.srcTag.className = "src-tag mono show guess"; }
+          else if (res.via === "web") { card.srcTag.textContent = "ANSWER FROM A WEB LOOKUP"; card.srcTag.className = "src-tag mono show web"; }
+          else if (res.via === "device") { card.srcTag.textContent = "WORKED OUT ON THIS PHONE"; card.srcTag.className = "src-tag mono show device"; }
+          else { card.srcTag.textContent = ""; card.srcTag.className = "src-tag mono"; }
+        }
         card.headline.classList.remove("waiting");
         if (res.letter) { card.badge.textContent = res.letter; card.badge.classList.add("show"); }
         card.headline.textContent = res.headline;
@@ -2083,13 +3018,67 @@
          the question came back with too few options. Split a fresh line
          before every marker that follows other content on the same line. */
       function expandOptionLines(text) {
-        return String(text).replace(/([^\n\s])\s+(\(?[A-Ea-e]\s*[\)\.\:\-]\s+)/g, "$1\n$2");
+        return String(text)
+          // A choice the reader glued onto the end of the question
+          // line itself ("…Dragon-type? A. Flygon"): the "?" ends the
+          // question, so the marker after it starts a new line.
+          .replace(/(\?)\s+([A-E])\s*[\.\)]\s+/g, "$1\n$2. ")
+          .replace(/([^\n\s])\s+(\(?[A-Ea-e]\s*[\)\.\:\-]\s+)/g, "$1\n$2");
+      }
+
+      /* Recovery for choices whose letter markers the reader dropped.
+         On a quiz screen the choices sit in pill buttons and the little
+         "A." is the first thing OCR loses — the choices are in plain
+         view, but the lettered parse finds nothing and the question
+         comes back choiceless. Two shapes are recovered, and only when
+         the lettered parse found fewer than two options:
+           (a) bare sequential letters with no punctuation — "A Flygon",
+               "B Kingdra", "C Haxorus" in a run of three or more;
+           (b) no letters at all — a run of 3–5 short lines straight
+               after the question line, lettered A, B, C… in order.
+               Long lines (hint sentences, page chrome) end the run, so
+               they are never lettered as choices. */
+      function recoverUnmarkedOptions(text) {
+        var lines = String(text || "").split(/\n/).map(function (l) { return l.trim(); });
+        var s, j;
+        for (s = 0; s < lines.length; s++) {
+          var first = /^\(?A\s+(.{1,60})$/.exec(lines[s] || "");
+          if (!first) continue;
+          var bare = [{ letter: "A", text: first[1].trim() }];
+          j = s + 1;
+          while (j < lines.length && bare.length < 5) {
+            var want = "ABCDE"[bare.length];
+            var m = new RegExp("^\\(?" + want + "\\s+(.{1,60})$").exec(lines[j] || "");
+            if (!m) break;
+            bare.push({ letter: want, text: m[1].trim() });
+            j++;
+          }
+          if (bare.length >= 3) return { stem: lines.slice(0, s).join(" ").trim(), options: bare };
+        }
+        var qIdx = -1;
+        lines.forEach(function (l, i) { if (l.indexOf("?") !== -1) qIdx = i; });
+        if (qIdx >= 0) {
+          var run = [];
+          for (var k = qIdx + 1; k < lines.length; k++) {
+            var l = lines[k];
+            if (!l) { if (run.length) break; continue; }
+            if (/^(hide|show)\s+hint\b/i.test(l) || /^(back|next)\b/i.test(l)) break;
+            if (l.length > 42 || l.indexOf("?") !== -1 || l.split(/\s+/).length > 5) break;
+            run.push(l);
+            if (run.length > 5) { run = []; break; }
+          }
+          if (run.length >= 3) {
+            return { stem: lines.slice(0, qIdx + 1).join(" ").trim(), options: run.map(function (t, i) { return { letter: "ABCDE"[i], text: t }; }) };
+          }
+        }
+        return null;
       }
 
       function parseOptions(text) {
         text = expandOptionLines(text);
         var lines = text.split(/\n/), opts = [], stemLines = [], current = null;
-        var optRe = /^\s*\(?([A-Ea-e])\s*[\)\.\:\-]\s*(.+)$/;
+        var hintSkip = false;
+        var optRe = /^\s*\(?([A-Ea-e])\s*[\)\.\:\-,]\s*(.+)$/;
         var numRe = /^\s*\(?([1-5])\s*[\)\.\:\-]\s*(.+)$/;
         var usedNum = false;
         lines.forEach(function (line) {
@@ -2097,7 +3086,11 @@
           // "Next", the quiz app's "Ask anything" box) is not part of
           // any choice — it was being glued onto the last one, which
           // then displayed and matched as garbage text.
-          if (opts.length && /^\s*(show hint|back|next|ask anything|text view)\b/i.test(line)) return;
+          if (opts.length && /^\s*(show hint|hide hint|back|next|ask anything|text view)\b/i.test(line)) { hintSkip = /hint/i.test(line); return; }
+          // The hint's own sentences follow a "Hide hint" line — they
+          // are not part of the last choice, and gluing them onto it
+          // poisoned that choice's text (and its matching).
+          if (hintSkip) { if (!optRe.test(line)) return; hintSkip = false; }
           // The quiz app's own grading lines, printed under a choice
           // once it has been answered ("Correct! 852 - 397 = 455.",
           // "Incorrect. This is off by 10…"), are not part of that
@@ -2135,10 +3128,23 @@
           if (!dup) opts.sort(function (a, b) { return a.letter < b.letter ? -1 : 1; });
           return { stem: stemLines.join(" ").trim(), options: opts };
         }
+        // Recovery: the letter markers were lost in the read (pill-
+        // button choices) — letter the choices in order instead of
+        // reporting the question as choiceless.
+        if (opts.length < 2) {
+          var recovered = recoverUnmarkedOptions(text);
+          if (recovered) return recovered;
+        }
         // Inline fallback: "Question? A. 24 B. 36 C. 48"
         var marker = /(?:^|\s)([A-E])[\)\.]\s+/g, hits = [], mm;
         while ((mm = marker.exec(text))) hits.push({ letter: mm[1].toUpperCase(), start: mm.index, contentStart: marker.lastIndex });
-        if (hits.length >= 3 && hits[0].letter === "A") {
+        // The run needn't start at A — shuffled choices can hand the
+        // reader any letter first. What makes it a choice run is three
+        // or more DISTINCT lettered choices, each keeping its own
+        // printed letter next to its own text.
+        var hitSeen = {};
+        hits.forEach(function (hh) { hitSeen[hh.letter] = 1; });
+        if (hits.length >= 3 && Object.keys(hitSeen).length >= 3) {
           var inline = [];
           for (var i = 0; i < hits.length; i++) {
             var end = i + 1 < hits.length ? hits[i + 1].start : text.length;
@@ -2357,10 +3363,10 @@
           .then(function (r) { if (!r.ok) throw new Error("nf"); return r.json(); })
           .then(function (j) {
             var entry = j[0], meaning = entry.meanings[0], def = meaning.definitions[0];
-            return { word: entry.word, pos: meaning.partOfSpeech || "", def: oneLine(def.definition), synonyms: (def.synonyms || []).concat(meaning.synonyms || []) };
+            return { word: entry.word, pos: meaning.partOfSpeech || "", def: oneLine(def.definition), synonyms: (def.synonyms || []).concat(meaning.synonyms || []), via: "web" };
           })
           .catch(function () {
-            if (BUILTIN[w]) return { word: w, pos: BUILTIN[w][0], def: BUILTIN[w][1], synonyms: [] };
+            if (BUILTIN[w]) return { word: w, pos: BUILTIN[w][0], def: BUILTIN[w][1], synonyms: [], via: "device" };
             return null;
           });
       }
@@ -2398,7 +3404,7 @@
             var scored = opts.map(function (o) { return { o: o, s: overlapScore(defTokens, o.text) }; });
             scored.sort(function (x, y) { return y.s - x.s; });
             if (scored[0].s > 0 && scored[0].s > (scored[1] ? scored[1].s : 0)) {
-              return { status: "solved", letter: scored[0].o.letter, headline: scored[0].o.text, detail: "\"" + info.word + "\" (" + info.pos + ") — " + info.def };
+              return { status: "solved", via: info.via || "web", letter: scored[0].o.letter, headline: scored[0].o.text, detail: "\"" + info.word + "\" (" + info.pos + ") — " + info.def };
             }
             if (scored[0].s > 0) {
               return { status: "uncertain", headline: "Not certain between " + scored[0].o.letter + " and " + scored[1].o.letter, detail: "\"" + info.word + "\" means: " + info.def, flag: "⚠ Two options overlap the definition of \"" + info.word + "\" — flagged instead of guessed, per the plan." };
@@ -2423,7 +3429,7 @@
           })).then(function (scored) {
             scored.sort(function (x, y) { return y.s - x.s; });
             if (scored[0].s > 0 && scored[0].s > (scored[1] ? scored[1].s : 0)) {
-              return { status: "solved", letter: scored[0].o.letter, headline: scored[0].o.text, detail: "\"" + scored[0].info.word + "\" — " + scored[0].info.def };
+              return { status: "solved", via: (scored[0].info && scored[0].info.via) || "web", letter: scored[0].o.letter, headline: scored[0].o.text, detail: "\"" + scored[0].info.word + "\" — " + scored[0].info.def };
             }
             if (scored[0].s > 0) {
               return { status: "uncertain", headline: "Not certain between " + scored[0].o.letter + " and " + scored[1].o.letter, detail: "Both definitions overlap \"" + phrase + "\" — check the wording on the page.", flag: "⚠ Two options could fit — flagged instead of guessed, per the plan." };
@@ -2529,7 +3535,12 @@
         { k: ["currency", "japan"], a: "Yen", r: "The currency of Japan is the yen." },
         { k: ["currency", "united kingdom"], a: "Pound", r: "The currency of the United Kingdom is the pound sterling." },
         { k: ["language", "brazil"], a: "Portuguese", r: "Portuguese is the official language of Brazil." },
-        { k: ["language", "spain"], a: "Spanish", r: "Spanish is the official language of Spain." }
+        { k: ["language", "spain"], a: "Spanish", r: "Spanish is the official language of Spain." },
+        { k: ["first episode", "rainbow"], a: "Ho-Oh", r: "At the end of the very first episode, Ash catches a glimpse of the legendary Ho-Oh flying across a rainbow — it was not even named until a later series." },
+        { k: ["glimpse", "rainbow"], a: "Ho-Oh", r: "The legendary Pokémon Ash glimpses flying across the rainbow in the first episode is Ho-Oh." },
+        { k: ["legendary", "rainbow", "ash"], a: "Ho-Oh", r: "The legendary Pokémon Ash sees flying across the rainbow in the first episode is Ho-Oh." },
+        { k: ["not a dragon type"], a: "Charizard", r: "Charizard is a Fire/Flying type, not a Dragon-type — Flygon, Kingdra and Haxorus are all Dragon-types." },
+        { k: ["not a dragon"], a: "Charizard", r: "Charizard is a Fire/Flying type, not a Dragon-type — the others listed (Flygon, Kingdra, Haxorus) are Dragon-types." }
       ];
 
       /* ---------------- Cybersecurity bank (Security+ + CISSP domains) ----------------
@@ -2834,7 +3845,7 @@
         var scored = opts.map(function (o) { return { o: o, s: overlapScore(defTokens, o.text) }; });
         scored.sort(function (x, y) { return y.s - x.s; });
         if (scored[0].s >= 2 && scored[0].s > (scored[1] ? scored[1].s : 0)) {
-          return { status: "solved", letter: scored[0].o.letter, headline: scored[0].o.text, detail: "\"" + entry.t + "\" — " + entry.d };
+          return { status: "solved", via: "device", letter: scored[0].o.letter, headline: scored[0].o.text, detail: "\"" + entry.t + "\" — " + entry.d };
         }
         if (scored[0].s >= 2 && scored[1]) {
           return { status: "uncertain", headline: "Not certain between " + scored[0].o.letter + " and " + scored[1].o.letter, detail: "\"" + entry.t + "\" — " + entry.d, flag: "⚠ Two options overlap the definition of \"" + entry.t + "\" — flagged instead of guessed." };
@@ -2887,9 +3898,144 @@
         var fact = findFact(stem) || findFact(fullText || "");
         if (!fact) return null;
         var hits = opts.filter(function (o) { return optionMatchesAnswer(o.text, fact.a); });
-        if (hits.length === 1) return { status: "solved", letter: hits[0].letter, headline: hits[0].text, detail: fact.r };
+        if (hits.length === 1) return { status: "solved", via: "device", letter: hits[0].letter, headline: hits[0].text, detail: fact.r };
         if (hits.length > 1) return { status: "uncertain", headline: "Not certain between " + hits[0].letter + " and " + hits[1].letter, detail: fact.r, flag: "⚠ More than one printed option matches the known answer — flagged instead of guessed. Check the options in the text box." };
         return null;
+      }
+
+      /* ---------------- Fill in the blank: repair a garbled question ----------------
+         The user asked for this directly: when the scanner cannot read
+         the question, it should fill in the blanks so the question
+         makes sense. A photographed screen garbles individual words
+         ("Whig ib the rote Mhcramon is NOT a Dragon-type?") while the
+         words that carry the meaning often survive. This pass swaps
+         each word that is not a known word for the closest known word
+         — known means: question vocabulary, every word the fact and
+         security banks use, and the words in this question's own
+         choices — but only when ONE candidate is clearly closest, so
+         a coin-flip word is left alone rather than rewritten wrong.
+         The filled-in question is then re-run through the fact bank
+         and the web lookup, and the card shows the filled-in wording
+         (FILLED IN AS) so the repair is never silent. */
+      var QUESTION_WORDS = ("which what when where who whom whose why how many much more most least first last next following above below between among " +
+        "is are was were does do did can could will would should has have had been being not never except only also just " +
+        "episode anime legendary catch catches glimpse flying across rainbow type types following question answer choice choices " +
+        "capital country city river ocean mountain planet largest smallest fastest slowest longest highest tallest " +
+        "called known named made makes used use using called group part form forms kind sort " +
+        "pokemon dragon fire water grass electric flying ground rock steel fairy psychic ghost dark normal fighting poison bug ice").split(" ");
+      var vocabCache = null;
+      function buildVocab(opts) {
+        if (!vocabCache) {
+          var v = {};
+          var add = function (s) { (String(s || "").toLowerCase().match(/[a-z][a-z'-]+/g) || []).forEach(function (w) { if (w.length >= 3) v[w] = 1; }); };
+          QUESTION_WORDS.forEach(function (w) { v[w] = 1; });
+          FACTS.concat(CYBER_FACTS).forEach(function (f) { add(f.k.join(" ")); add(f.a); add(f.r); });
+          CYBER_DEFS.forEach(function (e) { add(e.t); });
+          vocabCache = v;
+        }
+        if (!opts || !opts.length) return vocabCache;
+        var merged = {};
+        Object.keys(vocabCache).forEach(function (w) { merged[w] = 1; });
+        opts.forEach(function (o) { (String(o.text || "").toLowerCase().match(/[a-z][a-z'-]+/g) || []).forEach(function (w) { if (w.length >= 3) merged[w] = 1; }); });
+        return merged;
+      }
+      function levDist(a, b, max) {
+        if (Math.abs(a.length - b.length) > max) return max + 1;
+        var prev = [], cur = [], i, j;
+        for (j = 0; j <= b.length; j++) prev[j] = j;
+        for (i = 1; i <= a.length; i++) {
+          cur[0] = i;
+          var rowMin = cur[0];
+          for (j = 1; j <= b.length; j++) {
+            var cost = a.charAt(i - 1) === b.charAt(j - 1) ? 0 : 1;
+            cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + cost);
+            if (cur[j] < rowMin) rowMin = cur[j];
+          }
+          if (rowMin > max) return max + 1;
+          var tmp = prev; prev = cur; cur = tmp;
+        }
+        return prev[b.length];
+      }
+      /* Returns the filled-in question, or null when nothing needed
+         (or safely could) change. A word is only swapped when one
+         candidate is clearly closest; on a tie, a candidate from the
+         question vocabulary (which / first / following …) wins over
+         an equally close word that merely appears in a fact's reason,
+         and a tie with no such winner is left alone. */
+      function fillInQuestion(stem, opts) {
+        var vocab = buildVocab(opts);
+        var words = Object.keys(vocab);
+        var qw = {};
+        QUESTION_WORDS.forEach(function (w) { qw[w] = 1; });
+        var changed = 0;
+        var out = String(stem || "").replace(/[A-Za-z][A-Za-z'-]*/g, function (w) {
+          var lw = w.toLowerCase();
+          if (lw.length < 3 || vocab[lw]) return w;
+          var maxD = lw.length >= 4 ? 2 : 1;
+          var bestD = maxD + 1, bestSet = [];
+          for (var i = 0; i < words.length; i++) {
+            var cand = words[i];
+            if (Math.abs(cand.length - lw.length) > maxD) continue;
+            var d = levDist(lw, cand, maxD);
+            if (d < bestD) { bestD = d; bestSet = [cand]; }
+            else if (d === bestD && bestSet.length < 6) { bestSet.push(cand); }
+          }
+          var best = null;
+          if (bestD <= maxD && bestSet.length) {
+            var pref = bestSet.filter(function (c) { return qw[c]; });
+            var pool = pref.length ? pref : bestSet;
+            if (pool.length === 1) best = pool[0];
+            else {
+              // Still tied: the candidate sharing the longest opening
+              // with the garbled word wins ("Whig" -> "Which", not
+              // "When") — a tie even there is left unrepaired.
+              var topPre = -1, preWin = null, preTie = false;
+              pool.forEach(function (c) {
+                var p = 0;
+                while (p < lw.length && p < c.length && lw.charAt(p) === c.charAt(p)) p++;
+                if (p > topPre) { topPre = p; preWin = c; preTie = false; }
+                else if (p === topPre) { preTie = true; }
+              });
+              if (preWin && !preTie) best = preWin;
+            }
+          }
+          if (best) {
+            changed++;
+            if (w.charAt(0) >= "A" && w.charAt(0) <= "Z") return best.charAt(0).toUpperCase() + best.slice(1);
+            return best;
+          }
+          return w;
+        });
+        return changed ? out.replace(/\s+/g, " ").trim() : null;
+      }
+      /* The last resort for a multiple-choice question nothing could
+         confirm: fill in the garbled words and try the fact bank and
+         the web lookup once more on the filled-in question; if it
+         STILL can't be confirmed, offer the best-supported choice as
+         a SUGGESTED answer — clearly a guess, on the card and on the
+         camera — instead of no answer at all. */
+      function fillInAndSuggest(stem, opts) {
+        var repaired = fillInQuestion(stem, opts);
+        function suggest() {
+          return suggestMcAnswer(repaired || stem, opts).then(function (sg) {
+            if (sg) { if (repaired) sg.filledIn = repaired; return sg; }
+            return {
+              status: "cant",
+              headline: "Read it — no confident answer found",
+              detail: "The question and its " + opts.length + " options were read and are in the text box below. It was checked as math, vocabulary and general knowledge" + (repaired ? ", and the garbled words were filled in as best they could be (shown on the card)" : "") + ", but nothing — not even a guess — stood out. Check for misread words and tap Solve again."
+            };
+          });
+        }
+        if (!repaired) return suggest();
+        var factHit = solveMcFact(repaired, opts, repaired);
+        if (factHit) {
+          if (factHit.status === "solved") { factHit.filledIn = repaired; if (!factHit.via) factHit.via = "device"; return Promise.resolve(factHit); }
+          return suggest();
+        }
+        return solveMcWiki(repaired, opts).then(function (w) {
+          if (w) { if (w.status === "solved") w.filledIn = repaired; return w; }
+          return suggest();
+        });
       }
 
       /* ---------------- General knowledge: reference lookup (Wikipedia) ----------------
@@ -2930,21 +4076,86 @@
         if (/^\d+$/.test(o)) score = (" " + corpusNorm + " ").indexOf(" " + o + " ") !== -1 ? score : 0;
         return score;
       }
+      /* Raw mention count of an option in the reference text — the
+         backing measure the NOT-question logic needs, without the
+         phrase bonus that flattens scoreOptionInCorpus. */
+      function countMentions(optText, corpusNorm) {
+        var o = normText(optText);
+        if (!o) return 0;
+        var hay = " " + corpusNorm + " ", needle = " " + o + " ", n = 0, idx = 0;
+        while ((idx = hay.indexOf(needle, idx)) !== -1 && n < 60) { n++; idx += needle.length; }
+        return n;
+      }
       function solveMcWiki(stem, opts) {
-        var query = stem.replace(/\s+/g, " ").trim();
+        var query = stem.replace(/which of the following/i, "").replace(/\s+/g, " ").trim();
         if (query.length < 8) return Promise.resolve(null);
-        if (typeof setStatus === "function") setStatus("Checking a reference source for this question…");
+        if (typeof setStatus === "function") setStatus("Looking this one up on the web (Wikipedia)…");
         return wikiCorpus(query).then(function (corpus) {
           if (!corpus) return null;
           var cn = normText(corpus);
           var scored = opts.map(function (o) { return { o: o, s: scoreOptionInCorpus(o.text, cn) }; });
           scored.sort(function (x, y) { return y.s - x.s; });
           var top = scored[0], second = scored[1] || { s: 0, o: null };
+          // A "which is NOT a …?" question flips the logic: the right
+          // choice is the one the reference does NOT back, while the
+          // others are backed — picking the best-backed option there
+          // would name a Dragon-type as the answer to "NOT a
+          // Dragon-type". Backing is measured in raw mentions (the
+          // mention-everything phrase bonus above flattens the very
+          // differences this needs), and it is only called when at
+          // least two choices are clearly backed and one clearly isn't.
+          if (/\bnot\b|\bexcept\b|\bnever\b/i.test(stem)) {
+            var backed = opts.map(function (o) { return { o: o, n: countMentions(o.text, cn) }; });
+            backed.sort(function (x, y) { return y.n - x.n; });
+            var strongN = backed.filter(function (x) { return x.n >= 3; }).length;
+            var lowN = backed[backed.length - 1], secondLowN = backed[backed.length - 2] || { n: 0, o: null };
+            if (strongN >= 2 && lowN && secondLowN.o && lowN.n <= secondLowN.n - 2) {
+              return { status: "solved", via: "web", letter: lowN.o.letter, headline: lowN.o.text, detail: "Web lookup (Wikipedia): the reference names the other choices again and again for this question, but barely mentions \"" + lowN.o.text + "\" — and the question asks for the one that does NOT fit, so that is the pick." };
+            }
+            if (strongN >= 2 && lowN && secondLowN.o) {
+              return { status: "uncertain", via: "web", headline: "Not certain between " + lowN.o.letter + " and " + secondLowN.o.letter, detail: "Web lookup (Wikipedia): the reference backs the other choices, but two choices are left weakly supported and the question asks for the one that does NOT fit.", flag: "⚠ The web lookup couldn't separate the last two — check the exact wording on the page." };
+            }
+            return null;
+          }
           if (top.s >= 6 && top.s - second.s >= 3) {
-            return { status: "solved", letter: top.o.letter, headline: top.o.text, detail: "Best match in the reference for this question — \"" + top.o.text + "\" is the option the reference supports." };
+            return { status: "solved", via: "web", letter: top.o.letter, headline: top.o.text, detail: "Web lookup (Wikipedia): \"" + top.o.text + "\" is the option the reference supports for this question." };
           }
           if (top.s >= 6 && second.o) {
-            return { status: "uncertain", headline: "Not certain between " + top.o.letter + " and " + second.o.letter, detail: "The reference mentions both options for this question, so no single answer stands out.", flag: "⚠ Two options could fit — flagged instead of guessed. Check the exact wording on the page." };
+            return { status: "uncertain", via: "web", headline: "Not certain between " + top.o.letter + " and " + second.o.letter, detail: "Web lookup (Wikipedia): the reference mentions both options for this question, so no single answer stands out.", flag: "⚠ Two options could fit — flagged instead of guessed. Check the exact wording on the page." };
+          }
+          return null;
+        }).catch(function () { return null; });
+      }
+      /* The suggestion pass: same reference text as solveMcWiki, but
+         WITHOUT the confidence bar. When nothing could be confirmed,
+         the user still wants a possible answer — so the best-supported
+         choice is returned as status "suggested", and every surface
+         (card, options list, camera banner and camera box) marks it
+         as a guess, never as the answer. For a NOT question the guess
+         flips the same way the confident logic does: the choice the
+         reference backs least, while the others are backed. */
+      function suggestMcAnswer(stem, opts) {
+        var query = stem.replace(/which of the following/i, "").replace(/\s+/g, " ").trim();
+        if (query.length < 8 || !opts.length) return Promise.resolve(null);
+        if (typeof setStatus === "function") setStatus("No certain answer — finding the best guess…");
+        return wikiCorpus(query).then(function (corpus) {
+          if (!corpus) return null;
+          var cn = normText(corpus);
+          var flagText = "SUGGESTED ANSWER — this is the scanner's best guess, not a confirmed answer. It is shown so you have a possible answer to check against the page, not a certain one.";
+          if (/\bnot\b|\bexcept\b|\bnever\b/i.test(stem)) {
+            var backed = opts.map(function (o) { return { o: o, n: countMentions(o.text, cn) }; });
+            backed.sort(function (x, y) { return y.n - x.n; });
+            var strong = backed.filter(function (x) { return x.n >= 3; }).length;
+            var low = backed[backed.length - 1];
+            if (strong >= 2 && low) {
+              return { status: "suggested", via: "web", letter: low.o.letter, headline: low.o.text, detail: "Best guess from a web lookup (Wikipedia): the reference backs the other choices for this question and barely mentions \"" + low.o.text + "\" — and the question asks for the one that does NOT fit, so this is the suggested pick.", flag: flagText };
+            }
+            return null;
+          }
+          var scored = opts.map(function (o) { return { o: o, s: scoreOptionInCorpus(o.text, cn) }; });
+          scored.sort(function (x, y) { return y.s - x.s; });
+          if (scored[0] && scored[0].s > 0) {
+            return { status: "suggested", via: "web", letter: scored[0].o.letter, headline: scored[0].o.text, detail: "Best guess from a web lookup (Wikipedia): of the choices, \"" + scored[0].o.text + "\" fits what the reference says best — but not clearly enough to call it the answer.", flag: flagText };
           }
           return null;
         }).catch(function () { return null; });
@@ -2957,7 +4168,7 @@
           var clean = corpus.replace(/\s+/g, " ").trim();
           var sentence = (clean.match(/[^.!?]+[.!?]+/g) || []).filter(function (s) { return s.trim().length > 25; })[0] || clean.slice(0, 180);
           if (!sentence) return null;
-          return { status: "solved", headline: "Reference answer", detail: oneLine(sentence) };
+          return { status: "solved", via: "web", headline: "Reference answer", detail: "Web lookup (Wikipedia) — " + oneLine(sentence) };
         }).catch(function () { return null; });
       }
 
@@ -2996,30 +4207,31 @@
                 var amb = plusDivAmbiguity(qStem, mc.options, ma, hit);
                 if (amb) return Promise.resolve(amb);
               }
-              return Promise.resolve({ status: "solved", letter: hit.letter, headline: hit.text, detail: ma.reason, sentenceForm: !!ma.sentenceForm, hl: ma.hl || null, readAs: ma.readAs || null });
+              return Promise.resolve({ status: "solved", via: "device", letter: hit.letter, headline: hit.text, detail: ma.reason, sentenceForm: !!ma.sentenceForm, hl: ma.hl || null, readAs: ma.readAs || null });
             }
             // The worked answer matches NO printed choice: re-analyse
             // the symbols against the choices (a ÷ read as + is the
             // usual suspect), then — failing that — fit the stem's
             // numbers against the choices before reporting a mismatch.
             var re = reanalyzeMath(qStem, mc.options, ma);
-            if (re) return Promise.resolve(re);
+            if (re) { re.via = "device"; return Promise.resolve(re); }
             var bf1 = bestFitFromChoices(qStem, mc.options);
-            if (bf1) return Promise.resolve(bf1);
+            if (bf1) { bf1.via = "device"; return Promise.resolve(bf1); }
             return Promise.resolve({ status: "uncertain", headline: (ma.isX ? "x = " : "") + fmtMathValue(ma.value) + " — not among the options", detail: ma.reason, flag: "⚠ The worked answer doesn't match any printed option, and re-analysing the symbols against the choices found no fit either. The text may have been misread — check the numbers in the text box and solve again." });
           }
           // General knowledge, offline fact bank — instant and reliable for common questions
           var factHit = solveMcFact(qStem, mc.options, qStem);
-          if (factHit) return Promise.resolve(factHit);
+          if (factHit) { if (!factHit.via) factHit.via = "device"; return Promise.resolve(factHit); }
           // Cybersecurity reverse style: term named, options are definitions
           var cyberDefHit = solveMcCyberDef(qStem, mc.options);
-          if (cyberDefHit) return Promise.resolve(cyberDefHit);
+          if (cyberDefHit) { if (!cyberDefHit.via) cyberDefHit.via = "device"; return Promise.resolve(cyberDefHit); }
           return solveMcVocabulary(qStem, mc.options).then(function (v) {
-            if (v) return v;
+            if (v) { if (!v.via) v.via = "web"; return v; }
             // The choices were read but the question wasn't recognised:
             // fit the numbers that WERE read against the choices and
             // offer the unique fit as a best fit, clearly labelled.
             var bf2 = bestFitFromChoices(qStem, mc.options);
+            if (bf2) bf2.via = "device";
             if (bf2 && (stemWeak || looksLikeArithmetic(qStem))) return bf2;
             // Plainly arithmetic but the maths engine couldn't solve it:
             // the numbers were almost certainly misread. Never let the
@@ -3031,14 +4243,19 @@
             return solveMcWiki(qStem, mc.options).then(function (w) {
               if (w) return w;
               if (bf2) return bf2;
-              return { status: "cant", headline: "Read it — no confident answer found", detail: "The question and its " + mc.options.length + " options were read and are in the text box below. It was checked as math, vocabulary and general knowledge, but no option stood out clearly — check for misread words and tap Solve again." };
+              // Nothing confirmed it. Per the user's ask: fill in the
+              // garbled words so the question makes sense and try
+              // again — and if it still can't be confirmed, offer a
+              // possible answer as a labelled SUGGESTION rather than
+              // leaving the question with no answer at all.
+              return fillInAndSuggest(qStem, mc.options);
             });
           });
         }
         var openText = cutToQuestion(text);
         var ma2 = mathAnswer(openText);
         if (ma2) {
-          var openRes = { status: "solved", headline: (ma2.isX ? "x = " : "") + fmtMathValue(ma2.value), detail: ma2.reason, sentenceForm: !!ma2.sentenceForm, hl: ma2.hl || null, readAs: ma2.readAs || null };
+          var openRes = { status: "solved", via: "device", headline: (ma2.isX ? "x = " : "") + fmtMathValue(ma2.value), detail: ma2.reason, sentenceForm: !!ma2.sentenceForm, hl: ma2.hl || null, readAs: ma2.readAs || null };
           // The question was read but its choices weren't in the
           // frame: the worked answer stands as a SUGGESTED answer,
           // labelled as such, instead of pretending a printed choice
@@ -3055,25 +4272,25 @@
           // asks for its meaning, the definition is the answer, not the term.
           var cDef = findCyberDefTerm(openText);
           if (cDef && /what is|define|definition|meaning|describe/i.test(openText) && normText(factOpen.a) === normText(cDef.t)) {
-            return Promise.resolve({ status: "solved", headline: cDef.t, detail: cDef.d });
+            return Promise.resolve({ status: "solved", via: "device", headline: cDef.t, detail: cDef.d });
           }
-          return Promise.resolve({ status: "solved", headline: factOpen.a, detail: factOpen.r });
+          return Promise.resolve({ status: "solved", via: "device", headline: factOpen.a, detail: factOpen.r });
         }
         var cDefOpen = findCyberDefTerm(openText);
         if (cDefOpen && /what is|define|definition|meaning|describe/i.test(openText)) {
-          return Promise.resolve({ status: "solved", headline: cDefOpen.t, detail: cDefOpen.d });
+          return Promise.resolve({ status: "solved", via: "device", headline: cDefOpen.t, detail: cDefOpen.d });
         }
         var trimmed = openText.trim();
         var word = extractDefineWord(trimmed);
         if (word && /mean|define|definition/i.test(trimmed)) {
           return lookupWord(word).then(function (info) {
-            if (info) return { status: "solved", headline: info.word, detail: (info.pos ? info.pos + " — " : "") + info.def };
+            if (info) return { status: "solved", via: info.via || "web", headline: info.word, detail: (info.pos ? info.pos + " — " : "") + info.def };
             return { status: "cant", headline: "No definition found for \"" + word + "\"", detail: "The word was read, but the dictionary has no entry for it — check the spelling in the text box." };
           });
         }
         if (/^[A-Za-z][A-Za-z'-]*$/.test(trimmed)) {
           return lookupWord(trimmed).then(function (info) {
-            if (info) return { status: "solved", headline: info.word, detail: (info.pos ? info.pos + " — " : "") + info.def };
+            if (info) return { status: "solved", via: info.via || "web", headline: info.word, detail: (info.pos ? info.pos + " — " : "") + info.def };
             return { status: "cant", headline: "No definition found for \"" + trimmed + "\"", detail: "A single word was read, but the dictionary has no entry for it — check the spelling in the text box." };
           });
         }
@@ -3081,7 +4298,27 @@
         if (/\?\s*$/.test(trimmed) || /^(what|which|who|where|when|how many|how much)\b/i.test(trimmed)) {
           return solveOpenWiki(trimmed).then(function (w) {
             if (w) return w;
-            return { status: "cant", headline: "Read it — no confident answer found", detail: "The question was read and checked against the fact bank and a reference source, but no clear answer came back. The text is in the box below — fix any misread words and tap Solve again, or add A–D options if it is a multiple-choice question." };
+            // The choices weren't detected (or there are none) and the
+            // question may itself be garbled: fill in the misread words
+            // and try the fact bank and the reference once more on the
+            // filled-in question; whatever that yields is offered as a
+            // SUGGESTED answer, labelled a guess — not a certainty.
+            var repaired = fillInQuestion(trimmed, null);
+            if (!repaired) {
+              return { status: "cant", headline: "Read it — no confident answer found", detail: "The question was read and checked against the fact bank and a reference source, but no clear answer came back. The text is in the box below — fix any misread words and tap Solve again, or add A–D options if it is a multiple-choice question." };
+            }
+            var factFilled = findFact(repaired);
+            if (factFilled) return { status: "solved", via: "device", headline: factFilled.a, detail: factFilled.r, filledIn: repaired };
+            return solveOpenWiki(repaired).then(function (w2) {
+              if (w2) {
+                w2.status = "suggested";
+                w2.headline = "Possible answer";
+                w2.filledIn = repaired;
+                w2.flag = "SUGGESTED ANSWER — the question read garbled and its choices weren't detected, so this is a best guess from the filled-in question (shown on the card), not a confirmed answer.";
+                return w2;
+              }
+              return { status: "cant", headline: "Read it — no confident answer found", detail: "The question was read and checked against the fact bank and a reference source, and its garbled words were filled in as best they could be (shown on the card), but no clear answer came back. The text is in the box below — fix any misread words and tap Solve again, or add A–D options if it is a multiple-choice question.", filledIn: repaired };
+            });
           });
         }
         return Promise.resolve({
@@ -3102,6 +4339,27 @@
         overlayBoxes = [];
         hlLayer.innerHTML = ""; hlLayer.hidden = true;
         answerBanner.innerHTML = ""; answerBanner.hidden = true;
+        if (choicesPill) choicesPill.hidden = true;
+      }
+      /* The CHOICES SEEN pill: as soon as a read has located a
+         question's A–D choices, the pill names the letters it found —
+         the at-a-glance proof the scanner is looking at the
+         multiple-choice section, whether or not it solved the
+         question. Mirrors the blue choice outlines on the camera. */
+      function updateChoicesPill() {
+        if (!choicesPill) return;
+        var seen = {};
+        currentBlocks.forEach(function (block) {
+          var mc = parseOptions(block.raw);
+          if (mc) mc.options.forEach(function (o) { seen[o.letter] = 1; });
+        });
+        var letters = Object.keys(seen).sort();
+        if (letters.length >= 2) {
+          choicesPill.textContent = "CHOICES SEEN · " + letters.join(" ");
+          choicesPill.hidden = false;
+        } else {
+          choicesPill.hidden = true;
+        }
       }
       function placeOverlayBoxes() {
         var w = hlLayer.clientWidth, h = hlLayer.clientHeight;
@@ -3118,50 +4376,83 @@
       }
       function renderAnswerOverlay() {
         clearAnswerOverlay();
+        updateChoicesPill();
         var onCam = stage.classList.contains("live") || stage.classList.contains("has-photo");
         if (!onCam || !currentBlocks.length) return;
         var multi = currentBlocks.length > 1;
         var rows = 0;
+        function pushBox(box, cls, tagText) {
+          overlayBoxes.push({ fx0: box.x0 / lastLayout.w, fy0: box.y0 / lastLayout.h, fx1: box.x1 / lastLayout.w, fy1: box.y1 / lastLayout.h });
+          var el = document.createElement("div"); el.className = cls;
+          var tag = document.createElement("span"); tag.className = "hl-tag";
+          tag.textContent = tagText;
+          el.appendChild(tag); hlLayer.appendChild(el);
+        }
         currentBlocks.forEach(function (block, idx) {
           var res = block.result;
+          var mc = parseOptions(block.raw);
+          var pre = multi ? "Q" + (idx + 1) + " · " : "";
+          // The question is boxed on the camera — amber, tagged
+          // QUESTION — for every question, solved or not, so the user
+          // sees WHAT was read as the question in the same scan that
+          // produced (or failed to produce) the answer.
+          if (lastLayout) {
+            var qbox = findStemBox(lastLayout, block.raw);
+            if (qbox) pushBox(qbox, "hl-box q-box", pre + "QUESTION");
+            // Every choice the reader located gets a blue outline —
+            // the visible proof the scanner is SEEING the
+            // multiple-choice section, whether or not the question
+            // could be solved yet. The correct choice's outline is
+            // replaced by the solid green answer box below.
+            if (mc) {
+              mc.options.forEach(function (o) {
+                if (res && res.status === "solved" && res.letter === o.letter) return;
+                if (res && res.status === "suggested" && res.letter === o.letter) return;
+                var ob = findOptionBox(lastLayout, o.letter, o.text);
+                if (ob) pushBox(ob, "hl-box seen-box", pre + o.letter);
+              });
+            }
+          }
+          // A SUGGESTED answer is shown on the camera too — the user
+          // asked for the suggestion in the same place a confirmed
+          // answer appears — but in amber everywhere: an amber chip in
+          // the banner and a dashed amber box on the suggested choice,
+          // so it can never be read as the confirmed (green) answer.
+          if (res && res.status === "suggested") {
+            var srow = document.createElement("div"); srow.className = "ab-row guess";
+            var schip = document.createElement("span"); schip.className = "ab-letter guess";
+            schip.textContent = res.letter || "?";
+            var stxt = document.createElement("span"); stxt.className = "ab-text";
+            var sbold = document.createElement("b");
+            sbold.textContent = (multi ? "Q" + (idx + 1) + " · " : "") + "SUGGESTED · " + (res.letter ? res.letter + " · " : "") + (res.headline || "");
+            stxt.appendChild(sbold);
+            if (res.detail) stxt.appendChild(document.createTextNode(" — " + res.detail));
+            srow.appendChild(schip); srow.appendChild(stxt);
+            answerBanner.appendChild(srow); rows++;
+            if (lastLayout && res.letter && mc) {
+              var sOptText = res.headline;
+              for (var si = 0; si < mc.options.length; si++) { if (mc.options[si].letter === res.letter) sOptText = mc.options[si].text; }
+              var sbox = findOptionBox(lastLayout, res.letter, sOptText);
+              if (sbox) pushBox(sbox, "hl-box guess-box", pre + "SUGGESTED " + res.letter);
+            }
+            return;
+          }
           if (!res || res.status !== "solved") return;
           var row = document.createElement("div"); row.className = "ab-row";
           var chip = document.createElement("span"); chip.className = "ab-letter";
           chip.textContent = res.letter || "✓";
           var txt = document.createElement("span"); txt.className = "ab-text";
           var bold = document.createElement("b");
-          bold.textContent = (multi ? "Q" + (idx + 1) + " · " : "") + (res.suggested ? "SUGGESTED · " : "") + (res.letter ? res.letter + " · " : "") + (res.headline || "");
+          bold.textContent = (multi ? "Q" + (idx + 1) + " · " : "") + (res.suggested ? "SUGGESTED · " : "") + (res.via === "web" ? "WEB LOOKUP · " : "") + (res.letter ? res.letter + " · " : "") + (res.headline || "");
           txt.appendChild(bold);
           if (res.detail) txt.appendChild(document.createTextNode(" — " + res.detail));
           row.appendChild(chip); row.appendChild(txt);
           answerBanner.appendChild(row); rows++;
           if (lastLayout && res.letter) {
-            var mc = parseOptions(block.raw);
             var optText = res.headline;
             if (mc) { for (var i = 0; i < mc.options.length; i++) { if (mc.options[i].letter === res.letter) optText = mc.options[i].text; } }
             var box = findOptionBox(lastLayout, res.letter, optText);
-            if (box) {
-              overlayBoxes.push({ fx0: box.x0 / lastLayout.w, fy0: box.y0 / lastLayout.h, fx1: box.x1 / lastLayout.w, fy1: box.y1 / lastLayout.h });
-              var el = document.createElement("div"); el.className = "hl-box";
-              var tag = document.createElement("span"); tag.className = "hl-tag";
-              tag.textContent = (multi ? "Q" + (idx + 1) + " · " : "") + res.letter;
-              el.appendChild(tag); hlLayer.appendChild(el);
-            }
-          }
-          // The question is boxed on the camera too — amber, tagged
-          // QUESTION — for EVERY solved question (it used to appear
-          // only for sentence-form ones), so the user sees WHAT was
-          // read as the question right next to the green answer box,
-          // in the same scan that produced the answer.
-          if (lastLayout) {
-            var qbox = findStemBox(lastLayout, block.raw);
-            if (qbox) {
-              overlayBoxes.push({ fx0: qbox.x0 / lastLayout.w, fy0: qbox.y0 / lastLayout.h, fx1: qbox.x1 / lastLayout.w, fy1: qbox.y1 / lastLayout.h });
-              var qel = document.createElement("div"); qel.className = "hl-box q-box";
-              var qtag = document.createElement("span"); qtag.className = "hl-tag";
-              qtag.textContent = (multi ? "Q" + (idx + 1) + " · " : "") + "QUESTION";
-              qel.appendChild(qtag); hlLayer.appendChild(qel);
-            }
+            if (box) pushBox(box, "hl-box", pre + res.letter);
           }
         });
         if (rows) answerBanner.hidden = false;
@@ -3172,6 +4463,7 @@
       /* Solve every question found in the text — each block gets its own
          card, its own choices, and its own highlighted answer. */
       function solveAndShow(text) {
+        updateDetectSummary();
         var blocks = splitQuestions(text);
         buildCards(blocks);
         var jobs = blocks.map(function (raw, idx) {
@@ -3180,24 +4472,99 @@
         });
         return Promise.all(jobs).then(function () {
           var solved = currentBlocks.filter(function (b) { return b.result && b.result.status === "solved"; }).length;
+          var suggested = currentBlocks.filter(function (b) { return b.result && b.result.status === "suggested"; }).length;
           renderAnswerOverlay();
           if (blocks.length > 1) {
-            setStatus("Read complete — " + blocks.length + " questions found, " + solved + " solved. Each answer is highlighted on the camera and picked out under its own question below.");
+            setStatus("Read complete — " + blocks.length + " questions found, " + solved + " solved" + (suggested ? ", " + suggested + " with a suggested answer (best guess, in amber)" : "") + ". Each answer is highlighted on the camera and picked out under its own question below.");
+          } else if (solved) {
+            setStatus("Solved — the answer is highlighted on the camera and picked out below.");
+          } else if (suggested) {
+            setStatus("No certain answer — but a suggested answer (best guess) is shown in amber on the camera and picked out below.");
           } else {
-            setStatus(solved ? "Solved — the answer is highlighted on the camera and picked out below." : "Read complete — see below.");
+            setStatus("Read complete — see below.");
           }
         });
       }
 
-      $("solveBtn").addEventListener("click", function () {
+      /* ---------------- Correct the read & teach the split ----------------
+         The user asked for exactly this: a way to update the text the
+         scanner saw, and to tell it where the question and the choices
+         are when it got them wrong. The detect line states what the
+         scanner found in the current text; the two Mark buttons take
+         the lines the user selected in the box and rewrite them as the
+         question (moved to the top) or as choices (lettered A–D in
+         order), then re-solve. A correction that still resembles the
+         camera read keeps the camera layout, so the fixed answer is
+         highlighted on the camera as well as in the cards. */
+      function updateDetectSummary() {
+        if (!detectMeta) return;
+        var t = textInput.value.trim();
+        if (!t) { detectMeta.textContent = ""; detectMeta.classList.remove("warn"); return; }
+        var blocks = splitQuestions(t);
+        var anyChoices = false;
+        var parts = blocks.map(function (b, i) {
+          var mc = parseOptions(b);
+          var label = blocks.length > 1 ? "Q" + (i + 1) : "Question";
+          if (mc && mc.options.length >= 2) {
+            anyChoices = true;
+            return label + " found · choices " + mc.options.map(function (o) { return o.letter; }).join(" ");
+          }
+          return label + " found · no choices found";
+        });
+        detectMeta.textContent = "Scanner found: " + parts.join("  ·  ") + (anyChoices ? "" : " — if the choices are in the text above, select those lines and tap “Mark selection as choices A–D”.");
+        detectMeta.classList.toggle("warn", !anyChoices);
+      }
+      function textOverlap(a, b) {
+        function wordSet(t) { var s = {}; normText(t).split(" ").forEach(function (w) { if (w.length > 1) s[w] = 1; }); return s; }
+        var A = wordSet(a), B = wordSet(b), inter = 0;
+        Object.keys(A).forEach(function (w) { if (B[w]) inter++; });
+        var min = Math.min(Object.keys(A).length, Object.keys(B).length);
+        return min ? inter / min : 0;
+      }
+      function solveEditedText() {
         var t = textInput.value.trim();
         if (!t) { textMeta.textContent = "The text box is empty — capture a read, upload a photo, or type a question first."; return; }
         textMeta.textContent = "";
-        lastLayout = null;   // typed/pasted text has no camera positions to highlight
+        if (lastLayout && layoutText && textOverlap(t, layoutText) >= 0.5) layoutText = t;
+        else { lastLayout = null; layoutText = null; }
         solveAndShow(t);
+      }
+      function selectionLines() {
+        var v = textInput.value;
+        var s = textInput.selectionStart || 0, e = textInput.selectionEnd || 0;
+        var start = v.lastIndexOf("\n", s - 1) + 1;
+        var nl = v.indexOf("\n", e);
+        return { start: start, end: nl === -1 ? v.length : nl, lines: v.slice(start, nl === -1 ? v.length : nl).split("\n") };
+      }
+      $("solveBtn").addEventListener("click", solveEditedText);
+      textInput.addEventListener("input", updateDetectSummary);
+      $("markChoicesBtn").addEventListener("click", function () {
+        var sel = selectionLines();
+        var lines = sel.lines.map(function (l) { return l.trim(); }).filter(function (l) { return l.length; });
+        if (lines.length < 2 || lines.length > 5) { textMeta.textContent = "Select just the choice lines first — the 2 to 5 lines that are the possible answers — then tap Mark selection as choices."; return; }
+        var marked = lines.map(function (l, i) {
+          var clean = l.replace(/^\s*\(?[A-Ea-e]\s*[\)\.\:\-,]\s+/, "").replace(/^\s*\(?[1-5]\s*[\)\.\:\-,]\s+/, "");
+          return "ABCDE"[i] + ". " + clean;
+        });
+        textInput.value = textInput.value.slice(0, sel.start) + marked.join("\n") + textInput.value.slice(sel.end);
+        solveEditedText();
+        textMeta.textContent = "Choices marked A–" + "ABCDE"[lines.length - 1] + " from your selection — re-solved from your correction.";
+      });
+      $("markQBtn").addEventListener("click", function () {
+        var sel = selectionLines();
+        var q = sel.lines.map(function (l) { return l.trim().replace(/^\s*\(?[A-Ea-e]\s*[\)\.\:\-,]\s+/, ""); }).filter(function (l) { return l.length; });
+        if (!q.length) { textMeta.textContent = "Select the line or lines that are the question first, then tap Mark selection as the question."; return; }
+        var rest = (textInput.value.slice(0, sel.start) + textInput.value.slice(sel.end)).split("\n")
+          .map(function (l) { return l.trim(); })
+          .filter(function (l) { return l.length && q.indexOf(l) === -1; });
+        textInput.value = q.join("\n") + (rest.length ? "\n" + rest.join("\n") : "");
+        solveEditedText();
+        textMeta.textContent = "Question marked from your selection — re-solved from your correction.";
       });
       $("clearBtn").addEventListener("click", function () {
         textInput.value = ""; textMeta.textContent = "";
+        lastLayout = null; layoutText = null;
+        updateDetectSummary();
         buildCards([]);
       });
 
@@ -3218,6 +4585,11 @@
         geography: "What is the capital of France?\nA. London\nB. Berlin\nC. Paris\nD. Madrid",
         science: "Which planet is known as the Red Planet?\nA. Venus\nB. Mars\nC. Jupiter\nD. Saturn",
         vocab: "What does the word \"rapid\" mean?\nA. Very slow\nB. Happening quickly\nC. Extremely loud\nD. Full of color",
+        // The same Pokémon question as the user's screenshots, with the
+        // answers shuffled: Ho-Oh sits under B here, not the C it held
+        // on the quiz screen — the solver must still land on Ho-Oh and
+        // report THIS scan's letter for it.
+        "pokemon-shuffled": "3. In the very first episode of the anime (\"Pokémon, I Choose You!\"), which legendary Pokémon does Ash catch a glimpse of flying across the rainbow?\nA. Zapdos\nB. Ho-Oh\nC. Lugia\nD. Articuno",
         "cyber-port": "Which port is used by HTTPS?\nA. 80\nB. 443\nC. 22\nD. 25",
         "cissp-rbac": "In which access control model are permissions assigned based on a user's job role?\nA. Discretionary Access Control (DAC)\nB. Mandatory Access Control (MAC)\nC. Role-Based Access Control (RBAC)\nD. Rule-Based Access Control"
       };
@@ -3225,7 +4597,7 @@
         btn.addEventListener("click", function () {
           textInput.value = SAMPLES[btn.getAttribute("data-sample")] || "";
           textMeta.textContent = "Sample text — tap Solve this text, or edit it first.";
-          lastLayout = null;   // samples have no camera positions to highlight
+          lastLayout = null; layoutText = null;   // samples have no camera positions to highlight
           solveAndShow(textInput.value);
         });
       });
@@ -3250,12 +4622,17 @@
         ocrBusy = true;
         stage.classList.add("scanning");
         recognize(canvas).then(function (data) {
-          var fullText = (data.text || "").trim();
+          var aLayout = layoutFromData(data, canvas);
+          // Same column rule as the manual scan: auto-scan also used
+          // to solve from the reader's raw whole-frame dump, desk
+          // print and all.
+          var fullText = ((aLayout && textFromLayout(aLayout)) || (data.text || "")).trim();
           // Same garbage guard as the manual scan: a read too poor to
           // trust never becomes a card of fake questions and choices.
           if (fullText && readQuality(fullText, Math.round(data.confidence || 0)) < 34) fullText = "";
           if (fullText) {
-            lastLayout = layoutFromData(data, canvas);
+            lastLayout = aLayout;
+            layoutText = lastLayout ? fullText : null;
             textInput.value = fullText;
             var hasMc = splitQuestions(fullText).some(function (b) { return !!parseOptions(b); });
             if (fullText === lastAutoText && fullText !== lastAutoSolvedText && hasMc) {
@@ -3263,6 +4640,10 @@
               solveAndShow(fullText);
             } else if (fullText !== lastAutoSolvedText) {
               buildCards(splitQuestions(fullText));
+              // Show the choices it can already see — blue outlines on
+              // the camera plus the CHOICES SEEN pill — even before
+              // this read is stable enough to solve from.
+              renderAnswerOverlay();
             }
             lastAutoText = fullText;
           }
