@@ -3,7 +3,8 @@
 SOC Log Analyzer — my portfolio project for flagging suspicious login activity.
 
 Parses authentication log lines and flags suspicious login activity:
-brute-force attempts, logins after repeated failures, and unknown users.
+brute-force attempts, logins after repeated failures, and successful
+logins outside normal hours.
 
 This is a portfolio demo built from synthetic sample data. It does not
 claim production use at any employer and contains no real logs or credentials.
@@ -11,6 +12,7 @@ claim production use at any employer and contains no real logs or credentials.
 Usage:
     python log_analyzer.py sample_auth.log
     python log_analyzer.py sample_auth.log --threshold 5 --window-minutes 10 --output report.json
+    python log_analyzer.py sample_auth.log --normal-hours 07:00-19:00
 
 Log line format (one event per line):
     2026-11-07 10:15:22 FAILED LOGIN user=jthao ip=203.0.113.10
@@ -28,7 +30,7 @@ import re
 import sys
 from collections import Counter, defaultdict
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, time, timedelta
 from pathlib import Path
 
 LINE_RE = re.compile(
@@ -116,6 +118,68 @@ def find_brute_force(
     return sorted(findings, key=lambda f: f["failed_in_window"], reverse=True)
 
 
+def parse_normal_hours(spec: str) -> tuple[time, time]:
+    """
+    Parse a normal-hours window like "06:00-22:00" into (start, end) times.
+
+    A window that ends before it starts (e.g. "22:00-06:00") is an overnight
+    window: normal hours run from the start time through midnight to the
+    end time. Raises ValueError on a bad format or out-of-range hour/minute.
+    """
+    match = re.fullmatch(
+        r"(?P<sh>\d{2}):(?P<sm>\d{2})-(?P<eh>\d{2}):(?P<em>\d{2})", spec.strip()
+    )
+    if not match:
+        raise ValueError(
+            f"Bad --normal-hours value {spec!r}: expected HH:MM-HH:MM, e.g. 06:00-22:00"
+        )
+    start = time(int(match.group("sh")), int(match.group("sm")))
+    end = time(int(match.group("eh")), int(match.group("em")))
+    return start, end
+
+
+def is_outside_normal_hours(ts: datetime, start: time, end: time) -> bool:
+    """True when a timestamp falls outside the normal-hours window."""
+    current = ts.time()
+    if start <= end:
+        return not (start <= current < end)
+    # Overnight window: normal hours wrap past midnight.
+    return not (current >= start or current < end)
+
+
+def find_unusual_hours(
+    events: list[LoginEvent],
+    normal_start: time = time(6, 0),
+    normal_end: time = time(22, 0),
+) -> list[dict]:
+    """
+    Flag SUCCESS logins that happen outside normal hours.
+
+    A login at 3am is not proof of compromise — people work odd shifts —
+    but it is worth a look, especially in the small hours. Failed logins
+    are not flagged here; brute-force detection already covers those.
+    """
+    findings: list[dict] = []
+    for event in events:
+        if event.result != "SUCCESS":
+            continue
+        if not is_outside_normal_hours(event.timestamp, normal_start, normal_end):
+            continue
+        hour = event.timestamp.hour
+        findings.append(
+            {
+                "user": event.user,
+                "ip": event.ip,
+                "type": "unusual_hours_login",
+                "timestamp": event.timestamp.strftime(TS_FORMAT),
+                "normal_hours": f"{normal_start:%H:%M}-{normal_end:%H:%M}",
+                "severity": "medium" if 0 <= hour < 5 else "low",
+                "note": "Successful login outside normal hours — review, do not assume compromise.",
+            }
+        )
+    return findings
+
+
 def find_success_after_failures(events: list[LoginEvent]) -> list[dict]:
     """Flag SUCCESS logins where the same user/IP failed just before."""
     failed: set[tuple[str, str]] = set()
@@ -164,12 +228,17 @@ def summarize(events: list[LoginEvent]) -> dict:
 
 
 def analyze(
-    events: list[LoginEvent], threshold: int = 5, window_minutes: int = 10
+    events: list[LoginEvent],
+    threshold: int = 5,
+    window_minutes: int = 10,
+    normal_start: time = time(6, 0),
+    normal_end: time = time(22, 0),
 ) -> dict:
     return {
         "summary": summarize(events),
         "brute_force": find_brute_force(events, threshold, window_minutes),
         "success_after_failures": find_success_after_failures(events),
+        "unusual_hours_logins": find_unusual_hours(events, normal_start, normal_end),
     }
 
 
@@ -180,16 +249,27 @@ def main(argv: list[str] | None = None) -> int:
                         help="Failed logins in window to flag (default: 5)")
     parser.add_argument("--window-minutes", type=int, default=10,
                         help="Sliding window in minutes (default: 10)")
+    parser.add_argument("--normal-hours", type=str, default="06:00-22:00",
+                        help="Normal hours as HH:MM-HH:MM (default: 06:00-22:00). "
+                             "A window ending before it starts, e.g. 22:00-06:00, "
+                             "is an overnight window.")
     parser.add_argument("--output", type=Path, default=None,
                         help="Optional JSON report path")
     args = parser.parse_args(argv)
+
+    try:
+        normal_start, normal_end = parse_normal_hours(args.normal_hours)
+    except ValueError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        return 2
 
     if not args.logfile.exists():
         print(f"Log file not found: {args.logfile}", file=sys.stderr)
         return 2
 
     events, skipped = parse_log(args.logfile.read_text(encoding="utf-8"))
-    report = analyze(events, args.threshold, args.window_minutes)
+    report = analyze(events, args.threshold, args.window_minutes,
+                     normal_start, normal_end)
     report["skipped_lines"] = skipped
     report["source_file"] = str(args.logfile)
 
@@ -209,6 +289,11 @@ def main(argv: list[str] | None = None) -> int:
     print(f"Success-after-failure: {len(report['success_after_failures'])}")
     for finding in report["success_after_failures"]:
         print(f"  {finding['user']} from {finding['ip']} at {finding['timestamp']}")
+    print(f"Unusual-hours logins (outside {args.normal_hours}): "
+          f"{len(report['unusual_hours_logins'])}")
+    for finding in report["unusual_hours_logins"]:
+        print(f"  [{finding['severity']}] {finding['user']} from {finding['ip']} "
+              f"at {finding['timestamp']}")
 
     if args.output:
         args.output.write_text(json.dumps(report, indent=2), encoding="utf-8")

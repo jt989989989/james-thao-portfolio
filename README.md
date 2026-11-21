@@ -17,7 +17,7 @@ This repository is my project index for programming and IT roles. Each project i
 | [Life of a Man](projects/life-of-a-man/) | Satire board-game life sim — roll dice around a 40-square Board of Life, ages 18 to 65, quarterly choices, debt, marriage, midlife crises, and a tombstone ending; happiness is the main score | JavaScript, HTML5, no dependencies | Game dev / front-end |
 | [Flappy Bird Clone](projects/flappy-bird/) | Playable Flappy Bird–style game — tap to flap through the pipes, chase the high score; plain shapes and flat colours, no copied art | JavaScript, HTML5 Canvas | Game dev / front-end |
 | [Snake](projects/snake/) | Playable Snake — swipe or arrow keys to steer, eat the red squares to grow and speed up, best score saved; plain shapes and flat colours, no copied art | JavaScript, HTML5 Canvas | Game dev / front-end |
-| [SOC Log Analyzer](projects/soc-log-analyzer/) | CLI that parses auth logs and flags brute-force attempts and success-after-failure logins | Python (stdlib only) | SOC / security / IT |
+| [SOC Log Analyzer](projects/soc-log-analyzer/) | CLI that parses auth logs and flags brute-force attempts, success-after-failure logins, and logins outside normal hours | Python (stdlib only) | SOC / security / IT |
 | [Missed-Call Follow-Up](projects/missed-call-followup/) | CLI that turns a missed-call CSV into a prioritized follow-up queue with message drafts | Python (stdlib only) | Automation / IT |
 | [Scientific Calculator](projects/scientific-calculator/) | Scientific calculator in the browser — full expressions, trig, logs, factorial, history, memory | JavaScript, no dependencies, no `eval()` | Front-end / algorithms |
 | [Lead Generator](projects/lead-generator/) | CLI that finds small-business leads from Google Maps data via the official Places API — scores and dedupes them into a CSV | Python (stdlib only) | Automation / data / sales ops |
@@ -83,7 +83,7 @@ npm run build
 Python tools — Python 3.10+ only, no extra packages to install.
 
 ```bash
-# SOC Log Analyzer — 5 unit tests, 1 brute-force finding on the sample log
+# SOC Log Analyzer — 15 unit tests, 1 brute-force finding + 2 unusual-hours logins on the sample log
 cd projects/soc-log-analyzer
 python -m unittest discover -s tests -v
 python log_analyzer.py sample_auth.log

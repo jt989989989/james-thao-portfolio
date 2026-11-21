@@ -1,3 +1,4 @@
+2026-11-07 03:12:44 SUCCESS LOGIN user=admin ip=198.51.100.23
 2026-11-07 09:02:11 SUCCESS LOGIN user=jthao ip=203.0.113.10
 2026-11-07 09:14:03 FAILED LOGIN user=jthao ip=203.0.113.10
 2026-11-07 09:14:40 FAILED LOGIN user=jthao ip=203.0.113.10
@@ -15,3 +16,4 @@
 2026-11-07 11:04:01 SUCCESS LOGIN user=guest ip=192.0.2.15
 this line is intentionally malformed and should be skipped
 2026-11-07 12:30:00 SUCCESS LOGIN user=jthao ip=203.0.113.10
+2026-11-07 23:47:19 SUCCESS LOGIN user=mlee ip=203.0.113.42
