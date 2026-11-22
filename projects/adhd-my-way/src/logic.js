@@ -29,6 +29,11 @@ export const COLOUR_MATCH_COINS = 2; // coins per correct Colour Match tap
 export const COLOUR_GAME_BONUS_COINS = 10; // bonus for finishing all Colour Match rounds
 export const COLOUR_ROUNDS = 10; // rounds in one Colour Match game
 
+// v4: weekly star reward — finish WEEKLY_QUEST_GOAL quests in one week
+// (Monday to Sunday) and claim WEEKLY_REWARD_COINS once that week.
+export const WEEKLY_QUEST_GOAL = 10;
+export const WEEKLY_REWARD_COINS = 50;
+
 // Colour Match (v3): read the colour word, tap the button in that colour.
 // Words are the challenge — the word is shown in plain dark text, so a
 // child has to read it, not just match the ink colour.
@@ -107,7 +112,7 @@ export function yesterdayString(date = new Date()) {
 
 export function createDefaultState(date = new Date()) {
   return {
-    version: 3,
+    version: 4,
     coins: 0,
     date: todayString(date),
     tasks: DEFAULT_TASKS.map((t) => ({ ...t, done: false })),
@@ -121,25 +126,29 @@ export function createDefaultState(date = new Date()) {
     owned: SHOP.filter((item) => item.price === 0).map((item) => item.id),
     // v2 streak: consecutive days with at least one quest finished.
     streak: { count: 0, best: 0, lastActiveDate: null },
-    stats: { tasksDone: 0, gamesWon: 0, starsTapped: 0, timersFinished: 0, colourPlayed: 0, colourCorrect: 0 },
+    // v4 weekly record: quests / games / focus sessions this week, and
+    // whether this week's star reward has been claimed yet.
+    weekly: { weekStart: weekStartString(date), quests: 0, games: 0, focus: 0, claimed: false },
+    stats: { tasksDone: 0, gamesWon: 0, memoryWins: 0, starsTapped: 0, timersFinished: 0, colourPlayed: 0, colourCorrect: 0 },
   };
 }
 
 // Fill in any stats keys an older save is missing (v1/v2 saves have no
-// colour stats); never wipes a count that is already there.
+// colour stats; v3 saves have no memory-win count); never wipes a count
+// that is already there.
 function ensureStats(state) {
   if (!state.stats || typeof state.stats !== 'object') {
-    state.stats = { tasksDone: 0, gamesWon: 0, starsTapped: 0, timersFinished: 0 };
+    state.stats = { tasksDone: 0, gamesWon: 0, memoryWins: 0, starsTapped: 0, timersFinished: 0 };
   }
-  for (const [key, fallback] of Object.entries({ tasksDone: 0, gamesWon: 0, starsTapped: 0, timersFinished: 0, colourPlayed: 0, colourCorrect: 0 })) {
+  for (const [key, fallback] of Object.entries({ tasksDone: 0, gamesWon: 0, memoryWins: 0, starsTapped: 0, timersFinished: 0, colourPlayed: 0, colourCorrect: 0 })) {
     if (typeof state.stats[key] !== 'number') state.stats[key] = fallback;
   }
   return state.stats;
 }
 
-// Bring a saved v1/v2 state up to v3 without losing coins, quests or avatar:
-// adds the streak record, a category for any quest that lacks one, and the
-// v3 colour-game stats.
+// Bring a saved v1/v2/v3 state up to v4 without losing coins, quests or
+// avatar: adds the streak record, a category for any quest that lacks one,
+// the v3 colour-game stats, and the v4 weekly record + memory-win count.
 export function migrateState(state) {
   if (!state || typeof state !== 'object') return createDefaultState();
   if (!state.streak || typeof state.streak !== 'object') {
@@ -153,8 +162,70 @@ export function migrateState(state) {
     }
   }
   ensureStats(state);
-  state.version = 3;
+  ensureWeekly(state);
+  state.version = 4;
   return state;
+}
+
+// ---------- v4: weekly rewards ----------
+// Weeks run Monday to Sunday. weekStartString returns the Monday of the
+// week holding `date`, formatted in local time (not UTC, so the day never
+// slips across midnight for a child in the evening).
+export function weekStartString(date = new Date()) {
+  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const daysSinceMonday = (d.getDay() + 6) % 7; // Monday -> 0, Sunday -> 6
+  d.setDate(d.getDate() - daysSinceMonday);
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${month}-${day}`;
+}
+
+// Make sure state.weekly exists and belongs to this week; a new week
+// starts with fresh counters and an unclaimed reward.
+export function ensureWeekly(state, date = new Date()) {
+  const weekStart = weekStartString(date);
+  if (!state.weekly || typeof state.weekly !== 'object' || state.weekly.weekStart !== weekStart) {
+    state.weekly = { weekStart, quests: 0, games: 0, focus: 0, claimed: false };
+  }
+  for (const key of ['quests', 'games', 'focus']) {
+    if (typeof state.weekly[key] !== 'number') state.weekly[key] = 0;
+  }
+  if (typeof state.weekly.claimed !== 'boolean') state.weekly.claimed = false;
+  return state.weekly;
+}
+
+function recordWeekly(state, kind, date = new Date()) {
+  const weekly = ensureWeekly(state, date);
+  if (kind === 'quests' || kind === 'games' || kind === 'focus') weekly[kind] += 1;
+  return weekly;
+}
+
+// How the week is going: quests done vs the goal, and whether the star
+// reward can be claimed right now.
+export function weeklyRewardStatus(state, date = new Date()) {
+  const weekly = ensureWeekly(state, date);
+  return {
+    weekStart: weekly.weekStart,
+    quests: weekly.quests,
+    games: weekly.games,
+    focus: weekly.focus,
+    goal: WEEKLY_QUEST_GOAL,
+    claimed: weekly.claimed,
+    claimable: !weekly.claimed && weekly.quests >= WEEKLY_QUEST_GOAL,
+  };
+}
+
+// Claim this week's star reward: +WEEKLY_REWARD_COINS, once per week.
+// Returns { ok, coins } or { ok: false, reason }.
+export function claimWeeklyReward(state, date = new Date()) {
+  const status = weeklyRewardStatus(state, date);
+  if (status.claimed) return { ok: false, reason: 'already claimed this week' };
+  if (!status.claimable) {
+    return { ok: false, reason: 'not enough quests yet', quests: status.quests, goal: status.goal };
+  }
+  state.weekly.claimed = true;
+  state.coins += WEEKLY_REWARD_COINS;
+  return { ok: true, coins: WEEKLY_REWARD_COINS };
 }
 
 // Streak rule (kid-friendly): a day counts when at least one quest is
@@ -172,6 +243,65 @@ export function recordActivity(state, date = new Date()) {
   streak.lastActiveDate = today;
   if (streak.count > streak.best) streak.best = streak.count;
   return streak;
+}
+
+// ---------- v4: achievements ----------
+// Badges a child earns for doing things in the app. Each one has a
+// kid-friendly title, a one-line description, an icon, and a check that
+// reads the state — no new data to store, so old saves earn badges from
+// what they already did.
+export const FREE_ITEM_COUNT = SHOP.filter((item) => item.price === 0).length;
+
+export const ACHIEVEMENTS = [
+  { id: 'first-quest', title: 'First Steps', icon: '👣', text: 'Finish your very first quest!', check: (s) => s.stats.tasksDone >= 1 },
+  { id: 'quest-hero', title: 'Quest Hero', icon: '⚔️', text: 'Finish 25 quests in total!', check: (s) => s.stats.tasksDone >= 25 },
+  { id: 'quest-champion', title: 'Quest Champion', icon: '🏆', text: 'Finish 50 quests in total!', check: (s) => s.stats.tasksDone >= 50 },
+  { id: 'streak-3', title: 'On Fire', icon: '🔥', text: 'Keep a 3-day streak going!', check: (s) => (s.streak?.best || 0) >= 3 },
+  { id: 'streak-7', title: 'Super Streak', icon: '🌟', text: 'Keep a 7-day streak going!', check: (s) => (s.streak?.best || 0) >= 7 },
+  { id: 'memory-champ', title: 'Memory Champion', icon: '🧠', text: 'Win a game of Memory Match!', check: (s) => s.stats.memoryWins >= 1 },
+  { id: 'colour-star', title: 'Colour Star', icon: '🎨', text: 'Get 10 Colour Match answers right!', check: (s) => s.stats.colourCorrect >= 10 },
+  { id: 'star-tapper', title: 'Star Tapper', icon: '⭐', text: 'Tap 50 stars in Tap the Star!', check: (s) => s.stats.starsTapped >= 50 },
+  { id: 'focused', title: 'Focused', icon: '⏱️', text: 'Finish 5 focus timer sessions!', check: (s) => s.stats.timersFinished >= 5 },
+  { id: 'big-spender', title: 'Big Spender', icon: '🛍️', text: 'Buy your first avatar item from the shop!', check: (s) => s.owned.length > FREE_ITEM_COUNT },
+];
+
+// Ids of every badge the child has earned so far.
+export function unlockedAchievements(state) {
+  ensureStats(state);
+  return ACHIEVEMENTS.filter((a) => {
+    try {
+      return a.check(state);
+    } catch {
+      return false;
+    }
+  }).map((a) => a.id);
+}
+
+// One-line summary of everything the child has done so far — the data
+// behind the "My Stars" summary screen.
+export function weeklySummary(state, date = new Date()) {
+  ensureStats(state);
+  const weekly = ensureWeekly(state, date);
+  const unlocked = unlockedAchievements(state);
+  return {
+    coins: state.coins,
+    questsDoneToday: tasksDoneCount(state),
+    questsTotal: state.tasks.length,
+    streak: state.streak?.count || 0,
+    bestStreak: state.streak?.best || 0,
+    tasksDone: state.stats.tasksDone,
+    gamesWon: state.stats.gamesWon,
+    memoryWins: state.stats.memoryWins,
+    starsTapped: state.stats.starsTapped,
+    timersFinished: state.stats.timersFinished,
+    colourCorrect: state.stats.colourCorrect,
+    colourPlayed: state.stats.colourPlayed,
+    weeklyQuests: weekly.quests,
+    weeklyGames: weekly.games,
+    weeklyFocus: weekly.focus,
+    badgesUnlocked: unlocked.length,
+    badgesTotal: ACHIEVEMENTS.length,
+  };
 }
 
 // Filter quests by category ('all' returns every quest).
@@ -204,6 +334,7 @@ export function toggleTask(state, id, date = new Date()) {
   state.coins = Math.max(0, state.coins + (task.done ? task.coins : -task.coins));
   if (task.done) {
     state.stats.tasksDone += 1;
+    recordWeekly(state, 'quests', date);
     recordActivity(state, date);
   }
   return { ok: true, done: task.done, coins: state.coins };
@@ -279,9 +410,12 @@ export function awardStarTaps(state, taps) {
   return earned;
 }
 
-export function awardMemoryWin(state) {
+export function awardMemoryWin(state, date = new Date()) {
+  ensureStats(state);
   state.coins += MEMORY_WIN_COINS;
   state.stats.gamesWon += 1;
+  state.stats.memoryWins += 1;
+  recordWeekly(state, 'games', date);
   return MEMORY_WIN_COINS;
 }
 
@@ -304,11 +438,13 @@ export function finishFocusSession(state, taskId = null, date = new Date()) {
     task.done = true;
     state.coins += task.coins;
     state.stats.tasksDone += 1;
+    recordWeekly(state, 'quests', date);
     recordActivity(state, date);
     taskDone = true;
     taskTitle = task.title;
     taskCoins = task.coins;
   }
+  recordWeekly(state, 'focus', date);
   const bonus = awardTimerFinish(state);
   return { ok: true, coins: bonus + taskCoins, bonus, taskDone, taskTitle };
 }
@@ -348,9 +484,10 @@ export function awardColourPick(state, correct) {
 }
 
 // Finishing all COLOUR_ROUNDS rounds pays a bonus and counts as a game won.
-export function awardColourGameWin(state) {
+export function awardColourGameWin(state, date = new Date()) {
   ensureStats(state);
   state.coins += COLOUR_GAME_BONUS_COINS;
   state.stats.gamesWon += 1;
+  recordWeekly(state, 'games', date);
   return COLOUR_GAME_BONUS_COINS;
 }

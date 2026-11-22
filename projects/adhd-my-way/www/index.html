@@ -6,8 +6,8 @@
     <meta name="description" content="ADHD My Way — an Ionic app that helps children under 12 focus on daily tasks, earn coins, customise an avatar, and play mini games. Everything stays on the device." />
     <title>ADHD My Way</title>
     <link rel="icon" type="image/svg+xml" href="./logo-star.svg" />
-    <script type="module" crossorigin src="./assets/index-8PzIlHAI.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-DQA--rnj.css">
+    <script type="module" crossorigin src="./assets/index-CzmlX5qD.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-C1rWrE6j.css">
   </head>
   <body>
     <ion-app>
@@ -136,6 +136,57 @@
           </ion-content>
         </ion-tab>
 
+        <!-- ============ MY STARS TAB (v4) ============ -->
+        <ion-tab tab="stars">
+          <ion-header>
+            <ion-toolbar>
+              <ion-buttons slot="start">
+                <img class="app-logo" src="./logo-star.svg" alt="ADHD My Way logo" />
+              </ion-buttons>
+              <ion-title>My Stars</ion-title>
+              <ion-buttons slot="end">
+                <ion-chip class="coin-chip" color="warning">
+                  <span class="coin-dot"></span><span class="coin-count">0</span>&nbsp;coins
+                </ion-chip>
+              </ion-buttons>
+            </ion-toolbar>
+          </ion-header>
+          <ion-content>
+            <ion-card>
+              <ion-card-header>
+                <ion-card-title>This week's star reward ⭐</ion-card-title>
+                <ion-card-subtitle>Finish 10 quests in one week (Monday to Sunday) to earn 50 bonus coins!</ion-card-subtitle>
+              </ion-card-header>
+              <ion-card-content>
+                <p id="weekly-progress-label">0 of 10 quests this week</p>
+                <ion-progress-bar id="weekly-progress-bar" value="0" color="warning"></ion-progress-bar>
+                <p id="weekly-line" class="weekly-line">Finish 10 quests this week to earn a 50-coin star reward!</p>
+                <ion-button id="weekly-claim-btn" expand="block" color="warning">Claim my 50 coins! ⭐</ion-button>
+              </ion-card-content>
+            </ion-card>
+
+            <ion-card>
+              <ion-card-header>
+                <ion-card-title>My badges 🏆</ion-card-title>
+                <ion-card-subtitle id="achievements-line">0 of 10 badges earned — keep going!</ion-card-subtitle>
+              </ion-card-header>
+              <ion-card-content>
+                <div class="badge-grid" id="achievements-grid"></div>
+              </ion-card-content>
+            </ion-card>
+
+            <ion-card>
+              <ion-card-header>
+                <ion-card-title>My week so far 📋</ion-card-title>
+                <ion-card-subtitle>Everything you have done, all in one place.</ion-card-subtitle>
+              </ion-card-header>
+              <ion-card-content>
+                <p id="summary-line" class="summary-line"></p>
+              </ion-card-content>
+            </ion-card>
+          </ion-content>
+        </ion-tab>
+
         <!-- ============ AVATAR TAB ============ -->
         <ion-tab tab="avatar">
           <ion-header>
@@ -187,6 +238,9 @@
           </ion-tab-button>
           <ion-tab-button tab="games">
             <ion-label>Games</ion-label>
+          </ion-tab-button>
+          <ion-tab-button tab="stars">
+            <ion-label>My Stars</ion-label>
           </ion-tab-button>
           <ion-tab-button tab="avatar">
             <ion-label>Avatar</ion-label>

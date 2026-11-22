@@ -4,6 +4,7 @@
 import { defineCustomElements } from '@ionic/core/loader';
 import './style.css';
 import {
+  ACHIEVEMENTS,
   CATEGORIES,
   COLOUR_GAME_BONUS_COINS,
   COLOUR_ROUNDS,
@@ -11,6 +12,8 @@ import {
   SHOP,
   STAR_TAP_COINS,
   STORAGE_KEY,
+  WEEKLY_QUEST_GOAL,
+  WEEKLY_REWARD_COINS,
   addTask,
   applyDailyReset,
   awardColourGameWin,
@@ -18,6 +21,7 @@ import {
   awardMemoryWin,
   buyOrEquip,
   categoryById,
+  claimWeeklyReward,
   createColourRound,
   createDefaultState,
   createMemoryDeck,
@@ -30,6 +34,9 @@ import {
   tasksByCategory,
   tasksDoneCount,
   toggleTask,
+  unlockedAchievements,
+  weeklyRewardStatus,
+  weeklySummary,
 } from './logic.js';
 
 defineCustomElements(window);
@@ -40,11 +47,12 @@ function loadState() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return createDefaultState();
     const parsed = JSON.parse(raw);
-    if (!parsed || (parsed.version !== 1 && parsed.version !== 2 && parsed.version !== 3) || !Array.isArray(parsed.tasks)) {
+    if (!parsed || (parsed.version !== 1 && parsed.version !== 2 && parsed.version !== 3 && parsed.version !== 4) || !Array.isArray(parsed.tasks)) {
       return createDefaultState();
     }
-    // v1/v2 saves keep working: newer fields (streak, categories, colour
-    // stats) are filled in by migrateState.
+    // v1/v2/v3 saves keep working: newer fields (streak, categories,
+    // colour stats, weekly record, memory wins) are filled in by
+    // migrateState.
     const state = migrateState(parsed);
     if (needsDailyReset(state)) applyDailyReset(state);
     return state;
@@ -181,6 +189,7 @@ function renderShop() {
 
   document.querySelectorAll('.shop-item').forEach((btn) => {
     btn.addEventListener('click', async () => {
+      const before = unlockedAchievements(state);
       const result = buyOrEquip(state, btn.dataset.item);
       if (!result.ok) {
         await toast(`You need ${result.price} coins for that — finish a quest!`, 'warning');
@@ -190,6 +199,8 @@ function renderShop() {
       renderCoins();
       renderAvatar();
       renderShop();
+      renderStars();
+      announceNewBadges(before);
       if (result.action === 'bought') {
         await toast(`You bought it! Looking great!`, 'success');
       }
@@ -234,11 +245,14 @@ function renderTasks() {
     checkbox.checked = task.done;
     checkbox.setAttribute('aria-label', task.title);
     checkbox.addEventListener('ionChange', async () => {
+      const before = unlockedAchievements(state);
       const result = toggleTask(state, task.id);
       save();
       renderCoins();
       renderTasks();
       renderProgress();
+      renderStars();
+      announceNewBadges(before);
       if (result.done) {
         const streak = state.streak.count;
         await toast(`Nice work! +${task.coins} coins!${streak > 1 ? ` 🔥 ${streak}-day streak!` : ''}`, 'success');
@@ -300,6 +314,52 @@ function renderProgress() {
       : 'Finish a quest today to start your streak! 🔥';
   $('#stats-line').textContent =
     `Quests finished: ${state.stats.tasksDone} · Games won: ${state.stats.gamesWon} · Stars tapped: ${state.stats.starsTapped} · Focus sessions: ${state.stats.timersFinished} · Colour Match right: ${state.stats.colourCorrect || 0} of ${state.stats.colourPlayed || 0}`;
+}
+
+// ---------- v4: weekly rewards, achievements, summary ----------
+// Snapshot the unlocked badges before an action, then celebrate any
+// badge the action just earned.
+function announceNewBadges(before) {
+  const now = unlockedAchievements(state);
+  for (const id of now) {
+    if (before.includes(id)) continue;
+    const badge = ACHIEVEMENTS.find((a) => a.id === id);
+    if (badge) toast(`New badge! ${badge.icon} ${badge.title} — ${badge.text}`, 'success');
+  }
+}
+
+// The "My Stars" tab: this week's reward progress, the badge wall, and
+// a summary of everything the child has done so far.
+function renderStars() {
+  const status = weeklyRewardStatus(state);
+  const summary = weeklySummary(state);
+  $('#weekly-line').textContent = status.claimed
+    ? `You claimed your ${WEEKLY_REWARD_COINS}-coin star reward this week! Come back next week for a new one.`
+    : status.claimable
+      ? `You did it! ${status.quests} of ${WEEKLY_QUEST_GOAL} quests this week — tap below to claim your ${WEEKLY_REWARD_COINS}-coin star reward!`
+      : `Finish ${WEEKLY_QUEST_GOAL} quests this week to earn a ${WEEKLY_REWARD_COINS}-coin star reward!`;
+  $('#weekly-progress-label').textContent = `${status.quests} of ${WEEKLY_QUEST_GOAL} quests this week`;
+  $('#weekly-progress-bar').value = Math.min(1, status.quests / WEEKLY_QUEST_GOAL);
+  const claimBtn = $('#weekly-claim-btn');
+  claimBtn.disabled = !status.claimable;
+  claimBtn.textContent = status.claimed
+    ? 'Reward claimed! ⭐'
+    : `Claim my ${WEEKLY_REWARD_COINS} coins! ⭐`;
+  const unlocked = unlockedAchievements(state);
+  $('#achievements-grid').innerHTML = ACHIEVEMENTS.map((badge) => {
+    const got = unlocked.includes(badge.id);
+    return `<div class="badge ${got ? 'badge-unlocked' : 'badge-locked'}" aria-label="${got ? 'Earned: ' : 'Not yet earned: '}${badge.title}">
+      <span class="badge-icon">${got ? badge.icon : '🔒'}</span>
+      <span class="badge-title">${badge.title}</span>
+      <span class="badge-text">${badge.text}</span>
+    </div>`;
+  }).join('');
+  $('#achievements-line').textContent = `${summary.badgesUnlocked} of ${summary.badgesTotal} badges earned — keep going!`;
+  $('#summary-line').innerHTML =
+    `Quests finished: <b>${summary.tasksDone}</b> · Games won: <b>${summary.gamesWon}</b> (Memory Match: <b>${summary.memoryWins}</b>)<br>` +
+    `Stars tapped: <b>${summary.starsTapped}</b> · Focus sessions: <b>${summary.timersFinished}</b><br>` +
+    `Colour Match right: <b>${summary.colourCorrect}</b> of <b>${summary.colourPlayed}</b> · Best streak: <b>${summary.bestStreak} days</b><br>` +
+    `This week: <b>${summary.weeklyQuests}</b> quests · <b>${summary.weeklyGames}</b> games won · <b>${summary.weeklyFocus}</b> focus sessions`;
 }
 
 function escapeHtml(text) {
@@ -374,10 +434,13 @@ function flipMemory(index) {
       memory.flipped = [];
       renderMemory();
       if (memory.matched.size === memory.deck.length) {
+        const before = unlockedAchievements(state);
         awardMemoryWin(state);
         save();
         renderCoins();
         renderProgress();
+        renderStars();
+        announceNewBadges(before);
         toast(`Memory champion! +${MEMORY_WIN_COINS} coins!`, 'success');
       }
     } else {
@@ -413,11 +476,14 @@ function endStarGame() {
   $('#star-start').textContent = 'Play again';
   // Coins were already added live (+2 per tap); here we only record the
   // stats and report the total — do NOT award them a second time.
+  const before = unlockedAchievements(state);
   state.stats.starsTapped += starGame.taps;
   const earned = starGame.taps * STAR_TAP_COINS;
   save();
   renderCoins();
   renderProgress();
+  renderStars();
+  announceNewBadges(before);
   toast(`You tapped ${starGame.taps} stars and earned ${earned} coins!`, 'success');
 }
 
@@ -461,10 +527,13 @@ function pickColour(id) {
   renderCoins();
   if (colourGame.round >= COLOUR_ROUNDS) {
     colourGame.playing = false;
+    const before = unlockedAchievements(state);
     const bonus = awardColourGameWin(state);
     save();
     renderCoins();
     renderProgress();
+    renderStars();
+    announceNewBadges(before);
     renderColour();
     toast(`Colour Match done! ${colourGame.correct} of ${COLOUR_ROUNDS} right — +${bonus} bonus coins!`, 'success');
     return;
@@ -481,6 +550,25 @@ function init() {
   renderTasks();
   renderAvatar();
   renderShop();
+  renderStars();
+
+  // Weekly star reward: claim the coins once the week's quest goal is met.
+  $('#weekly-claim-btn').addEventListener('click', async () => {
+    const result = claimWeeklyReward(state);
+    if (!result.ok) {
+      await toast(
+        result.reason === 'already claimed this week'
+          ? 'You already claimed this week\'s reward — come back next week!'
+          : `Finish ${WEEKLY_QUEST_GOAL} quests this week to claim the reward!`,
+        'warning',
+      );
+      return;
+    }
+    save();
+    renderCoins();
+    renderStars();
+    await toast(`Star reward claimed! +${result.coins} coins! ⭐`, 'success');
+  });
 
   // Add a custom quest, in the chosen category.
   const categorySelect = $('#new-task-category');
@@ -526,12 +614,15 @@ function init() {
         if (timer.left <= 0) {
           stopTimer();
           timer.left = 0;
+          const before = unlockedAchievements(state);
           const result = finishFocusSession(state, timer.taskId);
           timer.taskId = null;
           save();
           renderCoins();
           renderTasks();
           renderProgress();
+          renderStars();
+          announceNewBadges(before);
           renderTimer();
           toast(
             result.taskDone
@@ -620,6 +711,7 @@ function init() {
     renderTasks();
     renderAvatar();
     renderShop();
+    renderStars();
     $('#reset-btn').textContent = 'Reset everything';
     resetArmed = false;
     await toast('All fresh! Have fun!', 'success');

@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  ACHIEVEMENTS,
   CATEGORIES,
   COLOUR_GAME_BONUS_COINS,
   COLOUR_MATCH_COINS,
@@ -11,6 +12,8 @@ import {
   STAR_TAP_COINS,
   TASK_COINS,
   TIMER_BONUS_COINS,
+  WEEKLY_QUEST_GOAL,
+  WEEKLY_REWARD_COINS,
   addTask,
   applyDailyReset,
   awardColourGameWin,
@@ -19,6 +22,7 @@ import {
   awardStarTaps,
   awardTimerFinish,
   buyOrEquip,
+  claimWeeklyReward,
   createColourRound,
   createDefaultState,
   createMemoryDeck,
@@ -32,6 +36,10 @@ import {
   tasksByCategory,
   tasksDoneCount,
   toggleTask,
+  unlockedAchievements,
+  weekStartString,
+  weeklyRewardStatus,
+  weeklySummary,
 } from '../src/logic.js';
 
 test('default state: 6 sample tasks, 0 coins, free shop items owned', () => {
@@ -219,23 +227,32 @@ test('v2: migrating a v1 save keeps coins and adds streak + categories', () => {
     stats: { tasksDone: 3, gamesWon: 0, starsTapped: 0, timersFinished: 1 },
   };
   const s = migrateState(v1);
-  assert.equal(s.version, 3);
+  assert.equal(s.version, 4);
   assert.equal(s.coins, 45);
   assert.equal(s.streak.count, 0);
   assert.equal(s.streak.best, 0);
   assert.equal(s.streak.lastActiveDate, null);
   assert.equal(s.stats.colourPlayed, 0);
   assert.equal(s.stats.colourCorrect, 0);
+  assert.equal(s.stats.memoryWins, 0);
+  assert.equal(s.weekly.quests, 0);
+  assert.equal(s.weekly.claimed, false);
   assert.ok(s.tasks.every((t) => typeof t.category === 'string' && t.category.length > 0));
   assert.equal(s.tasks[0].done, false);
   assert.equal(s.tasks[1].done, true);
 });
 
-test('v3: default state is version 3 with colour stats at zero', () => {
-  const s = createDefaultState();
-  assert.equal(s.version, 3);
+test('v4: default state is version 4 with weekly record and memory stats at zero', () => {
+  const s = createDefaultState(new Date('2026-11-22T10:00:00'));
+  assert.equal(s.version, 4);
   assert.equal(s.stats.colourPlayed, 0);
   assert.equal(s.stats.colourCorrect, 0);
+  assert.equal(s.stats.memoryWins, 0);
+  assert.equal(s.weekly.weekStart, '2026-11-16'); // Sun 22 Nov 2026 belongs to the week of Mon 16 Nov
+  assert.equal(s.weekly.quests, 0);
+  assert.equal(s.weekly.games, 0);
+  assert.equal(s.weekly.focus, 0);
+  assert.equal(s.weekly.claimed, false);
 });
 
 test('v3: colour round has 4 distinct options including the target', () => {
@@ -330,11 +347,169 @@ test('v3: migrating a v2 save keeps coins and streak and adds colour stats', () 
     stats: { tasksDone: 4, gamesWon: 1, starsTapped: 12, timersFinished: 2 },
   };
   const s = migrateState(v2);
-  assert.equal(s.version, 3);
+  assert.equal(s.version, 4);
   assert.equal(s.coins, 60);
   assert.equal(s.streak.count, 3);
   assert.equal(s.streak.best, 5);
   assert.equal(s.stats.colourPlayed, 0);
   assert.equal(s.stats.colourCorrect, 0);
+  assert.equal(s.stats.memoryWins, 0);
   assert.equal(s.stats.gamesWon, 1);
+  assert.equal(s.weekly.quests, 0);
+  assert.equal(s.weekly.claimed, false);
+});
+
+test('v4: week starts on Monday — Sunday belongs to the week just ending', () => {
+  assert.equal(weekStartString(new Date('2026-11-23T09:00:00')), '2026-11-23'); // Monday
+  assert.equal(weekStartString(new Date('2026-11-25T09:00:00')), '2026-11-23'); // Wednesday
+  assert.equal(weekStartString(new Date('2026-11-22T09:00:00')), '2026-11-16'); // Sunday
+  assert.equal(weekStartString(new Date('2026-11-29T09:00:00')), '2026-11-23'); // next Sunday
+});
+
+test('v4: finishing 10 quests in a week unlocks the star reward, claimable once', () => {
+  const s = createDefaultState(new Date('2026-11-22T10:00:00'));
+  assert.equal(WEEKLY_QUEST_GOAL, 10);
+  assert.equal(WEEKLY_REWARD_COINS, 50);
+  // 6 built-in quests + 4 custom ones = 10 in the week.
+  for (const id of ['t1', 't2', 't3', 't4', 't5', 't6']) {
+    toggleTask(s, id, new Date('2026-11-22T10:00:00'));
+  }
+  assert.equal(weeklyRewardStatus(s, new Date('2026-11-22T10:00:00')).claimable, false);
+  for (let i = 1; i <= 4; i += 1) {
+    addTask(s, `Extra quest ${i}`, 'fun', `x${i}`);
+    toggleTask(s, `x${i}`, new Date('2026-11-22T10:00:00'));
+  }
+  const status = weeklyRewardStatus(s, new Date('2026-11-22T10:00:00'));
+  assert.equal(status.quests, 10);
+  assert.equal(status.claimable, true);
+  assert.equal(status.claimed, false);
+  const claimed = claimWeeklyReward(s, new Date('2026-11-22T10:00:00'));
+  assert.equal(claimed.ok, true);
+  assert.equal(claimed.coins, WEEKLY_REWARD_COINS);
+  assert.equal(s.coins, 10 * TASK_COINS + WEEKLY_REWARD_COINS);
+  // Claiming again in the same week is refused — no double reward.
+  assert.equal(claimWeeklyReward(s, new Date('2026-11-22T10:00:00')).ok, false);
+  assert.equal(s.coins, 10 * TASK_COINS + WEEKLY_REWARD_COINS);
+});
+
+test('v4: claiming too early is refused and pays nothing', () => {
+  const s = createDefaultState(new Date('2026-11-22T10:00:00'));
+  toggleTask(s, 't1', new Date('2026-11-22T10:00:00'));
+  const result = claimWeeklyReward(s, new Date('2026-11-22T10:00:00'));
+  assert.equal(result.ok, false);
+  assert.equal(result.reason, 'not enough quests yet');
+  assert.equal(s.coins, TASK_COINS);
+});
+
+test('v4: a new week resets the counters and the reward can be earned again', () => {
+  const s = createDefaultState(new Date('2026-11-22T10:00:00'));
+  for (const id of ['t1', 't2', 't3', 't4', 't5', 't6']) {
+    toggleTask(s, id, new Date('2026-11-22T10:00:00'));
+  }
+  for (let i = 1; i <= 4; i += 1) {
+    addTask(s, `Extra quest ${i}`, 'fun', `x${i}`);
+    toggleTask(s, `x${i}`, new Date('2026-11-22T10:00:00'));
+  }
+  assert.equal(claimWeeklyReward(s, new Date('2026-11-22T10:00:00')).ok, true);
+  // Next Monday: fresh week, counters back to zero, reward unclaimed.
+  const nextWeek = weeklyRewardStatus(s, new Date('2026-11-23T09:00:00'));
+  assert.equal(nextWeek.weekStart, '2026-11-23');
+  assert.equal(nextWeek.quests, 0);
+  assert.equal(nextWeek.claimed, false);
+  assert.equal(nextWeek.claimable, false);
+});
+
+test('v4: game wins and focus sessions count toward the weekly record', () => {
+  const s = createDefaultState(new Date('2026-11-22T10:00:00'));
+  awardMemoryWin(s, new Date('2026-11-22T10:00:00'));
+  assert.equal(s.stats.memoryWins, 1);
+  awardColourGameWin(s, new Date('2026-11-22T10:00:00'));
+  const focused = finishFocusSession(s, 't1', new Date('2026-11-22T10:00:00'));
+  assert.equal(focused.taskDone, true);
+  const status = weeklyRewardStatus(s, new Date('2026-11-22T10:00:00'));
+  assert.equal(status.games, 2);
+  assert.equal(status.focus, 1);
+  assert.equal(status.quests, 1); // the focus session ticked off t1
+});
+
+test('v4: achievements unlock from what the child already did', () => {
+  const s = createDefaultState(new Date('2026-11-22T10:00:00'));
+  assert.equal(ACHIEVEMENTS.length, 10);
+  assert.deepEqual(unlockedAchievements(s), []);
+  toggleTask(s, 't1', new Date('2026-11-22T10:00:00'));
+  assert.ok(unlockedAchievements(s).includes('first-quest'));
+
+  // Thresholds: quests, streaks, games, stars, focus, shop.
+  s.stats.tasksDone = 25;
+  assert.ok(unlockedAchievements(s).includes('quest-hero'));
+  assert.ok(!unlockedAchievements(s).includes('quest-champion'));
+  s.stats.tasksDone = 50;
+  assert.ok(unlockedAchievements(s).includes('quest-champion'));
+  s.streak.best = 3;
+  assert.ok(unlockedAchievements(s).includes('streak-3'));
+  assert.ok(!unlockedAchievements(s).includes('streak-7'));
+  s.streak.best = 7;
+  assert.ok(unlockedAchievements(s).includes('streak-7'));
+  s.stats.memoryWins = 1;
+  assert.ok(unlockedAchievements(s).includes('memory-champ'));
+  s.stats.colourCorrect = 10;
+  assert.ok(unlockedAchievements(s).includes('colour-star'));
+  s.stats.starsTapped = 50;
+  assert.ok(unlockedAchievements(s).includes('star-tapper'));
+  s.stats.timersFinished = 5;
+  assert.ok(unlockedAchievements(s).includes('focused'));
+  assert.ok(!unlockedAchievements(s).includes('big-spender'));
+  s.coins = 100;
+  buyOrEquip(s, 'hat-crown');
+  assert.ok(unlockedAchievements(s).includes('big-spender'));
+  assert.equal(unlockedAchievements(s).length, 10);
+});
+
+test('v4: achievement ids are unique', () => {
+  const ids = ACHIEVEMENTS.map((a) => a.id);
+  assert.equal(new Set(ids).size, ids.length);
+  assert.ok(ACHIEVEMENTS.every((a) => a.title && a.text && a.icon && typeof a.check === 'function'));
+});
+
+test('v4: summary screen numbers match the state', () => {
+  const s = createDefaultState(new Date('2026-11-22T10:00:00'));
+  toggleTask(s, 't1', new Date('2026-11-22T10:00:00'));
+  awardMemoryWin(s, new Date('2026-11-22T10:00:00'));
+  const summary = weeklySummary(s, new Date('2026-11-22T10:00:00'));
+  assert.equal(summary.coins, TASK_COINS + MEMORY_WIN_COINS);
+  assert.equal(summary.questsDoneToday, 1);
+  assert.equal(summary.questsTotal, 6);
+  assert.equal(summary.tasksDone, 1);
+  assert.equal(summary.gamesWon, 1);
+  assert.equal(summary.memoryWins, 1);
+  assert.equal(summary.streak, 1);
+  assert.equal(summary.weeklyQuests, 1);
+  assert.equal(summary.weeklyGames, 1);
+  assert.equal(summary.badgesUnlocked, 2); // first-quest + memory-champ
+  assert.equal(summary.badgesTotal, 10);
+});
+
+test('v4: migrating a v3 save keeps coins and streak and adds the weekly record', () => {
+  const v3 = {
+    version: 3,
+    coins: 80,
+    date: '2026-11-21',
+    tasks: [{ id: 't1', title: 'Brush my teeth', category: 'morning', coins: 10, custom: false, done: true }],
+    avatar: { skin: '#f6c89f', hairStyle: 'short', hairColor: '#5b3a1e', hat: 'none', accessory: 'none' },
+    owned: ['skin-1'],
+    streak: { count: 2, best: 4, lastActiveDate: '2026-11-21' },
+    stats: { tasksDone: 6, gamesWon: 2, starsTapped: 20, timersFinished: 1, colourPlayed: 10, colourCorrect: 7 },
+  };
+  const s = migrateState(v3);
+  assert.equal(s.version, 4);
+  assert.equal(s.coins, 80);
+  assert.equal(s.streak.count, 2);
+  assert.equal(s.streak.best, 4);
+  assert.equal(s.stats.colourCorrect, 7);
+  assert.equal(s.stats.memoryWins, 0);
+  assert.equal(s.weekly.quests, 0);
+  assert.equal(s.weekly.claimed, false);
+  assert.equal(typeof s.weekly.weekStart, 'string');
+  // The old save already earned badges from what it did.
+  assert.ok(unlockedAchievements(s).includes('first-quest'));
 });

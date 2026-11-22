@@ -10,7 +10,7 @@ coins, a customisable avatar, and mini games to keep it fun.
 > **Day 1 of the 100-day programming challenge** (8 Nov 2026). v1 launch.
 > Roadmap: v2 focus timer + task categories + streaks (done) · v3 new mini game
 > (Colour Match) + more avatar items (done, 20 Nov 2026) · v4 weekly rewards /
-> achievements + summary screen.
+> achievements + summary screen (done, 22 Nov 2026).
 >
 > **Update (8 Nov 2026)** — phone-friendly layout (the app now sits in a
 > centred phone-width column on wide screens, with bigger tap targets) and
@@ -30,6 +30,18 @@ coins, a customisable avatar, and mini games to keep it fun.
 > wizard hat, heart badge, sunglasses). Saved v1/v2 data carries over —
 > coins, quests, avatar and streaks are kept, and the new colour stats start
 > at zero.
+>
+> **Update — v4 (22 Nov 2026, Day 3 of the restarted challenge)** — a new
+> **My Stars** tab: a **weekly star reward** (finish 10 quests in one week,
+> Monday to Sunday, and claim 50 bonus coins — once per week), **10
+> achievements** to earn (First Steps, Quest Hero, Quest Champion, On Fire,
+> Super Streak, Memory Champion, Colour Star, Star Tapper, Focused, Big
+> Spender — a toast celebrates each new badge as it is earned), and a
+> **summary screen** with everything done so far (quests, games, stars
+> tapped, focus sessions, Colour Match score, best streak, this week's
+> totals). Saved v1/v2/v3 data carries over — coins, quests, avatar,
+> streaks and stats are kept, and badges are earned from what was already
+> done.
 
 ## What it does
 
@@ -54,6 +66,15 @@ coins, a customisable avatar, and mini games to keep it fun.
     **+2 coins** per tap.
   - **Colour Match** — read the colour word, then tap the button in that colour.
     10 rounds, **+2 coins** per right tap and a **+10 coin** bonus for finishing.
+- **Weekly star reward** — finish 10 quests in one week (Monday to Sunday)
+  and claim **50 bonus coins** from the My Stars tab. The reward can only be
+  claimed once per week, and a new week starts fresh.
+- **Achievements** — 10 badges to earn by playing: finishing quests, keeping
+  streaks, winning games, tapping stars, focusing, and buying a shop item.
+  A toast celebrates each new badge the moment it is earned.
+- **Summary screen** — the My Stars tab shows everything done so far: quests
+  finished, games won, stars tapped, focus sessions, Colour Match score, best
+  streak, and this week's totals.
 - **Everything persists on the device** via `localStorage` — coins, quests,
   avatar and shop purchases survive closing the app.
 
@@ -95,16 +116,17 @@ open www/index.html
 
 ```bash
 npm test
-# 22 tests: task coins, daily reset, shop purchases, memory deck, rewards,
-# quest categories, daily streaks, per-quest focus sessions, v1/v2 save
-# migration, colour-match rounds and rewards, v3 shop items
+# 31 tests: task coins, daily reset, shop purchases, memory deck, rewards,
+# quest categories, daily streaks, per-quest focus sessions, v1/v2/v3 save
+# migration, colour-match rounds and rewards, v3 shop items, weekly reward
+# (goal, claim-once, week rollover), achievements, summary screen
 ```
 
 ## Project structure
 
 ```
 adhd-my-way/
-├── index.html            # Ionic shell: 3 tabs (Quests / Games / Avatar)
+├── index.html            # Ionic shell: 4 tabs (Quests / Games / My Stars / Avatar)
 ├── package.json          # Ionic + Capacitor deps, Vite build, npm test
 ├── capacitor.config.json # Capacitor app id / name / webDir
 ├── ionic.config.json     # Ionic project type
