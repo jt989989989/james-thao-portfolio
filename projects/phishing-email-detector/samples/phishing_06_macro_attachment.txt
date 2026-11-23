@@ -1,0 +1,14 @@
+From: ParcelPost Billing <billing@parcelpost-delivery.example>
+Subject: Your invoice is attached — payment overdue
+Date: Mon, 09 Nov 2026 11:20:00 +0000
+
+Dear Customer,
+
+Your payment failed and your parcel is on hold. Open the attached invoice and follow the instructions to pay the customs fee now.
+
+Attachment: invoice.pdf.exe (96 KB)
+Attachment: payment-details.docm (58 KB)
+
+The password to open the invoice is 4821. Do not delay — pay now or your parcel will be returned.
+
+ParcelPost Billing

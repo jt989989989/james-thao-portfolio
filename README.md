@@ -26,7 +26,7 @@ This repository is my project index for programming and IT roles. Each project i
 | [Recon Scanner](projects/recon-scanner/) | Passive recon CLI — finds subdomains from Certificate Transparency (crt.sh), checks DNS liveness, and grades security headers + TLS on a domain; public data and one normal request only | Python (stdlib only) | Security / bug bounty |
 | [SQL Detective](projects/sql-detective/) | Fun SQL practice game — solve the case of the missing mascot by writing real SQL queries against a fictional SQLite database; hints and a checker included | Python (stdlib only, sqlite3) | SQL / databases / games |
 | [SQL Injection Lab](projects/sql-injection-lab/) | Educational local-only lab — try classic injection payloads against a deliberately vulnerable login, then see the same payloads fail against parameterized queries; spot-it and fix-it guide included | Python (stdlib only, sqlite3) | Security / defensive |
-| [Phishing Email Detector](projects/phishing-email-detector/) | Local ML email classifier — Naive Bayes word model trained on built-in fictional samples plus rule signals (urgency, credential requests, Reply-To mismatch, deceptive links, risky attachments); scores an email 0–100 and explains why | Python (stdlib only) | Security / AI / defensive |
+| [Phishing Email Detector](projects/phishing-email-detector/) | Local ML email classifier — Naive Bayes word model trained on built-in fictional samples plus rule signals (urgency, credential requests, Reply-To mismatch, deceptive links, risky attachments); v2 adds typosquat-domain detection, deeper suspicious-URL checks (punycode, @ trick, percent-encoded hosts) and attachment-risk checks (double extensions, macro files, password in the email); scores an email 0–100 and explains why | Python (stdlib only) | Security / AI / defensive |
 | [Port Scanner](projects/port-scanner/) | TCP connect port scanner for lab targets only — scans a port range and prints open/closed; refuses public targets unless `--i-have-permission` is given | Python (stdlib only) | Security / offensive lab |
 | [Cloud Security Posture Checker](projects/cloud-security-posture-checker/) | Defensive CLI that scores an AWS account 0–100 — public S3 buckets, users without MFA, old/unused keys, root risks, open security groups, missing CloudTrail, public/unencrypted databases; demo, snapshot, and live boto3 modes, read-only | Python (stdlib only; boto3 for live mode) | Security / cloud |
 | [ADHD My Way](projects/adhd-my-way/) | Ionic app for children under 12 — daily quests earn coins, coins buy avatar customisations, plus Memory Match, Tap the Star and Colour Match mini games; v2 adds quest groups, per-quest focus timer and daily streaks; v3 adds the Colour Match game and more avatar shop items; v4 adds a weekly star reward (50 coins for 10 quests in a week), 10 earnable badges and a "My Stars" summary screen; everything stays on the device | Ionic 8, Capacitor 7, Vite, JavaScript | Mobile / front-end |
@@ -128,8 +128,8 @@ python -m unittest discover -s tests -v
 python sql_injection_lab.py --demo
 # Interactive menu: python sql_injection_lab.py
 
-# Phishing Email Detector — 22 unit tests; demo scores 4 phishing samples
-# 75–88/100 (PHISHING) and 4 legit samples 0/100 (LEGITIMATE)
+# Phishing Email Detector — 38 unit tests; demo scores 6 phishing samples
+# 78–100/100 (PHISHING) and 5 legit samples 0–7/100 (LEGITIMATE)
 cd ../phishing-email-detector
 python -m unittest discover -s tests -v
 python phishing_detector.py --demo

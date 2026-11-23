@@ -16,6 +16,12 @@ no data leaves the device):
    not match the sender, links whose shown text differs from their real
    destination, URL shorteners and IP-literal hosts, and risky attachments.
 
+   v2 adds three more layers: lookalike-domain (typosquatting) detection
+   against a list of well-known brands, deeper suspicious-URL checks
+   (punycode, the @ trick, percent-encoded hosts, per-link instead of
+   first-link-only), and attachment-risk checks (double extensions,
+   macro-enabled Office files, script files, password-protected files).
+
 The final 0-100 score blends the two layers 50/50. Verdict bands:
 0-39 LEGITIMATE, 40-69 SUSPICIOUS, 70-100 PHISHING.
 
@@ -51,7 +57,7 @@ from collections import Counter
 from pathlib import Path
 from urllib.parse import urlparse
 
-VERSION = "1.0.0"
+VERSION = "2.0.0"
 
 # ---------------------------------------------------------------------------
 # Built-in training corpus (fictional emails only — no real mail, no personal data)
@@ -151,9 +157,41 @@ RISKY_ATTACHMENT_EXTS = {
     ".zip", ".rar", ".iso", ".lnk", ".hta", ".com", ".pif",
 }
 
+# Macro-enabled Office files — a classic malware carrier.
+MACRO_ATTACHMENT_EXTS = {".docm", ".xlsm", ".pptm"}
+
+# Harmless-looking extensions a double-extension file pretends to be.
+DOCUMENT_EXTS = {
+    ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".txt",
+    ".jpg", ".png", ".gif", ".csv",
+}
+
 FREE_MAIL_DOMAINS = {
     "gmail.com", "yahoo.com", "hotmail.com", "outlook.com", "proton.me",
     "protonmail.com", "icloud.com", "aol.com", "mail.com",
+}
+
+# Brands (fictional sample brands + well-known real ones) mapped to the
+# domain they really use. Used for typosquat / lookalike detection: a
+# sender or link host that is one or two letters off one of these, or that
+# smuggles the brand name into an unrelated domain, gets flagged.
+KNOWN_BRAND_DOMAINS = {
+    # Fictional brands from the built-in samples.
+    "northbank": "northbank.example",
+    "clouddesk": "clouddesk.example",
+    "shopsphere": "shopsphere.example",
+    "parcelpost": "parcelpost.example",
+    "riverside": "riverside.example",
+    # Well-known real brands phishers impersonate most.
+    "paypal": "paypal.com",
+    "amazon": "amazon.com",
+    "apple": "apple.com",
+    "microsoft": "microsoft.com",
+    "google": "google.com",
+    "chase": "chase.com",
+    "netflix": "netflix.com",
+    "facebook": "facebook.com",
+    "instagram": "instagram.com",
 }
 
 # Fictional brands used in the samples, mapped to their real domain fragment.
@@ -301,6 +339,68 @@ def _is_ip_host(host: str) -> bool:
     return bool(re.fullmatch(r"\d{1,3}(?:\.\d{1,3}){3}", host))
 
 
+def _levenshtein(a: str, b: str) -> int:
+    """Classic edit distance (insertions, deletions, substitutions)."""
+    if a == b:
+        return 0
+    if not a:
+        return len(b)
+    if not b:
+        return len(a)
+    previous = list(range(len(b) + 1))
+    for i, char_a in enumerate(a, 1):
+        current = [i]
+        for j, char_b in enumerate(b, 1):
+            current.append(min(
+                previous[j] + 1,
+                current[j - 1] + 1,
+                previous[j - 1] + (char_a != char_b),
+            ))
+        previous = current
+    return previous[-1]
+
+
+def _registrable_domain(host: str) -> str:
+    """The last two labels of a host — the part someone actually registers."""
+    labels = host.lower().rstrip(".").split(".")
+    return ".".join(labels[-2:]) if len(labels) >= 2 else host.lower()
+
+
+def lookalike_brand(host: str) -> tuple[str, str] | None:
+    """Return (brand, reason) if a host impersonates a known brand's domain.
+
+    Catches the three typosquatting tricks phishers use most: a domain one
+    or two letters off the real one (northbnak, paypa1), a hyphen slipped
+    into the brand name (north-bank), and the brand name smuggled into an
+    unrelated domain (northbank-secure.example). An exact match with the
+    brand's real domain is never flagged.
+    """
+    if not host:
+        return None
+    host = host.lower().rstrip(".")
+    registrable = _registrable_domain(host)
+    for brand, canonical in KNOWN_BRAND_DOMAINS.items():
+        if registrable == canonical:
+            return None
+    for brand, canonical in KNOWN_BRAND_DOMAINS.items():
+        first_label = registrable.split(".")[0]
+        squashed = first_label.replace("-", "")
+        max_distance = 1 if len(brand) <= 5 else 2
+        if len(squashed) >= 5 and _levenshtein(squashed, brand) <= max_distance:
+            return (
+                brand,
+                f"{registrable!r} is a letter or two off the real "
+                f"{canonical!r}",
+            )
+        if brand in host:
+            return (
+                brand,
+                f"uses {brand!r} inside {registrable!r}, not the real "
+                f"{canonical!r}",
+            )
+    return None
+
+
 def rule_signals(email: dict) -> list[dict]:
     """Return a list of triggered signals: {name, points, detail}."""
     signals: list[dict] = []
@@ -383,7 +483,26 @@ def rule_signals(email: dict) -> list[dict]:
             "detail": f"sender domain is {email['from_domain']}",
         })
 
-    # Link checks
+    # v2: lookalike (typosquat) sender domain — one or two letters off a
+    # known brand, or the brand name smuggled into an unrelated domain.
+    lookalike = lookalike_brand(email["from_domain"])
+    if lookalike:
+        brand, reason = lookalike
+        signals.append({
+            "name": "Sender domain looks like a well-known brand's (typosquat)",
+            "points": 20,
+            "detail": f"sender domain {reason}",
+        })
+
+    # Link checks — every link is checked on its own, so a second bad link
+    # is not hidden behind the first one. Each signal fires at most once.
+    seen_url_signals: set[str] = set()
+
+    def add_url_signal(name: str, points: int, detail: str) -> None:
+        if name not in seen_url_signals:
+            seen_url_signals.add(name)
+            signals.append({"name": name, "points": points, "detail": detail})
+
     for link in email["links"]:
         host = _domain_of_url(link["url"])
         text_domain = ""
@@ -394,38 +513,66 @@ def rule_signals(email: dict) -> list[dict]:
             # Bare domain in the shown text, e.g. "northbank.example/verify"
             text_domain = link["text"].strip().lower().split("/")[0]
         if text_domain and text_domain != host:
-            signals.append({
-                "name": "Link text shows a different destination than the real URL",
-                "points": 15,
-                "detail": f"text shows {text_domain!r}, link goes to {host!r}",
-            })
-            break
-    else:
-        for link in email["links"]:
-            host = _domain_of_url(link["url"])
-            if host in URL_SHORTENERS:
-                signals.append({
-                    "name": "Link uses a URL shortener (destination hidden)",
-                    "points": 15,
-                    "detail": f"shortened link to {host}",
-                })
-                break
-            if _is_ip_host(host):
-                signals.append({
-                    "name": "Link points to a raw IP address, not a domain",
-                    "points": 15,
-                    "detail": f"link goes to {host}",
-                })
-                break
-            if email["from_domain"] and host != email["from_domain"]:
-                labels = host.split(".")
-                if len(labels) > 3:
-                    signals.append({
-                        "name": "Link hides behind many subdomains",
-                        "points": 10,
-                        "detail": f"link goes to {host}",
-                    })
-                    break
+            add_url_signal(
+                "Link text shows a different destination than the real URL",
+                15,
+                f"text shows {text_domain!r}, link goes to {host!r}",
+            )
+        if host in URL_SHORTENERS:
+            add_url_signal(
+                "Link uses a URL shortener (destination hidden)",
+                15,
+                f"shortened link to {host}",
+            )
+        if _is_ip_host(host):
+            add_url_signal(
+                "Link points to a raw IP address, not a domain",
+                15,
+                f"link goes to {host}",
+            )
+        if host and len(host.split(".")) > 3:
+            add_url_signal(
+                "Link hides behind many subdomains",
+                10,
+                f"link goes to {host}",
+            )
+        # v2: punycode (xn--) or non-ASCII host — the classic homoglyph trick.
+        if host and (
+            any(label.startswith("xn--") for label in host.split("."))
+            or any(ord(char) > 127 for char in host)
+        ):
+            add_url_signal(
+                "Link uses a punycode / non-ASCII domain (lookalike trick)",
+                10,
+                f"link goes to {host}",
+            )
+        # v2: the @ trick — https://real-brand.example@attacker.example/
+        # shows the brand in the address bar, but the browser goes to the
+        # part after the @.
+        netloc = urlparse(link["url"]).netloc
+        if "@" in netloc:
+            add_url_signal(
+                "Link hides its real destination behind an @ sign",
+                15,
+                f"{link['url']!r} really goes to {host!r}",
+            )
+        # v2: percent-encoded host — https://%6eorthbank.example/ is not
+        # the domain it looks like at a glance.
+        if "%" in host:
+            add_url_signal(
+                "Link host is percent-encoded (disguised destination)",
+                10,
+                f"link goes to {host}",
+            )
+        # v2: lookalike link host.
+        link_lookalike = lookalike_brand(host)
+        if link_lookalike:
+            brand, reason = link_lookalike
+            add_url_signal(
+                "Link host looks like a well-known brand's (typosquat)",
+                15,
+                f"link host {reason}",
+            )
 
     # Attachment checks
     risky = [
@@ -437,6 +584,47 @@ def rule_signals(email: dict) -> list[dict]:
             "name": "Unexpected risky attachment",
             "points": 15,
             "detail": f"attachment: {', '.join(risky)}",
+        })
+
+    # v2: double extension — invoice.pdf.exe is an executable wearing a
+    # document's name; Windows hides the real extension by default.
+    double_ext = []
+    for att in email["attachments"]:
+        path = Path(att)
+        stem_suffix = Path(path.stem).suffix.lower()
+        if (
+            path.suffix.lower() in RISKY_ATTACHMENT_EXTS
+            and stem_suffix in DOCUMENT_EXTS
+        ):
+            double_ext.append(att)
+    if double_ext:
+        signals.append({
+            "name": "Double-extension attachment (document name, executable file)",
+            "points": 20,
+            "detail": f"attachment: {', '.join(double_ext)}",
+        })
+
+    # v2: macro-enabled Office files — .docm/.xlsm/.pptm can run code on open.
+    macro = [
+        att for att in email["attachments"]
+        if Path(att).suffix.lower() in MACRO_ATTACHMENT_EXTS
+    ]
+    if macro:
+        signals.append({
+            "name": "Macro-enabled Office attachment (can run code on open)",
+            "points": 15,
+            "detail": f"attachment: {', '.join(macro)}",
+        })
+
+    # v2: the email hands over the password for a "protected" attachment —
+    # a common way to smuggle malware past scanners.
+    if email["attachments"] and (
+        "password to open" in body.lower() or "the password is" in body.lower()
+    ):
+        signals.append({
+            "name": "Password-protected attachment with the password in the email",
+            "points": 10,
+            "detail": "attachment password is handed over in the message body",
         })
 
     return signals
