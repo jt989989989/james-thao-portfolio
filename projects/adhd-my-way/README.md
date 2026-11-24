@@ -7,6 +7,8 @@ My first project during my internship as a software engineer touched up with mod
 An **Ionic** mobile app that helps children under 12 focus on their daily tasks — with
 coins, a customisable avatar, and mini games to keep it fun.
 
+**Try it live:** https://jt989989989.github.io/james-thao-portfolio/projects/adhd-my-way/www/ — the built app in `www/`. (The folder's `index.html` is the Vite source entry, not the runnable app — opening the folder URL without `/www/` shows unstyled text because its script path doesn't resolve on GitHub Pages.)
+
 > **Day 1 of the 100-day programming challenge** (8 Nov 2026). v1 launch.
 > Roadmap: v2 focus timer + task categories + streaks (done) · v3 new mini game
 > (Colour Match) + more avatar items (done, 20 Nov 2026) · v4 weekly rewards /
@@ -120,7 +122,9 @@ npm install
 # Development server (hot reload)
 npm run dev
 
-# Production web build -> www/ (this is what GitHub Pages serves)
+# Production web build -> www/ (the runnable app — the live URL is
+# .../projects/adhd-my-way/www/; the folder's index.html is the Vite source
+# entry and does NOT boot on GitHub Pages)
 npm run build
 
 # Preview the production build
