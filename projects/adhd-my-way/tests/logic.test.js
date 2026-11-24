@@ -227,7 +227,7 @@ test('v2: migrating a v1 save keeps coins and adds streak + categories', () => {
     stats: { tasksDone: 3, gamesWon: 0, starsTapped: 0, timersFinished: 1 },
   };
   const s = migrateState(v1);
-  assert.equal(s.version, 4);
+  assert.equal(s.version, 5);
   assert.equal(s.coins, 45);
   assert.equal(s.streak.count, 0);
   assert.equal(s.streak.best, 0);
@@ -242,9 +242,9 @@ test('v2: migrating a v1 save keeps coins and adds streak + categories', () => {
   assert.equal(s.tasks[1].done, true);
 });
 
-test('v4: default state is version 4 with weekly record and memory stats at zero', () => {
+test('v5: default state is version 5 with weekly record and memory stats at zero', () => {
   const s = createDefaultState(new Date('2026-11-22T10:00:00'));
-  assert.equal(s.version, 4);
+  assert.equal(s.version, 5);
   assert.equal(s.stats.colourPlayed, 0);
   assert.equal(s.stats.colourCorrect, 0);
   assert.equal(s.stats.memoryWins, 0);
@@ -309,7 +309,7 @@ test('v3: finishing a colour game pays the bonus and counts a game won', () => {
 
 test('v3: shop has the new avatar items at the right prices', () => {
   const byId = Object.fromEntries(SHOP.map((i) => [i.id, i]));
-  assert.equal(SHOP.length, 27);
+  assert.equal(SHOP.length, 49); // 27 through v3 + 22 chibi items in v5
   assert.equal(byId['skin-5'].value, '#e8b06a');
   assert.equal(byId['hair-ponytail'].slot, 'hairStyle');
   assert.equal(byId['hair-ponytail'].price, 25);
@@ -347,7 +347,7 @@ test('v3: migrating a v2 save keeps coins and streak and adds colour stats', () 
     stats: { tasksDone: 4, gamesWon: 1, starsTapped: 12, timersFinished: 2 },
   };
   const s = migrateState(v2);
-  assert.equal(s.version, 4);
+  assert.equal(s.version, 5);
   assert.equal(s.coins, 60);
   assert.equal(s.streak.count, 3);
   assert.equal(s.streak.best, 5);
@@ -501,7 +501,7 @@ test('v4: migrating a v3 save keeps coins and streak and adds the weekly record'
     stats: { tasksDone: 6, gamesWon: 2, starsTapped: 20, timersFinished: 1, colourPlayed: 10, colourCorrect: 7 },
   };
   const s = migrateState(v3);
-  assert.equal(s.version, 4);
+  assert.equal(s.version, 5);
   assert.equal(s.coins, 80);
   assert.equal(s.streak.count, 2);
   assert.equal(s.streak.best, 4);
@@ -512,4 +512,150 @@ test('v4: migrating a v3 save keeps coins and streak and adds the weekly record'
   assert.equal(typeof s.weekly.weekStart, 'string');
   // The old save already earned badges from what it did.
   assert.ok(unlockedAchievements(s).includes('first-quest'));
+});
+
+test('v5: default avatar is a chibi with the free everyday outfit', () => {
+  const s = createDefaultState(new Date('2026-11-24T10:00:00'));
+  assert.equal(s.version, 5);
+  assert.equal(s.avatar.outfit, 'casual');
+  assert.equal(s.avatar.pants, 'jeans');
+  assert.equal(s.avatar.shoes, 'sneakers');
+  assert.equal(s.avatar.armor, 'none');
+  // The old choices are still there — the chibi keeps them.
+  assert.equal(s.avatar.skin, '#f6c89f');
+  assert.equal(s.avatar.hairStyle, 'short');
+  assert.equal(s.avatar.hat, 'none');
+  // Every free chibi item is owned from the start.
+  for (const id of ['outfit-casual', 'pants-jeans', 'shoes-sneakers', 'armor-none']) {
+    assert.ok(s.owned.includes(id), `${id} should be owned by default`);
+  }
+});
+
+test('v5: shop catalogue is tidy — unique ids, every slot has a free item', () => {
+  const ids = SHOP.map((item) => item.id);
+  assert.equal(new Set(ids).size, ids.length, 'shop item ids must be unique');
+  for (const slot of ['skin', 'hairStyle', 'hairColor', 'hat', 'outfit', 'pants', 'shoes', 'armor', 'accessory']) {
+    const items = SHOP.filter((item) => item.slot === slot);
+    assert.ok(items.length >= 2, `${slot} needs at least 2 items`);
+    assert.ok(items.some((item) => item.price === 0), `${slot} needs a free item`);
+    assert.ok(items.every((item) => typeof item.value === 'string' && item.value.length > 0), `${slot} values must be non-empty`);
+  }
+  // The new anime hair and the new accessories are really in the shop.
+  for (const id of ['hair-twin-tails', 'hair-bob', 'hair-messy', 'acc-bow', 'acc-cape']) {
+    assert.ok(SHOP.some((item) => item.id === id), `${id} should be in the shop`);
+  }
+});
+
+test('v5: buying and wearing an outfit, pants, shoes and armor', () => {
+  const s = createDefaultState();
+  s.coins = 200;
+  const outfit = buyOrEquip(s, 'outfit-hero');
+  assert.equal(outfit.ok, true);
+  assert.equal(outfit.action, 'bought');
+  assert.equal(s.avatar.outfit, 'hero');
+  assert.equal(s.coins, 160);
+
+  const pants = buyOrEquip(s, 'pants-skirt');
+  assert.equal(pants.action, 'bought');
+  assert.equal(s.avatar.pants, 'skirt');
+
+  const shoes = buyOrEquip(s, 'shoes-hero-boots');
+  assert.equal(shoes.action, 'bought');
+  assert.equal(s.avatar.shoes, 'hero-boots');
+
+  const armor = buyOrEquip(s, 'armor-knight');
+  assert.equal(armor.action, 'bought');
+  assert.equal(s.avatar.armor, 'knight');
+  assert.equal(s.coins, 160 - 20 - 40 - 60);
+
+  // Switching back to the free outfit costs nothing and keeps the armor.
+  const back = buyOrEquip(s, 'outfit-casual');
+  assert.equal(back.action, 'equipped');
+  assert.equal(s.avatar.outfit, 'casual');
+  assert.equal(s.avatar.armor, 'knight');
+  assert.equal(s.coins, 40);
+
+  // Not enough coins for the dragon armor.
+  const broke = buyOrEquip(s, 'armor-dragon');
+  assert.equal(broke.ok, false);
+  assert.equal(broke.reason, 'not enough coins');
+  assert.equal(s.avatar.armor, 'knight');
+});
+
+test('v5: new anime hair, bow and cape buy and equip', () => {
+  const s = createDefaultState();
+  s.coins = 100;
+  const tails = buyOrEquip(s, 'hair-twin-tails');
+  assert.equal(tails.action, 'bought');
+  assert.equal(s.avatar.hairStyle, 'twin-tails');
+  const bow = buyOrEquip(s, 'acc-bow');
+  assert.equal(bow.action, 'bought');
+  assert.equal(s.avatar.accessory, 'bow');
+  const cape = buyOrEquip(s, 'acc-cape');
+  assert.equal(cape.action, 'bought');
+  assert.equal(s.avatar.accessory, 'cape');
+  assert.equal(s.coins, 100 - 30 - 20 - 45);
+  // The hair choice survives the accessory changes.
+  assert.equal(s.avatar.hairStyle, 'twin-tails');
+});
+
+test('v5: migrating a v4 save keeps the old avatar and adds the free chibi outfit', () => {
+  const v4 = {
+    version: 4,
+    coins: 90,
+    date: '2026-11-23',
+    tasks: [{ id: 't1', title: 'Brush my teeth', category: 'morning', coins: 10, custom: false, done: true }],
+    avatar: { skin: '#8d5524', hairStyle: 'ponytail', hairColor: '#9775fa', hat: 'wizard', accessory: 'glasses' },
+    owned: ['skin-3', 'hair-ponytail', 'hair-purple', 'hat-wizard', 'acc-glasses'],
+    streak: { count: 2, best: 4, lastActiveDate: '2026-11-23' },
+    stats: { tasksDone: 9, gamesWon: 2, memoryWins: 1, starsTapped: 30, timersFinished: 2, colourPlayed: 10, colourCorrect: 8 },
+    weekly: { weekStart: '2026-11-23', quests: 3, games: 1, focus: 0, claimed: false },
+  };
+  const s = migrateState(v4);
+  assert.equal(s.version, 5);
+  assert.equal(s.coins, 90);
+  // Old avatar choices are untouched.
+  assert.equal(s.avatar.skin, '#8d5524');
+  assert.equal(s.avatar.hairStyle, 'ponytail');
+  assert.equal(s.avatar.hairColor, '#9775fa');
+  assert.equal(s.avatar.hat, 'wizard');
+  assert.equal(s.avatar.accessory, 'glasses');
+  // New chibi slots get the free defaults.
+  assert.equal(s.avatar.outfit, 'casual');
+  assert.equal(s.avatar.pants, 'jeans');
+  assert.equal(s.avatar.shoes, 'sneakers');
+  assert.equal(s.avatar.armor, 'none');
+  assert.equal(s.streak.count, 2);
+  assert.equal(s.stats.colourCorrect, 8);
+});
+
+test('v5: migrating a v1 save gets the chibi defaults too', () => {
+  const v1 = {
+    version: 1,
+    coins: 10,
+    date: '2026-11-09',
+    tasks: [{ id: 't1', title: 'Brush my teeth', coins: 10, custom: false, done: false }],
+    avatar: { skin: '#f6c89f', hairStyle: 'curly', hairColor: '#222222', hat: 'cap', accessory: 'none' },
+    owned: ['skin-1'],
+    stats: { tasksDone: 1, gamesWon: 0, starsTapped: 0, timersFinished: 0 },
+  };
+  const s = migrateState(v1);
+  assert.equal(s.version, 5);
+  assert.equal(s.avatar.hairStyle, 'curly');
+  assert.equal(s.avatar.hat, 'cap');
+  assert.equal(s.avatar.outfit, 'casual');
+  assert.equal(s.avatar.pants, 'jeans');
+  assert.equal(s.avatar.shoes, 'sneakers');
+  assert.equal(s.avatar.armor, 'none');
+});
+
+test('v5: migration drops an unknown chibi value back to the free default', () => {
+  const weird = createDefaultState();
+  weird.avatar.outfit = 'spacesuit';
+  weird.avatar.pants = 'jeans';
+  weird.avatar.shoes = 'sneakers';
+  weird.avatar.armor = 'none';
+  const s = migrateState(weird);
+  assert.equal(s.avatar.outfit, 'casual');
+  assert.equal(s.avatar.pants, 'jeans');
 });

@@ -10,7 +10,8 @@ coins, a customisable avatar, and mini games to keep it fun.
 > **Day 1 of the 100-day programming challenge** (8 Nov 2026). v1 launch.
 > Roadmap: v2 focus timer + task categories + streaks (done) · v3 new mini game
 > (Colour Match) + more avatar items (done, 20 Nov 2026) · v4 weekly rewards /
-> achievements + summary screen (done, 22 Nov 2026).
+> achievements + summary screen (done, 22 Nov 2026) · v5 anime-style chibi
+> avatar (done, 24 Nov 2026).
 >
 > **Update (8 Nov 2026)** — phone-friendly layout (the app now sits in a
 > centred phone-width column on wide screens, with bigger tap targets) and
@@ -42,6 +43,18 @@ coins, a customisable avatar, and mini games to keep it fun.
 > totals). Saved v1/v2/v3 data carries over — coins, quests, avatar,
 > streaks and stats are kept, and badges are earned from what was already
 > done.
+>
+> **Update — v5 (24 Nov 2026, Day 5 of the restarted challenge)** — the
+> avatar is now an **anime-style chibi**: a big head with sparkly eyes and
+> blush, and a small body you can dress up — **outfits** (Everyday Tee,
+> Hero Suit, Star Dress, Explorer Jacket, Cosy Pajamas), **pants** (Jeans,
+> Shorts, Twirl Skirt, Star Leggings), **shoes** (Sneakers, Adventure Boots,
+> Sunny Sandals, Hero Boots) and **armor** worn over the outfit (Knight,
+> Star and Dragon Armor, with shoulder pads and a chest plate), plus new
+> **anime hair** (Twin Tails, Bob Cut, Messy Anime with a cowlick) and new
+> accessories (a Cute Bow and a Hero Cape). The shop now has 49 items.
+> Saved v1–v4 data carries over — coins, quests, avatar choices and streaks
+> are kept, and old avatars get the free everyday outfit.
 
 ## What it does
 
@@ -56,10 +69,15 @@ coins, a customisable avatar, and mini games to keep it fun.
 - **Focus timer** — pick a quest to focus on (tap **Focus** next to it), choose
   5 / 10 / 15 minutes, and press start. Finishing the timer ticks that quest off
   (+10 coins) and adds a **+5 coin** focus bonus. It also works with no quest picked.
-- **Avatar shop** — coins buy avatar customisations: skin colours, hair styles and
-  colours (including a ponytail and purple hair), hats (cap, beanie, party hat,
-  wizard hat, gold crown) and accessories (star badge, heart badge, glasses,
-  sunglasses, headphones). The avatar is drawn from plain shapes and colours.
+- **Avatar shop** — coins buy avatar customisations for my anime-style
+  chibi: skin colours, hair styles and colours (including Twin Tails, a Bob
+  Cut and Messy Anime hair), hats (cap, beanie, party hat, wizard hat, gold
+  crown), outfits (Hero Suit, Star Dress, Explorer Jacket, Cosy Pajamas),
+  pants (Jeans, Shorts, Twirl Skirt, Star Leggings), shoes (Sneakers,
+  Adventure Boots, Sunny Sandals, Hero Boots), armor worn over the outfit
+  (Knight, Star and Dragon Armor) and accessories (star badge, heart badge,
+  glasses, sunglasses, headphones, a cute bow and a hero cape). The chibi
+  is drawn from plain shapes and colours.
 - **Mini games** (all earn coins):
   - **Memory Match** — flip cards, find all 6 shape pairs, win **20 coins**.
   - **Tap the Star** — tap the star as many times as you can in 30 seconds,
@@ -116,10 +134,11 @@ open www/index.html
 
 ```bash
 npm test
-# 31 tests: task coins, daily reset, shop purchases, memory deck, rewards,
-# quest categories, daily streaks, per-quest focus sessions, v1/v2/v3 save
+# 38 tests: task coins, daily reset, shop purchases, memory deck, rewards,
+# quest categories, daily streaks, per-quest focus sessions, v1/v2/v3/v4 save
 # migration, colour-match rounds and rewards, v3 shop items, weekly reward
-# (goal, claim-once, week rollover), achievements, summary screen
+# (goal, claim-once, week rollover), achievements, summary screen, v5 chibi
+# avatar (new slots, shop catalogue, buy/equip, v4/v1 migration)
 ```
 
 ## Project structure
@@ -137,7 +156,7 @@ adhd-my-way/
 │   ├── logic.js          # pure rules (coins, tasks, shop, decks) — tested
 │   └── style.css         # bright, simple, kid-friendly styling
 ├── tests/
-│   └── logic.test.js     # 22 Node tests for src/logic.js
+│   └── logic.test.js     # 38 Node tests for src/logic.js
 └── www/                  # production build output (built by running npm run build)
 ```
 

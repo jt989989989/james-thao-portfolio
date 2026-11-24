@@ -71,6 +71,11 @@ export const SHOP = [
   { id: 'hair-spiky', slot: 'hairStyle', name: 'Spiky hair', value: 'spiky', price: 15 },
   { id: 'hair-long', slot: 'hairStyle', name: 'Long hair', value: 'long', price: 20 },
   { id: 'hair-ponytail', slot: 'hairStyle', name: 'Ponytail', value: 'ponytail', price: 25 },
+  // v5: anime-style chibi hair — twin tails, a bob cut and a messy
+  // anime mop with a little cowlick on top.
+  { id: 'hair-twin-tails', slot: 'hairStyle', name: 'Twin Tails', value: 'twin-tails', price: 30 },
+  { id: 'hair-bob', slot: 'hairStyle', name: 'Bob Cut', value: 'bob', price: 25 },
+  { id: 'hair-messy', slot: 'hairStyle', name: 'Messy Anime', value: 'messy', price: 20 },
   // Hair colours (free)
   { id: 'hair-brown', slot: 'hairColor', name: 'Brown hair', value: '#5b3a1e', price: 0 },
   { id: 'hair-black', slot: 'hairColor', name: 'Black hair', value: '#222222', price: 0 },
@@ -91,6 +96,30 @@ export const SHOP = [
   { id: 'acc-glasses', slot: 'accessory', name: 'Cool glasses', value: 'glasses', price: 50 },
   { id: 'acc-headphones', slot: 'accessory', name: 'Headphones', value: 'headphones', price: 60 },
   { id: 'acc-sunglasses', slot: 'accessory', name: 'Sunglasses', value: 'sunglasses', price: 70 },
+  // v5: a cute bow for the hair and a hero cape for the back.
+  { id: 'acc-bow', slot: 'accessory', name: 'Cute Bow', value: 'bow', price: 20 },
+  { id: 'acc-cape', slot: 'accessory', name: 'Hero Cape', value: 'cape', price: 45 },
+  // v5: outfits — what the chibi wears on top.
+  { id: 'outfit-casual', slot: 'outfit', name: 'Everyday Tee', value: 'casual', price: 0 },
+  { id: 'outfit-hero', slot: 'outfit', name: 'Hero Suit', value: 'hero', price: 40 },
+  { id: 'outfit-star-dress', slot: 'outfit', name: 'Star Dress', value: 'star-dress', price: 45 },
+  { id: 'outfit-explorer', slot: 'outfit', name: 'Explorer Jacket', value: 'explorer', price: 50 },
+  { id: 'outfit-pajamas', slot: 'outfit', name: 'Cosy Pajamas', value: 'pajamas', price: 25 },
+  // v5: pants — jeans, shorts, a twirl skirt or star leggings.
+  { id: 'pants-jeans', slot: 'pants', name: 'Jeans', value: 'jeans', price: 0 },
+  { id: 'pants-shorts', slot: 'pants', name: 'Shorts', value: 'shorts', price: 15 },
+  { id: 'pants-skirt', slot: 'pants', name: 'Twirl Skirt', value: 'skirt', price: 20 },
+  { id: 'pants-leggings', slot: 'pants', name: 'Star Leggings', value: 'leggings', price: 25 },
+  // v5: shoes — sneakers, boots, sandals or hero boots.
+  { id: 'shoes-sneakers', slot: 'shoes', name: 'Sneakers', value: 'sneakers', price: 0 },
+  { id: 'shoes-boots', slot: 'shoes', name: 'Adventure Boots', value: 'boots', price: 30 },
+  { id: 'shoes-sandals', slot: 'shoes', name: 'Sunny Sandals', value: 'sandals', price: 15 },
+  { id: 'shoes-hero-boots', slot: 'shoes', name: 'Hero Boots', value: 'hero-boots', price: 40 },
+  // v5: armor — a shiny overlay worn over the outfit.
+  { id: 'armor-none', slot: 'armor', name: 'No armor', value: 'none', price: 0 },
+  { id: 'armor-knight', slot: 'armor', name: 'Knight Armor', value: 'knight', price: 60 },
+  { id: 'armor-star', slot: 'armor', name: 'Star Armor', value: 'star', price: 70 },
+  { id: 'armor-dragon', slot: 'armor', name: 'Dragon Armor', value: 'dragon', price: 80 },
 ];
 
 export const MEMORY_SHAPES = [
@@ -112,7 +141,7 @@ export function yesterdayString(date = new Date()) {
 
 export function createDefaultState(date = new Date()) {
   return {
-    version: 4,
+    version: 5,
     coins: 0,
     date: todayString(date),
     tasks: DEFAULT_TASKS.map((t) => ({ ...t, done: false })),
@@ -122,6 +151,11 @@ export function createDefaultState(date = new Date()) {
       hairColor: '#5b3a1e',
       hat: 'none',
       accessory: 'none',
+      // v5: the chibi's outfit — top, bottom, shoes and an armor overlay.
+      outfit: 'casual',
+      pants: 'jeans',
+      shoes: 'sneakers',
+      armor: 'none',
     },
     owned: SHOP.filter((item) => item.price === 0).map((item) => item.id),
     // v2 streak: consecutive days with at least one quest finished.
@@ -146,11 +180,27 @@ function ensureStats(state) {
   return state.stats;
 }
 
-// Bring a saved v1/v2/v3 state up to v4 without losing coins, quests or
-// avatar: adds the streak record, a category for any quest that lacks one,
-// the v3 colour-game stats, and the v4 weekly record + memory-win count.
+// Bring a saved v1/v2/v3/v4 state up to v5 without losing coins, quests
+// or avatar: adds the streak record, a category for any quest that lacks
+// one, the v3 colour-game stats, the v4 weekly record + memory-win count,
+// and the v5 chibi outfit slots (old avatars keep their hair, hat and
+// accessory and get the free everyday outfit).
 export function migrateState(state) {
   if (!state || typeof state !== 'object') return createDefaultState();
+  if (!state.avatar || typeof state.avatar !== 'object') {
+    state.avatar = { skin: '#f6c89f', hairStyle: 'short', hairColor: '#5b3a1e', hat: 'none', accessory: 'none' };
+  }
+  // v5: fill any chibi slot an older save is missing; never overwrite a
+  // choice the child already made, and drop a value the shop no longer
+  // sells (e.g. a hand-edited save) back to the free default.
+  for (const [slot, fallback] of Object.entries({ outfit: 'casual', pants: 'jeans', shoes: 'sneakers', armor: 'none' })) {
+    if (!SHOP.some((item) => item.slot === slot && item.value === state.avatar[slot])) {
+      state.avatar[slot] = fallback;
+    }
+  }
+  for (const [slot, fallback] of Object.entries({ skin: '#f6c89f', hairStyle: 'short', hairColor: '#5b3a1e', hat: 'none', accessory: 'none' })) {
+    if (typeof state.avatar[slot] !== 'string' || !state.avatar[slot]) state.avatar[slot] = fallback;
+  }
   if (!state.streak || typeof state.streak !== 'object') {
     state.streak = { count: 0, best: 0, lastActiveDate: null };
   }
@@ -163,7 +213,7 @@ export function migrateState(state) {
   }
   ensureStats(state);
   ensureWeekly(state);
-  state.version = 4;
+  state.version = 5;
   return state;
 }
 

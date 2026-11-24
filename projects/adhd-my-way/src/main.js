@@ -47,7 +47,7 @@ function loadState() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return createDefaultState();
     const parsed = JSON.parse(raw);
-    if (!parsed || (parsed.version !== 1 && parsed.version !== 2 && parsed.version !== 3 && parsed.version !== 4) || !Array.isArray(parsed.tasks)) {
+    if (!parsed || (parsed.version !== 1 && parsed.version !== 2 && parsed.version !== 3 && parsed.version !== 4 && parsed.version !== 5) || !Array.isArray(parsed.tasks)) {
       return createDefaultState();
     }
     // v1/v2/v3 saves keep working: newer fields (streak, categories,
@@ -93,33 +93,42 @@ function renderCoins() {
 }
 
 // ---------- avatar ----------
+// The chibi (v5): a big head with anime eyes and blush, and a small body
+// with an outfit, pants, shoes and an optional armor overlay. Head is
+// centred at (100, 74) with radius 52; the body runs from y=130 to y=244.
 function hairSvg(style, color) {
   switch (style) {
     case 'curly':
-      return `<circle cx="62" cy="72" r="20" fill="${color}"/><circle cx="100" cy="58" r="22" fill="${color}"/><circle cx="138" cy="72" r="20" fill="${color}"/>`;
+      return `<circle cx="58" cy="46" r="18" fill="${color}"/><circle cx="78" cy="30" r="20" fill="${color}"/><circle cx="100" cy="26" r="20" fill="${color}"/><circle cx="122" cy="30" r="20" fill="${color}"/><circle cx="142" cy="46" r="18" fill="${color}"/><circle cx="48" cy="72" r="14" fill="${color}"/><circle cx="152" cy="72" r="14" fill="${color}"/>`;
     case 'spiky':
-      return `<path d="M45 95 L58 52 L74 78 L90 48 L106 76 L122 50 L138 78 L152 58 L158 100 Q150 62 100 58 Q52 62 45 95 Z" fill="${color}"/>`;
+      return `<path d="M46 92 L52 50 L66 68 L76 36 L92 60 L100 30 L108 60 L124 36 L134 68 L148 50 L154 92 Q142 52 100 50 Q58 52 46 92 Z" fill="${color}"/>`;
     case 'long':
-      return `<path d="M42 170 L42 105 Q42 52 100 52 Q158 52 158 105 L158 170 L142 170 L142 108 Q142 72 100 72 Q58 72 58 108 L58 170 Z" fill="${color}"/>`;
+      return `<path d="M46 92 Q42 22 100 20 Q158 22 154 92 L154 172 L138 172 L138 96 Q138 52 100 50 Q62 52 62 96 L62 172 L46 172 Z" fill="${color}"/>`;
     case 'ponytail':
-      return `<path d="M44 108 Q40 52 100 50 Q160 52 156 108 Q146 74 100 72 Q54 74 44 108 Z" fill="${color}"/><ellipse cx="160" cy="132" rx="13" ry="36" fill="${color}"/><rect x="150" y="92" width="20" height="9" rx="4" fill="#f2c94c"/>`;
+      return `<path d="M46 90 Q42 22 100 20 Q158 22 154 90 Q142 50 100 48 Q58 50 46 90 Z" fill="${color}"/><ellipse cx="160" cy="142" rx="13" ry="36" fill="${color}"/><rect x="150" y="94" width="20" height="9" rx="4" fill="#f2c94c"/>`;
+    case 'twin-tails':
+      return `<path d="M46 90 Q42 22 100 20 Q158 22 154 90 Q142 50 100 48 Q58 50 46 90 Z" fill="${color}"/><ellipse cx="38" cy="142" rx="13" ry="38" fill="${color}"/><ellipse cx="162" cy="142" rx="13" ry="38" fill="${color}"/><rect x="28" y="94" width="20" height="9" rx="4" fill="#ff6b9d"/><rect x="152" y="94" width="20" height="9" rx="4" fill="#ff6b9d"/>`;
+    case 'bob':
+      return `<path d="M44 96 Q40 20 100 18 Q160 20 156 96 L156 122 L138 122 L138 94 Q138 50 100 48 Q62 50 62 94 L62 122 L44 122 Z" fill="${color}"/>`;
+    case 'messy':
+      return `<path d="M46 92 L50 54 L64 70 L72 38 L88 62 L100 32 L112 62 L128 38 L136 70 L150 54 L154 92 Q142 52 100 50 Q58 52 46 92 Z" fill="${color}"/><path d="M100 30 Q96 12 110 6" fill="none" stroke="${color}" stroke-width="4" stroke-linecap="round"/>`;
     default: // short
-      return `<path d="M44 108 Q40 52 100 50 Q160 52 156 108 Q146 74 100 72 Q54 74 44 108 Z" fill="${color}"/>`;
+      return `<path d="M46 90 Q42 22 100 20 Q158 22 154 90 Q142 50 100 48 Q58 50 46 90 Z" fill="${color}"/>`;
   }
 }
 
 function hatSvg(hat) {
   switch (hat) {
     case 'cap':
-      return `<path d="M48 78 Q50 42 100 40 Q150 42 152 78 L152 84 L48 84 Z" fill="#e63946"/><rect x="40" y="80" width="120" height="10" rx="5" fill="#c1121f"/>`;
+      return `<path d="M50 48 Q52 14 100 12 Q148 14 150 48 L150 54 L50 54 Z" fill="#e63946"/><rect x="42" y="50" width="116" height="9" rx="4" fill="#c1121f"/>`;
     case 'beanie':
-      return `<path d="M52 82 Q50 40 100 38 Q150 40 148 82 L148 88 L52 88 Z" fill="#4dabff"/><rect x="50" y="80" width="100" height="12" rx="6" fill="#2f6fb2"/><circle cx="100" cy="38" r="9" fill="#ffffff"/>`;
+      return `<path d="M54 52 Q52 14 100 12 Q148 14 146 52 L146 58 L54 58 Z" fill="#4dabff"/><rect x="52" y="50" width="96" height="12" rx="6" fill="#2f6fb2"/><circle cx="100" cy="12" r="8" fill="#ffffff"/>`;
     case 'party':
-      return `<path d="M76 64 L100 8 L124 64 Z" fill="#ff6b6b"/><circle cx="100" cy="8" r="7" fill="#f2c94c"/><circle cx="92" cy="42" r="4" fill="#ffffff"/><circle cx="108" cy="50" r="4" fill="#4dabff"/>`;
+      return `<path d="M78 40 L100 4 L122 40 Z" fill="#ff6b6b"/><circle cx="100" cy="4" r="5" fill="#f2c94c"/><circle cx="92" cy="28" r="3" fill="#ffffff"/><circle cx="108" cy="32" r="3" fill="#4dabff"/>`;
     case 'wizard':
-      return `<path d="M62 66 L100 2 L138 66 Z" fill="#9775fa"/><rect x="52" y="62" width="96" height="10" rx="5" fill="#6a3fb5"/><circle cx="100" cy="34" r="5" fill="#f2c94c"/>`;
+      return `<path d="M62 42 L100 2 L138 42 Z" fill="#9775fa"/><rect x="52" y="38" width="96" height="10" rx="5" fill="#6a3fb5"/><circle cx="100" cy="24" r="5" fill="#f2c94c"/>`;
     case 'crown':
-      return `<path d="M58 78 L58 44 L80 62 L100 38 L120 62 L142 44 L142 78 Z" fill="#f2c94c" stroke="#b8860b" stroke-width="2"/>`;
+      return `<path d="M58 50 L58 20 L80 36 L100 16 L120 36 L142 20 L142 50 Z" fill="#f2c94c" stroke="#b8860b" stroke-width="2"/>`;
     default:
       return '';
   }
@@ -128,28 +137,121 @@ function hatSvg(hat) {
 function accessorySvg(acc) {
   switch (acc) {
     case 'glasses':
-      return `<circle cx="78" cy="112" r="16" fill="none" stroke="#222" stroke-width="4"/><circle cx="122" cy="112" r="16" fill="none" stroke="#222" stroke-width="4"/><line x1="94" y1="112" x2="106" y2="112" stroke="#222" stroke-width="4"/>`;
+      return `<circle cx="80" cy="78" r="15" fill="none" stroke="#222" stroke-width="4"/><circle cx="120" cy="78" r="15" fill="none" stroke="#222" stroke-width="4"/><line x1="95" y1="78" x2="105" y2="78" stroke="#222" stroke-width="4"/>`;
     case 'sunglasses':
-      return `<circle cx="78" cy="112" r="16" fill="#222"/><circle cx="122" cy="112" r="16" fill="#222"/><line x1="94" y1="112" x2="106" y2="112" stroke="#222" stroke-width="4"/><circle cx="72" cy="106" r="4" fill="#ffffff"/><circle cx="116" cy="106" r="4" fill="#ffffff"/>`;
+      return `<circle cx="80" cy="78" r="15" fill="#222"/><circle cx="120" cy="78" r="15" fill="#222"/><line x1="95" y1="78" x2="105" y2="78" stroke="#222" stroke-width="4"/><circle cx="74" cy="72" r="4" fill="#ffffff"/><circle cx="114" cy="72" r="4" fill="#ffffff"/>`;
     case 'heart':
-      return `<path d="M158 170 C146 160 142 150 150 146 C154 144 158 148 158 152 C158 148 162 144 166 146 C174 150 170 160 158 170 Z" fill="#ff6b6b" stroke="#c0392b" stroke-width="1"/>`;
+      return `<path d="M122 170 C112 162 108 154 114 150 C118 148 122 152 122 156 C122 152 126 148 130 150 C136 154 132 162 122 170 Z" fill="#ff6b6b" stroke="#c0392b" stroke-width="1"/>`;
     case 'star':
-      return `<path d="M158 158 l4 9 10 1 -7 7 2 10 -9 -5 -9 5 2 -10 -7 -7 10 -1 Z" fill="#f2c94c" stroke="#b8860b" stroke-width="1"/>`;
+      return `<path d="M122 148 l4 9 10 1 -7 7 2 10 -9 -5 -9 5 2 -10 -7 -7 10 -1 Z" fill="#f2c94c" stroke="#b8860b" stroke-width="1"/>`;
     case 'headphones':
-      return `<path d="M52 118 Q52 52 100 52 Q148 52 148 118" fill="none" stroke="#1e88e5" stroke-width="10"/><rect x="42" y="106" width="18" height="30" rx="8" fill="#1e88e5"/><rect x="140" y="106" width="18" height="30" rx="8" fill="#1e88e5"/>`;
-    default:
+      return `<path d="M50 84 Q50 12 100 12 Q150 12 150 84" fill="none" stroke="#1e88e5" stroke-width="10"/><rect x="40" y="74" width="18" height="30" rx="8" fill="#1e88e5"/><rect x="142" y="74" width="18" height="30" rx="8" fill="#1e88e5"/>`;
+    case 'bow':
+      return `<path d="M146 44 L128 30 L128 58 Z" fill="#ff6b9d"/><path d="M146 44 L164 30 L164 58 Z" fill="#ff6b9d"/><circle cx="146" cy="44" r="6" fill="#e63946"/>`;
+    default: // 'cape' is drawn behind the body, not here; 'none' draws nothing
       return '';
   }
+}
+
+// The cape flows behind the whole body, so it is drawn first.
+function capeSvg() {
+  return `<path d="M66 128 Q100 120 134 128 L150 250 L50 250 Z" fill="#e63946"/><circle cx="70" cy="132" r="5" fill="#f2c94c"/><circle cx="130" cy="132" r="5" fill="#f2c94c"/>`;
+}
+
+function outfitSvg(outfit) {
+  switch (outfit) {
+    case 'hero':
+      return `<rect x="68" y="130" width="64" height="66" rx="18" fill="#1e88e5"/><path d="M100 148 l3.5 8 9 1 -6.5 6 1.5 9 -8 -4.5 -8 4.5 1.5 -9 -6.5 -6 9 -1 Z" fill="#f2c94c"/><rect x="68" y="186" width="64" height="8" fill="#c1121f"/>`;
+    case 'star-dress':
+      return `<path d="M70 132 Q100 124 130 132 L142 210 Q100 218 58 210 Z" fill="#ff8fab"/><circle cx="84" cy="160" r="3" fill="#ffffff"/><circle cx="116" cy="176" r="3" fill="#ffffff"/><circle cx="96" cy="192" r="2.5" fill="#ffffff"/><rect x="66" y="170" width="68" height="6" fill="#e75480"/>`;
+    case 'explorer':
+      return `<rect x="68" y="130" width="64" height="66" rx="18" fill="#b08968"/><line x1="100" y1="134" x2="100" y2="196" stroke="#8d6e4a" stroke-width="3"/><rect x="76" y="160" width="16" height="14" rx="3" fill="#8d6e4a"/><rect x="108" y="160" width="16" height="14" rx="3" fill="#8d6e4a"/>`;
+    case 'pajamas':
+      return `<rect x="68" y="130" width="64" height="66" rx="18" fill="#9775fa"/><line x1="72" y1="146" x2="128" y2="146" stroke="#ffffff" stroke-width="4" opacity="0.6"/><line x1="72" y1="162" x2="128" y2="162" stroke="#ffffff" stroke-width="4" opacity="0.6"/><line x1="72" y1="178" x2="128" y2="178" stroke="#ffffff" stroke-width="4" opacity="0.6"/><line x1="72" y1="192" x2="128" y2="192" stroke="#ffffff" stroke-width="4" opacity="0.6"/>`;
+    default: // casual — an everyday tee
+      return `<rect x="68" y="130" width="64" height="66" rx="18" fill="#4dabff"/><path d="M88 130 Q100 140 112 130" fill="none" stroke="#2f6fb2" stroke-width="3"/>`;
+  }
+}
+
+// Legs are skin first; the pants choice covers them (shorts leave the
+// lower legs bare, the skirt flares over the top of them).
+function pantsSvg(pants, skin) {
+  const legs = `<rect x="78" y="196" width="18" height="34" rx="6" fill="${skin}"/><rect x="104" y="196" width="18" height="34" rx="6" fill="${skin}"/>`;
+  switch (pants) {
+    case 'shorts':
+      return legs + `<rect x="78" y="196" width="18" height="18" rx="5" fill="#c9a227"/><rect x="104" y="196" width="18" height="18" rx="5" fill="#c9a227"/>`;
+    case 'skirt':
+      return legs + `<path d="M66 194 L134 194 L144 224 L56 224 Z" fill="#ff8fab"/><rect x="66" y="192" width="68" height="8" fill="#e75480"/>`;
+    case 'leggings':
+      return legs + `<rect x="78" y="196" width="18" height="34" rx="6" fill="#9775fa"/><rect x="104" y="196" width="18" height="34" rx="6" fill="#9775fa"/><circle cx="87" cy="214" r="2.5" fill="#ffffff"/><circle cx="113" cy="222" r="2.5" fill="#ffffff"/>`;
+    default: // jeans
+      return legs + `<rect x="78" y="196" width="18" height="34" rx="6" fill="#4a6fa5"/><rect x="104" y="196" width="18" height="34" rx="6" fill="#4a6fa5"/><line x1="82" y1="200" x2="82" y2="226" stroke="#2f4a6e" stroke-width="2"/><line x1="108" y1="200" x2="108" y2="226" stroke="#2f4a6e" stroke-width="2"/>`;
+  }
+}
+
+function shoesSvg(shoes) {
+  switch (shoes) {
+    case 'boots':
+      return `<rect x="76" y="216" width="22" height="26" rx="6" fill="#8d5524"/><rect x="102" y="216" width="22" height="26" rx="6" fill="#8d5524"/><rect x="76" y="216" width="22" height="6" fill="#5b3a1e"/><rect x="102" y="216" width="22" height="6" fill="#5b3a1e"/>`;
+    case 'sandals':
+      return `<rect x="74" y="232" width="26" height="8" rx="4" fill="#d2a679"/><rect x="100" y="232" width="26" height="8" rx="4" fill="#d2a679"/><line x1="80" y1="232" x2="94" y2="226" stroke="#8d5524" stroke-width="2"/><line x1="106" y1="232" x2="120" y2="226" stroke="#8d5524" stroke-width="2"/>`;
+    case 'hero-boots':
+      return `<rect x="76" y="216" width="22" height="26" rx="6" fill="#1e88e5"/><rect x="102" y="216" width="22" height="26" rx="6" fill="#1e88e5"/><rect x="76" y="216" width="22" height="6" fill="#f2c94c"/><rect x="102" y="216" width="22" height="6" fill="#f2c94c"/>`;
+    default: // sneakers
+      return `<rect x="74" y="228" width="26" height="14" rx="7" fill="#ffffff" stroke="#dfe6e9" stroke-width="1"/><rect x="100" y="228" width="26" height="14" rx="7" fill="#ffffff" stroke="#dfe6e9" stroke-width="1"/><rect x="74" y="232" width="26" height="4" fill="#e63946"/><rect x="100" y="232" width="26" height="4" fill="#e63946"/>`;
+  }
+}
+
+// Armor is a shiny overlay: shoulder pads plus a chest plate, worn over
+// the outfit. 'none' draws nothing.
+function armorSvg(armor) {
+  const colors = {
+    knight: { main: '#b8c4cc', edge: '#7f8c8d', plate: '#cfd8dc' },
+    star: { main: '#f2c94c', edge: '#b8860b', plate: '#ffe066' },
+    dragon: { main: '#2e7d32', edge: '#1b5e20', plate: '#43a047' },
+  }[armor];
+  if (!colors) return '';
+  const emblem =
+    armor === 'star'
+      ? `<path d="M100 152 l3 7 8 1 -6 5 1.5 8 -6.5 -4 -6.5 4 1.5 -8 -6 -5 8 -1 Z" fill="#b8860b"/>`
+      : armor === 'dragon'
+        ? `<path d="M88 168 Q94 158 100 168 Q106 158 112 168" fill="none" stroke="#1b5e20" stroke-width="2.5"/>`
+        : `<circle cx="88" cy="154" r="2.5" fill="#7f8c8d"/><circle cx="112" cy="154" r="2.5" fill="#7f8c8d"/><circle cx="88" cy="172" r="2.5" fill="#7f8c8d"/><circle cx="112" cy="172" r="2.5" fill="#7f8c8d"/>`;
+  return `<circle cx="68" cy="136" r="13" fill="${colors.main}" stroke="${colors.edge}" stroke-width="2"/><circle cx="132" cy="136" r="13" fill="${colors.main}" stroke="${colors.edge}" stroke-width="2"/><rect x="80" y="142" width="40" height="40" rx="10" fill="${colors.plate}" stroke="${colors.edge}" stroke-width="2"/>${emblem}`;
+}
+
+// Big anime eyes with a sparkle, plus blush — the chibi face.
+function faceSvg() {
+  return `
+    <ellipse cx="80" cy="78" rx="10" ry="14" fill="#ffffff"/>
+    <ellipse cx="120" cy="78" rx="10" ry="14" fill="#ffffff"/>
+    <ellipse cx="80" cy="80" rx="6.5" ry="10" fill="#2b2118"/>
+    <ellipse cx="120" cy="80" rx="6.5" ry="10" fill="#2b2118"/>
+    <circle cx="77" cy="72" r="3.5" fill="#ffffff"/>
+    <circle cx="117" cy="72" r="3.5" fill="#ffffff"/>
+    <circle cx="83" cy="86" r="1.5" fill="#ffffff"/>
+    <circle cx="123" cy="86" r="1.5" fill="#ffffff"/>
+    <ellipse cx="62" cy="96" rx="9" ry="5" fill="#ff9aa2" opacity="0.55"/>
+    <ellipse cx="138" cy="96" rx="9" ry="5" fill="#ff9aa2" opacity="0.55"/>
+    <path d="M92 104 Q100 110 108 104" fill="none" stroke="#b3543f" stroke-width="3.5" stroke-linecap="round"/>`;
 }
 
 function avatarSvg() {
   const a = state.avatar;
   return `
-  <svg viewBox="0 0 200 200" role="img" aria-label="Your avatar" class="avatar-svg">
-    <circle cx="100" cy="118" r="58" fill="${a.skin}"/>
-    <circle cx="79" cy="112" r="6" fill="#222"/>
-    <circle cx="121" cy="112" r="6" fill="#222"/>
-    <path d="M84 140 Q100 152 116 140" fill="none" stroke="#b3543f" stroke-width="4" stroke-linecap="round"/>
+  <svg viewBox="0 0 200 260" role="img" aria-label="Your avatar" class="avatar-svg">
+    ${a.accessory === 'cape' ? capeSvg() : ''}
+    ${pantsSvg(a.pants, a.skin)}
+    ${shoesSvg(a.shoes)}
+    ${outfitSvg(a.outfit)}
+    <ellipse cx="60" cy="162" rx="9" ry="24" fill="${a.skin}" transform="rotate(8 60 162)"/>
+    <ellipse cx="140" cy="162" rx="9" ry="24" fill="${a.skin}" transform="rotate(-8 140 162)"/>
+    ${armorSvg(a.armor)}
+    <rect x="93" y="118" width="14" height="14" fill="${a.skin}"/>
+    <circle cx="48" cy="74" r="8" fill="${a.skin}"/>
+    <circle cx="152" cy="74" r="8" fill="${a.skin}"/>
+    <circle cx="100" cy="74" r="52" fill="${a.skin}"/>
+    ${faceSvg()}
     ${hairSvg(a.hairStyle, a.hairColor)}
     ${hatSvg(a.hat)}
     ${accessorySvg(a.accessory)}
@@ -166,6 +268,10 @@ function renderShop() {
     ['hairStyle', 'Hair style'],
     ['hairColor', 'Hair colour'],
     ['hat', 'Hats'],
+    ['outfit', 'Outfits'],
+    ['pants', 'Pants'],
+    ['shoes', 'Shoes'],
+    ['armor', 'Armor'],
     ['accessory', 'Accessories'],
   ];
   $('#shop').innerHTML = slots
