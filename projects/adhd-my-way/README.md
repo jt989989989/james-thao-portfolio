@@ -13,7 +13,7 @@ coins, a customisable avatar, and mini games to keep it fun.
 > Roadmap: v2 focus timer + task categories + streaks (done) · v3 new mini game
 > (Colour Match) + more avatar items (done, 20 Nov 2026) · v4 weekly rewards /
 > achievements + summary screen (done, 22 Nov 2026) · v5 anime-style chibi
-> avatar (done, 24 Nov 2026).
+> avatar (done, 24 Nov 2026) · v5.1 proper anime face (done, 24 Nov 2026).
 >
 > **Update (8 Nov 2026)** — phone-friendly layout (the app now sits in a
 > centred phone-width column on wide screens, with bigger tap targets) and
@@ -57,6 +57,16 @@ coins, a customisable avatar, and mini games to keep it fun.
 > accessories (a Cute Bow and a Hero Cape). The shop now has 49 items.
 > Saved v1–v4 data carries over — coins, quests, avatar choices and streaks
 > are kept, and old avatars get the free everyday outfit.
+>
+> **Update — v5.1 (24 Nov 2026, same day)** — the face is now properly
+> anime: bigger eyes with a gradient brown iris, big sparkle highlights, a
+> thick upper lash line with flicks, fringe bangs on the forehead for every
+> hairstyle, and a small open smile. (v5's eyes were plain white ovals with
+> dark pupils and the hair was a flat bowl — it read as a generic cartoon
+> kid.) Also fixed the spiky and messy hair shapes, whose old zigzag path
+> self-intersected and left the middle of the head bald, and fixed the
+> daily-reset date: it used UTC, so quests reset at 7pm local instead of
+> midnight — it now uses the local calendar day.
 
 ## What it does
 

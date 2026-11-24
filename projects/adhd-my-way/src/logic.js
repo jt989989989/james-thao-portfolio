@@ -132,7 +132,13 @@ export const MEMORY_SHAPES = [
 ];
 
 export function todayString(date = new Date()) {
-  return date.toISOString().slice(0, 10); // YYYY-MM-DD, local day is fine for a demo
+  // Local calendar day (getFullYear/getMonth/getDate), NOT toISOString —
+  // toISOString is UTC, so in the evening it already said "tomorrow" and
+  // the app reset the day's quests at 7pm local instead of midnight.
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
 }
 
 export function yesterdayString(date = new Date()) {

@@ -96,25 +96,47 @@ function renderCoins() {
 // The chibi (v5): a big head with anime eyes and blush, and a small body
 // with an outfit, pants, shoes and an optional armor overlay. Head is
 // centred at (100, 74) with radius 52; the body runs from y=130 to y=244.
+// Fringe strands falling onto the forehead — the anime cue the plain
+// hair cap was missing. Tops tuck under the hair cap (same colour, so no
+// seam); tips stop above the eyes.
+function bangsSvg(color) {
+  return `<path d="M64 42 L72 64 L80 44 Z" fill="${color}"/><path d="M92 40 L100 60 L108 40 Z" fill="${color}"/><path d="M120 44 L128 64 L136 42 Z" fill="${color}"/>`;
+}
+
 function hairSvg(style, color) {
+  let base;
   switch (style) {
     case 'curly':
-      return `<circle cx="58" cy="46" r="18" fill="${color}"/><circle cx="78" cy="30" r="20" fill="${color}"/><circle cx="100" cy="26" r="20" fill="${color}"/><circle cx="122" cy="30" r="20" fill="${color}"/><circle cx="142" cy="46" r="18" fill="${color}"/><circle cx="48" cy="72" r="14" fill="${color}"/><circle cx="152" cy="72" r="14" fill="${color}"/>`;
+      base = `<circle cx="58" cy="46" r="18" fill="${color}"/><circle cx="78" cy="30" r="20" fill="${color}"/><circle cx="100" cy="26" r="20" fill="${color}"/><circle cx="122" cy="30" r="20" fill="${color}"/><circle cx="142" cy="46" r="18" fill="${color}"/><circle cx="48" cy="72" r="14" fill="${color}"/><circle cx="152" cy="72" r="14" fill="${color}"/>`;
+      break;
     case 'spiky':
-      return `<path d="M46 92 L52 50 L66 68 L76 36 L92 60 L100 30 L108 60 L124 36 L134 68 L148 50 L154 92 Q142 52 100 50 Q58 52 46 92 Z" fill="${color}"/>`;
+      // Short cap plus separate spike triangles on top. (The old single
+      // zigzag path self-intersected — its valleys dipped below the bottom
+      // curve — so the middle of the hair never filled and the head looked
+      // bald. Separate triangles can't do that.)
+      base = `<path d="M46 90 Q42 22 100 20 Q158 22 154 90 Q142 50 100 48 Q58 50 46 90 Z" fill="${color}"/><path d="M56 36 L66 12 L78 36 Z M78 34 L90 8 L102 34 Z M98 32 L110 6 L122 32 Z M120 34 L132 12 L144 34 Z M140 36 L150 16 L158 36 Z" fill="${color}"/>`;
+      break;
     case 'long':
-      return `<path d="M46 92 Q42 22 100 20 Q158 22 154 92 L154 172 L138 172 L138 96 Q138 52 100 50 Q62 52 62 96 L62 172 L46 172 Z" fill="${color}"/>`;
+      base = `<path d="M46 92 Q42 22 100 20 Q158 22 154 92 L154 172 L138 172 L138 96 Q138 52 100 50 Q62 52 62 96 L62 172 L46 172 Z" fill="${color}"/>`;
+      break;
     case 'ponytail':
-      return `<path d="M46 90 Q42 22 100 20 Q158 22 154 90 Q142 50 100 48 Q58 50 46 90 Z" fill="${color}"/><ellipse cx="160" cy="142" rx="13" ry="36" fill="${color}"/><rect x="150" y="94" width="20" height="9" rx="4" fill="#f2c94c"/>`;
+      base = `<path d="M46 90 Q42 22 100 20 Q158 22 154 90 Q142 50 100 48 Q58 50 46 90 Z" fill="${color}"/><ellipse cx="160" cy="142" rx="13" ry="36" fill="${color}"/><rect x="150" y="94" width="20" height="9" rx="4" fill="#f2c94c"/>`;
+      break;
     case 'twin-tails':
-      return `<path d="M46 90 Q42 22 100 20 Q158 22 154 90 Q142 50 100 48 Q58 50 46 90 Z" fill="${color}"/><ellipse cx="38" cy="142" rx="13" ry="38" fill="${color}"/><ellipse cx="162" cy="142" rx="13" ry="38" fill="${color}"/><rect x="28" y="94" width="20" height="9" rx="4" fill="#ff6b9d"/><rect x="152" y="94" width="20" height="9" rx="4" fill="#ff6b9d"/>`;
+      base = `<path d="M46 90 Q42 22 100 20 Q158 22 154 90 Q142 50 100 48 Q58 50 46 90 Z" fill="${color}"/><ellipse cx="38" cy="142" rx="13" ry="38" fill="${color}"/><ellipse cx="162" cy="142" rx="13" ry="38" fill="${color}"/><rect x="28" y="94" width="20" height="9" rx="4" fill="#ff6b9d"/><rect x="152" y="94" width="20" height="9" rx="4" fill="#ff6b9d"/>`;
+      break;
     case 'bob':
-      return `<path d="M44 96 Q40 20 100 18 Q160 20 156 96 L156 122 L138 122 L138 94 Q138 50 100 48 Q62 50 62 94 L62 122 L44 122 Z" fill="${color}"/>`;
+      base = `<path d="M44 96 Q40 20 100 18 Q160 20 156 96 L156 122 L138 122 L138 94 Q138 50 100 48 Q62 50 62 94 L62 122 L44 122 Z" fill="${color}"/>`;
+      break;
     case 'messy':
-      return `<path d="M46 92 L50 54 L64 70 L72 38 L88 62 L100 32 L112 62 L128 38 L136 70 L150 54 L154 92 Q142 52 100 50 Q58 52 46 92 Z" fill="${color}"/><path d="M100 30 Q96 12 110 6" fill="none" stroke="${color}" stroke-width="4" stroke-linecap="round"/>`;
+      // Same fix as spiky: short cap plus separate uneven triangles, then
+      // the cowlick flick on top.
+      base = `<path d="M46 90 Q42 22 100 20 Q158 22 154 90 Q142 50 100 48 Q58 50 46 90 Z" fill="${color}"/><path d="M54 38 L62 14 L74 38 Z M76 36 L86 10 L98 36 Z M96 34 L108 6 L120 34 Z M118 36 L130 12 L142 36 Z M138 38 L148 16 L158 38 Z" fill="${color}"/><path d="M100 30 Q96 12 110 6" fill="none" stroke="${color}" stroke-width="4" stroke-linecap="round"/>`;
+      break;
     default: // short
-      return `<path d="M46 90 Q42 22 100 20 Q158 22 154 90 Q142 50 100 48 Q58 50 46 90 Z" fill="${color}"/>`;
+      base = `<path d="M46 90 Q42 22 100 20 Q158 22 154 90 Q142 50 100 48 Q58 50 46 90 Z" fill="${color}"/>`;
   }
+  return base + bangsSvg(color);
 }
 
 function hatSvg(hat) {
@@ -220,20 +242,38 @@ function armorSvg(armor) {
   return `<circle cx="68" cy="136" r="13" fill="${colors.main}" stroke="${colors.edge}" stroke-width="2"/><circle cx="132" cy="136" r="13" fill="${colors.main}" stroke="${colors.edge}" stroke-width="2"/><rect x="80" y="142" width="40" height="40" rx="10" fill="${colors.plate}" stroke="${colors.edge}" stroke-width="2"/>${emblem}`;
 }
 
-// Big anime eyes with a sparkle, plus blush — the chibi face.
+// Big anime eyes: large gradient irises with big sparkle highlights, a
+// thick upper lash line with flicks at the outer corners, a tiny nose dot,
+// blush and a small open smile — the chibi face.
 function faceSvg() {
   return `
-    <ellipse cx="80" cy="78" rx="10" ry="14" fill="#ffffff"/>
-    <ellipse cx="120" cy="78" rx="10" ry="14" fill="#ffffff"/>
-    <ellipse cx="80" cy="80" rx="6.5" ry="10" fill="#2b2118"/>
-    <ellipse cx="120" cy="80" rx="6.5" ry="10" fill="#2b2118"/>
-    <circle cx="77" cy="72" r="3.5" fill="#ffffff"/>
-    <circle cx="117" cy="72" r="3.5" fill="#ffffff"/>
-    <circle cx="83" cy="86" r="1.5" fill="#ffffff"/>
-    <circle cx="123" cy="86" r="1.5" fill="#ffffff"/>
-    <ellipse cx="62" cy="96" rx="9" ry="5" fill="#ff9aa2" opacity="0.55"/>
-    <ellipse cx="138" cy="96" rx="9" ry="5" fill="#ff9aa2" opacity="0.55"/>
-    <path d="M92 104 Q100 110 108 104" fill="none" stroke="#b3543f" stroke-width="3.5" stroke-linecap="round"/>`;
+    <defs>
+      <radialGradient id="irisGrad" cx="50%" cy="35%" r="65%">
+        <stop offset="0%" stop-color="#d9a05b"/>
+        <stop offset="55%" stop-color="#a06a2e"/>
+        <stop offset="100%" stop-color="#6b4423"/>
+      </radialGradient>
+    </defs>
+    <ellipse cx="77" cy="82" rx="13" ry="18" fill="#ffffff"/>
+    <ellipse cx="123" cy="82" rx="13" ry="18" fill="#ffffff"/>
+    <ellipse cx="77" cy="84" rx="8.5" ry="12" fill="url(#irisGrad)" stroke="#3a2415" stroke-width="1.5"/>
+    <ellipse cx="123" cy="84" rx="8.5" ry="12" fill="url(#irisGrad)" stroke="#3a2415" stroke-width="1.5"/>
+    <ellipse cx="77" cy="86" rx="4.5" ry="7" fill="#2b2118"/>
+    <ellipse cx="123" cy="86" rx="4.5" ry="7" fill="#2b2118"/>
+    <circle cx="73" cy="74" r="4.5" fill="#ffffff"/>
+    <circle cx="119" cy="74" r="4.5" fill="#ffffff"/>
+    <circle cx="81" cy="90" r="2" fill="#ffffff"/>
+    <circle cx="127" cy="90" r="2" fill="#ffffff"/>
+    <path d="M64 74 Q77 58 90 74" fill="none" stroke="#2b2118" stroke-width="4.5" stroke-linecap="round"/>
+    <path d="M110 74 Q123 58 136 74" fill="none" stroke="#2b2118" stroke-width="4.5" stroke-linecap="round"/>
+    <path d="M64 74 L58 69" stroke="#2b2118" stroke-width="3.5" stroke-linecap="round"/>
+    <path d="M67 69 L63 63" stroke="#2b2118" stroke-width="3" stroke-linecap="round"/>
+    <path d="M136 74 L142 69" stroke="#2b2118" stroke-width="3.5" stroke-linecap="round"/>
+    <path d="M133 69 L137 63" stroke="#2b2118" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="100" cy="98" r="1.8" fill="#d98e5f"/>
+    <ellipse cx="60" cy="100" rx="10" ry="5.5" fill="#ff9aa2" opacity="0.6"/>
+    <ellipse cx="140" cy="100" rx="10" ry="5.5" fill="#ff9aa2" opacity="0.6"/>
+    <path d="M94 106 Q100 114 106 106 Q100 109 94 106 Z" fill="#b3543f"/>`;
 }
 
 function avatarSvg() {
