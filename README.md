@@ -27,7 +27,7 @@ This repository is my project index for programming and IT roles. Each project i
 | [SQL Detective](projects/sql-detective/) | Fun SQL practice game — solve the case of the missing mascot by writing real SQL queries against a fictional SQLite database; hints and a checker included | Python (stdlib only, sqlite3) | SQL / databases / games |
 | [SQL Injection Lab](projects/sql-injection-lab/) | Educational local-only lab — try classic injection payloads against a deliberately vulnerable login, then see the same payloads fail against parameterized queries; spot-it and fix-it guide included | Python (stdlib only, sqlite3) | Security / defensive |
 | [Phishing Email Detector](projects/phishing-email-detector/) | Local ML email classifier — Naive Bayes word model trained on built-in fictional samples plus rule signals (urgency, credential requests, Reply-To mismatch, deceptive links, risky attachments); v2 adds typosquat-domain detection, deeper suspicious-URL checks (punycode, @ trick, percent-encoded hosts) and attachment-risk checks (double extensions, macro files, password in the email); scores an email 0–100 and explains why | Python (stdlib only) | Security / AI / defensive |
-| [Port Scanner](projects/port-scanner/) | TCP connect port scanner for lab targets only — scans a port range and prints open/closed; refuses public targets unless `--i-have-permission` is given | Python (stdlib only) | Security / offensive lab |
+| [Port Scanner](projects/port-scanner/) | Threaded TCP connect port scanner for lab targets only — scans a port range and prints open/closed with a scan rate; `--timing` presets and `--threads` trade speed against politeness; refuses public targets unless `--i-have-permission` is given | Python (stdlib only) | Security / offensive lab |
 | [Cloud Security Posture Checker](projects/cloud-security-posture-checker/) | Defensive CLI that scores an AWS account 0–100 — public S3 buckets, users without MFA, old/unused keys, root risks, open security groups, missing CloudTrail, public/unencrypted databases; demo, snapshot, and live boto3 modes, read-only | Python (stdlib only; boto3 for live mode) | Security / cloud |
 | [ADHD My Way](projects/adhd-my-way/) | Ionic app for children under 12 — daily quests earn coins, coins buy avatar customisations, plus Memory Match, Tap the Star and Colour Match mini games; v2 adds quest groups, per-quest focus timer and daily streaks; v3 adds the Colour Match game and more avatar shop items; v4 adds a weekly star reward (50 coins for 10 quests in a week), 10 earnable badges and a "My Stars" summary screen; v5 turns the avatar into an anime-style chibi with outfits, pants, shoes, armor, anime hair and a hero cape; v5.1 gives it a proper anime face (gradient irises, lash lines, fringe bangs) and fixes the daily reset to local midnight; everything stays on the device | Ionic 8, Capacitor 7, Vite, JavaScript | Mobile / front-end |
 | [Local Chatbot](projects/local-chatbot/) | Simple offline chatbot — keyword/intent matching over a built-in knowledge base about All Stars Automations and my portfolio; answers services, booking, pricing (never invents a price), projects, and contact; demo mode included | Python (stdlib only) | AI / automation |
@@ -141,11 +141,12 @@ python -m unittest discover -s tests -v
 python chatbot.py --demo
 # Interactive chat: python chatbot.py
 
-# Port Scanner — 20 unit tests; lab targets only, no brute force or exploits
+# Port Scanner — 37 unit tests; lab targets only, no brute force or exploits
 cd ../port-scanner
 python -m unittest discover -s tests -v
 python port_scanner.py --demo
 # Scan localhost: python port_scanner.py 127.0.0.1 --ports 22,80,443
+# Fast sweep: python port_scanner.py 127.0.0.1 --ports 1-1024 --timing fast
 
 # Cloud Security Posture Checker — 21 unit tests; demo scores 0/100 (Grade F) on purpose
 cd ../cloud-security-posture-checker

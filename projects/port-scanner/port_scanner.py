@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
-"""Port Scanner v1 — a basic TCP connect scanner for lab targets only.
+"""Port Scanner v3 — a threaded TCP connect scanner for lab targets only.
 
 Scans a target host over a port range (or a list of ports) and prints
-which ports are OPEN and which are CLOSED, with a short summary.
+which ports are OPEN and which are CLOSED, with a short summary. v3
+scans with a thread pool instead of one port at a time, so a sweep of
+slow or filtered ports that took minutes now takes seconds, and adds
+--timing presets (fast / normal / slow / paranoid) plus a --threads
+knob so I can trade speed against politeness on a fragile lab box.
 
 This is an offensive-security learning tool I built for my own
 penetration-testing practice. It is ONLY for targets I own or have
@@ -22,13 +26,16 @@ own or have permission to test: unauthorised scanning can break the law
 where you live.
 
 The scanner never brute-forces logins, never tries exploits, and never
-floods a target — it is a plain sequential TCP connect scan, one short
-connection attempt per port.
+floods a target — it opens one short TCP connection per port, and the
+threads only run those attempts in parallel. The paranoid timing preset
+(5 threads, 2s timeout) is there for fragile lab machines.
 
 Usage:
     python port_scanner.py 127.0.0.1 --ports 1-1024
     python port_scanner.py localhost --ports 22,80,443
     python port_scanner.py 192.168.1.10 --ports 1-100 --timeout 1
+    python port_scanner.py 127.0.0.1 --ports 1-1024 --timing fast
+    python port_scanner.py 127.0.0.1 --ports 1-1024 --threads 10 --timeout 2
     python port_scanner.py scanme.example.com --ports 80,443 --i-have-permission
     python port_scanner.py --demo        # scans a local test server; needs no target
 
@@ -45,13 +52,26 @@ import socket
 import sys
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 
-VERSION = "1.0.0"
+VERSION = "3.0.0"
 
 DEFAULT_PORT_SPEC = "1-1024"
 DEFAULT_TIMEOUT = 0.5
+DEFAULT_THREADS = 50
+DEFAULT_TIMING = "normal"
 MAX_PORTS = 65535
+MAX_THREADS = 500
+
+# Timing presets: (per-port timeout in seconds, worker threads).
+# fast is for a responsive local lab box; paranoid is for a fragile one.
+TIMING_PRESETS = {
+    "fast": (0.2, 200),
+    "normal": (0.5, 50),
+    "slow": (1.0, 20),
+    "paranoid": (2.0, 5),
+}
 
 # Lab networks the scanner will touch without the permission flag:
 # loopback, RFC 1918 private ranges, and link-local. Everything else
@@ -111,6 +131,33 @@ def parse_ports(spec: str) -> list[int]:
     if len(ports) > MAX_PORTS:
         raise ValueError(f"too many ports (max {MAX_PORTS})")
     return sorted(ports)
+
+
+def resolve_timing(
+    timing: str, timeout: float | None = None, threads: int | None = None
+) -> tuple[float, int]:
+    """Turn a --timing preset plus any explicit --timeout / --threads
+    overrides into the (timeout, threads) pair the scan will use.
+
+    An explicit flag always wins over its preset value. Raises
+    ValueError on an unknown preset, a non-positive timeout, or a
+    thread count outside 1-500.
+    """
+    if timing not in TIMING_PRESETS:
+        raise ValueError(
+            f"unknown timing preset: {timing!r}"
+            " (fast, normal, slow, paranoid)"
+        )
+    preset_timeout, preset_threads = TIMING_PRESETS[timing]
+    if timeout is None:
+        timeout = preset_timeout
+    if threads is None:
+        threads = preset_threads
+    if timeout <= 0:
+        raise ValueError("--timeout must be greater than 0")
+    if not 1 <= threads <= MAX_THREADS:
+        raise ValueError(f"--threads must be 1-{MAX_THREADS}")
+    return timeout, threads
 
 
 def resolve_target(target: str) -> ipaddress.IPv4Address | ipaddress.IPv6Address:
@@ -174,19 +221,37 @@ def scan_port(host: str, port: int, timeout: float = DEFAULT_TIMEOUT) -> bool:
 
 
 def scan(
-    host: str, ports: list[int], timeout: float = DEFAULT_TIMEOUT
+    host: str,
+    ports: list[int],
+    timeout: float = DEFAULT_TIMEOUT,
+    threads: int = DEFAULT_THREADS,
 ) -> tuple[list[PortResult], float]:
-    """Scan ports on host in order. Returns (results, elapsed seconds)."""
+    """Scan ports on host with a thread pool. Results come back in port
+    order (ThreadPoolExecutor.map preserves it), however fast each
+    connection is. Returns (results, elapsed seconds)."""
+    if threads < 1:
+        raise ValueError("--threads must be at least 1")
     started = time.monotonic()
-    results = [PortResult(port, scan_port(host, port, timeout)) for port in ports]
+    worker_count = max(1, min(threads, len(ports))) if ports else 1
+    with ThreadPoolExecutor(max_workers=worker_count) as pool:
+        open_flags = list(
+            pool.map(lambda p: scan_port(host, p, timeout), ports)
+        )
+    results = [
+        PortResult(port, is_open) for port, is_open in zip(ports, open_flags)
+    ]
     return results, time.monotonic() - started
 
 
 def format_results(
     host: str, results: list[PortResult], elapsed: float
 ) -> str:
-    """Human-readable scan report."""
-    lines = [f"Scan of {host} — {len(results)} port(s) in {elapsed:.2f}s:"]
+    """Human-readable scan report, including the scan rate."""
+    rate = len(results) / elapsed if elapsed > 0 else float(len(results))
+    lines = [
+        f"Scan of {host} — {len(results)} port(s) in {elapsed:.2f}s"
+        f" ({rate:.0f} ports/s):"
+    ]
     for result in results:
         state = "OPEN  " if result.is_open else "closed"
         lines.append(f"  {result.port:>5}/tcp  {state}")
@@ -199,7 +264,9 @@ def format_results(
     return "\n".join(lines)
 
 
-def run_demo() -> int:
+def run_demo(
+    timeout: float = DEFAULT_TIMEOUT, threads: int = DEFAULT_THREADS
+) -> int:
     """Demo: start a throwaway TCP server on localhost, scan it and its
     neighbours, and show the open port being found. No external target.
     """
@@ -223,7 +290,9 @@ def run_demo() -> int:
         ports = [demo_port - 1, demo_port, demo_port + 1]
         ports = [p for p in ports if 1 <= p <= 65535]
         print(f"Demo server listening on 127.0.0.1:{demo_port}")
-        results, elapsed = scan("127.0.0.1", ports, timeout=DEFAULT_TIMEOUT)
+        results, elapsed = scan(
+            "127.0.0.1", ports, timeout=timeout, threads=threads
+        )
         print(format_results("127.0.0.1 (demo server)", results, elapsed))
         return 0
     finally:
@@ -232,7 +301,7 @@ def run_demo() -> int:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="Basic TCP connect port scanner — lab targets only"
+        description="Threaded TCP connect port scanner — lab targets only"
         " unless --i-have-permission (see README for the rules)."
     )
     parser.add_argument(
@@ -249,8 +318,25 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--timeout",
         type=float,
-        default=DEFAULT_TIMEOUT,
-        help=f"Seconds to wait per port (default: {DEFAULT_TIMEOUT}).",
+        default=None,
+        help="Seconds to wait per port. Overrides the --timing preset"
+        f" (default: {DEFAULT_TIMEOUT} via the normal preset).",
+    )
+    parser.add_argument(
+        "--threads",
+        type=int,
+        default=None,
+        help="Worker threads for the scan, 1-500. Overrides the"
+        " --timing preset"
+        f" (default: {DEFAULT_THREADS} via the normal preset).",
+    )
+    parser.add_argument(
+        "--timing",
+        choices=sorted(TIMING_PRESETS),
+        default=DEFAULT_TIMING,
+        help="Timing preset: fast (0.2s, 200 threads), normal (0.5s,"
+        " 50 threads), slow (1.0s, 20 threads), paranoid (2.0s,"
+        f" 5 threads) (default: {DEFAULT_TIMING}).",
     )
     parser.add_argument(
         "--i-have-permission",
@@ -265,13 +351,16 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
+    try:
+        timeout, threads = resolve_timing(args.timing, args.timeout, args.threads)
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+
     if args.demo:
-        return run_demo()
+        return run_demo(timeout=timeout, threads=threads)
     if not args.target:
         parser.error("a target is required (or use --demo)")
-    if args.timeout <= 0:
-        print("error: --timeout must be greater than 0", file=sys.stderr)
-        return 2
 
     try:
         ports = parse_ports(args.ports)
@@ -284,7 +373,7 @@ def main(argv: list[str] | None = None) -> int:
     if not allowed:
         return 2
 
-    results, elapsed = scan(args.target, ports, timeout=args.timeout)
+    results, elapsed = scan(args.target, ports, timeout=timeout, threads=threads)
     print(format_results(args.target, results, elapsed))
     return 0
 

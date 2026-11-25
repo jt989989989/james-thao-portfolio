@@ -157,9 +157,115 @@ class TestScanning(unittest.TestCase):
         self.assertIn("Open ports: 22", text)
 
 
+class TestResolveTiming(unittest.TestCase):
+    def test_presets(self):
+        self.assertEqual(port_scanner.resolve_timing("fast"), (0.2, 200))
+        self.assertEqual(port_scanner.resolve_timing("normal"), (0.5, 50))
+        self.assertEqual(port_scanner.resolve_timing("slow"), (1.0, 20))
+        self.assertEqual(port_scanner.resolve_timing("paranoid"), (2.0, 5))
+
+    def test_explicit_timeout_overrides_preset(self):
+        self.assertEqual(
+            port_scanner.resolve_timing("fast", timeout=1.5), (1.5, 200)
+        )
+
+    def test_explicit_threads_overrides_preset(self):
+        self.assertEqual(
+            port_scanner.resolve_timing("paranoid", threads=10), (2.0, 10)
+        )
+
+    def test_both_overrides_win(self):
+        self.assertEqual(
+            port_scanner.resolve_timing("slow", timeout=0.1, threads=3),
+            (0.1, 3),
+        )
+
+    def test_rejects_unknown_preset(self):
+        with self.assertRaises(ValueError):
+            port_scanner.resolve_timing("turbo")
+
+    def test_rejects_non_positive_timeout(self):
+        for bad in (0, -1.0):
+            with self.subTest(bad=bad), self.assertRaises(ValueError):
+                port_scanner.resolve_timing("normal", timeout=bad)
+
+    def test_rejects_thread_count_out_of_range(self):
+        for bad in (0, -5, 501, 1000):
+            with self.subTest(bad=bad), self.assertRaises(ValueError):
+                port_scanner.resolve_timing("normal", threads=bad)
+
+
+class TestThreadedScanning(unittest.TestCase):
+    def test_threaded_and_sequential_agree(self):
+        server = _TestServer()
+        closed = _free_port()
+        ports = [server.port, closed]
+        try:
+            seq, _ = port_scanner.scan("127.0.0.1", ports, threads=1)
+            threaded, _ = port_scanner.scan("127.0.0.1", ports, threads=20)
+            self.assertEqual(
+                [(r.port, r.is_open) for r in seq],
+                [(r.port, r.is_open) for r in threaded],
+            )
+            self.assertTrue(seq[0].is_open)
+            self.assertFalse(seq[1].is_open)
+        finally:
+            server.close()
+
+    def test_results_stay_in_port_order(self):
+        # Results follow the order of the ports list given, however fast
+        # each connection is — even when the input list is not sorted.
+        server = _TestServer()
+        try:
+            ports = [server.port + 3, server.port, server.port + 1]
+            ports = [p for p in ports if 1 <= p <= 65535]
+            results, _ = port_scanner.scan(
+                "127.0.0.1", ports, threads=10
+            )
+            self.assertEqual([r.port for r in results], ports)
+        finally:
+            server.close()
+
+    def test_threaded_scan_of_many_closed_ports(self):
+        # 40 closed ports: threaded must finish and report them all closed.
+        ports = [_free_port() for _ in range(40)]
+        results, elapsed = port_scanner.scan(
+            "127.0.0.1", sorted(set(ports)), threads=20
+        )
+        self.assertTrue(all(not r.is_open for r in results))
+        self.assertGreaterEqual(elapsed, 0)
+
+    def test_threads_capped_at_port_count(self):
+        # More threads than ports is fine — no crash, same result.
+        server = _TestServer()
+        try:
+            results, _ = port_scanner.scan(
+                "127.0.0.1", [server.port], threads=500
+            )
+            self.assertTrue(results[0].is_open)
+        finally:
+            server.close()
+
+    def test_scan_rejects_zero_threads(self):
+        with self.assertRaises(ValueError):
+            port_scanner.scan("127.0.0.1", [80], threads=0)
+
+    def test_format_results_shows_scan_rate(self):
+        results = [
+            port_scanner.PortResult(22, True),
+            port_scanner.PortResult(80, False),
+        ]
+        text = port_scanner.format_results("127.0.0.1", results, 0.02)
+        self.assertIn("ports/s", text)
+        self.assertIn("100 ports/s", text)
+
+
 class TestCli(unittest.TestCase):
     def test_demo_exits_zero_and_finds_open_port(self):
         self.assertEqual(port_scanner.main(["--demo"]), 0)
+
+    def test_demo_with_fast_timing_exits_zero(self):
+        self.assertEqual(port_scanner.main(["--demo", "--timing", "fast"]), 0)
 
     def test_public_target_without_flag_exits_2(self):
         self.assertEqual(port_scanner.main(["8.8.8.8", "--ports", "80"]), 2)
@@ -168,6 +274,26 @@ class TestCli(unittest.TestCase):
         self.assertEqual(
             port_scanner.main(["127.0.0.1", "--ports", "not-a-port"]), 2
         )
+
+    def test_bad_thread_count_exits_2(self):
+        for bad in ("0", "501"):
+            with self.subTest(bad=bad):
+                self.assertEqual(
+                    port_scanner.main(
+                        ["127.0.0.1", "--ports", "80", "--threads", bad]
+                    ),
+                    2,
+                )
+
+    def test_bad_timeout_exits_2(self):
+        self.assertEqual(
+            port_scanner.main(["127.0.0.1", "--ports", "80", "--timeout", "0"]),
+            2,
+        )
+
+    def test_bad_timing_preset_exits_2(self):
+        with self.assertRaises(SystemExit):
+            port_scanner.main(["127.0.0.1", "--timing", "turbo"])
 
 
 if __name__ == "__main__":
