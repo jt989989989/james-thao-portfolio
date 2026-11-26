@@ -28,6 +28,9 @@ export const TIMER_BONUS_COINS = 5; // coins for finishing a focus timer
 export const COLOUR_MATCH_COINS = 2; // coins per correct Colour Match tap
 export const COLOUR_GAME_BONUS_COINS = 10; // bonus for finishing all Colour Match rounds
 export const COLOUR_ROUNDS = 10; // rounds in one Colour Match game
+export const QUICK_MATH_COINS = 2; // coins per correct Quick Math answer
+export const QUICK_MATH_BONUS_COINS = 10; // bonus for finishing all Quick Math rounds
+export const QUICK_MATH_ROUNDS = 10; // rounds in one Quick Math game
 
 // v4: weekly star reward — finish WEEKLY_QUEST_GOAL quests in one week
 // (Monday to Sunday) and claim WEEKLY_REWARD_COINS once that week.
@@ -120,6 +123,12 @@ export const SHOP = [
   { id: 'armor-knight', slot: 'armor', name: 'Knight Armor', value: 'knight', price: 60 },
   { id: 'armor-star', slot: 'armor', name: 'Star Armor', value: 'star', price: 70 },
   { id: 'armor-dragon', slot: 'armor', name: 'Dragon Armor', value: 'dragon', price: 80 },
+  // v6: a rosy skin, braided hair, a sun hat, a rainbow hoodie and a star wand.
+  { id: 'skin-rose', slot: 'skin', name: 'Rosy', value: '#f2a594', price: 15 },
+  { id: 'hair-braids', slot: 'hairStyle', name: 'Braids', value: 'braids', price: 30 },
+  { id: 'hat-sun', slot: 'hat', name: 'Sun Hat', value: 'sun', price: 35 },
+  { id: 'outfit-rainbow', slot: 'outfit', name: 'Rainbow Hoodie', value: 'rainbow', price: 45 },
+  { id: 'acc-wand', slot: 'accessory', name: 'Star Wand', value: 'wand', price: 40 },
 ];
 
 export const MEMORY_SHAPES = [
@@ -147,7 +156,7 @@ export function yesterdayString(date = new Date()) {
 
 export function createDefaultState(date = new Date()) {
   return {
-    version: 5,
+    version: 6,
     coins: 0,
     date: todayString(date),
     tasks: DEFAULT_TASKS.map((t) => ({ ...t, done: false })),
@@ -169,28 +178,28 @@ export function createDefaultState(date = new Date()) {
     // v4 weekly record: quests / games / focus sessions this week, and
     // whether this week's star reward has been claimed yet.
     weekly: { weekStart: weekStartString(date), quests: 0, games: 0, focus: 0, claimed: false },
-    stats: { tasksDone: 0, gamesWon: 0, memoryWins: 0, starsTapped: 0, timersFinished: 0, colourPlayed: 0, colourCorrect: 0 },
+    stats: { tasksDone: 0, gamesWon: 0, memoryWins: 0, starsTapped: 0, timersFinished: 0, colourPlayed: 0, colourCorrect: 0, mathPlayed: 0, mathCorrect: 0 },
   };
 }
 
 // Fill in any stats keys an older save is missing (v1/v2 saves have no
-// colour stats; v3 saves have no memory-win count); never wipes a count
-// that is already there.
+// colour stats; v3 saves have no memory-win count; v5 saves have no maths
+// stats); never wipes a count that is already there.
 function ensureStats(state) {
   if (!state.stats || typeof state.stats !== 'object') {
     state.stats = { tasksDone: 0, gamesWon: 0, memoryWins: 0, starsTapped: 0, timersFinished: 0 };
   }
-  for (const [key, fallback] of Object.entries({ tasksDone: 0, gamesWon: 0, memoryWins: 0, starsTapped: 0, timersFinished: 0, colourPlayed: 0, colourCorrect: 0 })) {
+  for (const [key, fallback] of Object.entries({ tasksDone: 0, gamesWon: 0, memoryWins: 0, starsTapped: 0, timersFinished: 0, colourPlayed: 0, colourCorrect: 0, mathPlayed: 0, mathCorrect: 0 })) {
     if (typeof state.stats[key] !== 'number') state.stats[key] = fallback;
   }
   return state.stats;
 }
 
-// Bring a saved v1/v2/v3/v4 state up to v5 without losing coins, quests
+// Bring a saved v1/v2/v3/v4/v5 state up to v6 without losing coins, quests
 // or avatar: adds the streak record, a category for any quest that lacks
 // one, the v3 colour-game stats, the v4 weekly record + memory-win count,
-// and the v5 chibi outfit slots (old avatars keep their hair, hat and
-// accessory and get the free everyday outfit).
+// the v5 chibi outfit slots (old avatars keep their hair, hat and
+// accessory and get the free everyday outfit), and the v6 maths stats.
 export function migrateState(state) {
   if (!state || typeof state !== 'object') return createDefaultState();
   if (!state.avatar || typeof state.avatar !== 'object') {
@@ -219,7 +228,7 @@ export function migrateState(state) {
   }
   ensureStats(state);
   ensureWeekly(state);
-  state.version = 5;
+  state.version = 6;
   return state;
 }
 
@@ -316,6 +325,7 @@ export const ACHIEVEMENTS = [
   { id: 'streak-7', title: 'Super Streak', icon: '🌟', text: 'Keep a 7-day streak going!', check: (s) => (s.streak?.best || 0) >= 7 },
   { id: 'memory-champ', title: 'Memory Champion', icon: '🧠', text: 'Win a game of Memory Match!', check: (s) => s.stats.memoryWins >= 1 },
   { id: 'colour-star', title: 'Colour Star', icon: '🎨', text: 'Get 10 Colour Match answers right!', check: (s) => s.stats.colourCorrect >= 10 },
+  { id: 'math-whiz', title: 'Math Whiz', icon: '🔢', text: 'Get 10 Quick Math answers right!', check: (s) => s.stats.mathCorrect >= 10 },
   { id: 'star-tapper', title: 'Star Tapper', icon: '⭐', text: 'Tap 50 stars in Tap the Star!', check: (s) => s.stats.starsTapped >= 50 },
   { id: 'focused', title: 'Focused', icon: '⏱️', text: 'Finish 5 focus timer sessions!', check: (s) => s.stats.timersFinished >= 5 },
   { id: 'big-spender', title: 'Big Spender', icon: '🛍️', text: 'Buy your first avatar item from the shop!', check: (s) => s.owned.length > FREE_ITEM_COUNT },
@@ -352,6 +362,8 @@ export function weeklySummary(state, date = new Date()) {
     timersFinished: state.stats.timersFinished,
     colourCorrect: state.stats.colourCorrect,
     colourPlayed: state.stats.colourPlayed,
+    mathCorrect: state.stats.mathCorrect,
+    mathPlayed: state.stats.mathPlayed,
     weeklyQuests: weekly.quests,
     weeklyGames: weekly.games,
     weeklyFocus: weekly.focus,
@@ -546,4 +558,71 @@ export function awardColourGameWin(state, date = new Date()) {
   state.stats.gamesWon += 1;
   recordWeekly(state, 'games', date);
   return COLOUR_GAME_BONUS_COINS;
+}
+
+// ---------- v6: Quick Math ----------
+// One round: a small sum to solve — addition (1–9 + 1–9) or subtraction
+// with an answer that is never negative (take-away, never below zero),
+// plus 4 big number buttons to choose from (the answer plus 3 close
+// distractors, shuffled). Numbers stay small so a child under 12 can
+// work them out in their head.
+export function createQuickMathRound(random = Math.random) {
+  const subtract = random() < 0.5;
+  let a;
+  let b;
+  let answer;
+  let question;
+  if (subtract) {
+    a = 2 + Math.floor(random() * 9); // 2–10
+    b = 1 + Math.floor(random() * (a - 1)); // 1..a-1, so the answer is at least 1
+    answer = a - b;
+    question = `${a} - ${b}`;
+  } else {
+    a = 1 + Math.floor(random() * 9); // 1–9
+    b = 1 + Math.floor(random() * 9); // 1–9
+    answer = a + b;
+    question = `${a} + ${b}`;
+  }
+  // Distractors: close to the answer (off by 1, 2 or 3, or 10 away),
+  // never negative, never the answer twice, never repeated.
+  const options = [answer];
+  const offsets = [1, -1, 2, -2, 3, -3, 10, -10];
+  for (let i = offsets.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(random() * (i + 1));
+    [offsets[i], offsets[j]] = [offsets[j], offsets[i]];
+  }
+  for (const offset of offsets) {
+    if (options.length >= 4) break;
+    const candidate = answer + offset;
+    if (candidate >= 0 && !options.includes(candidate)) options.push(candidate);
+  }
+  for (let i = options.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(random() * (i + 1));
+    [options[i], options[j]] = [options[j], options[i]];
+  }
+  return { question, answer, options };
+}
+
+export function isQuickMathPickCorrect(round, value) {
+  return !!round && typeof round.answer === 'number' && value === round.answer;
+}
+
+// A correct answer earns QUICK_MATH_COINS; a wrong tap earns nothing.
+// Every tap is counted, so the stats line can show how a child is doing.
+export function awardQuickMathPick(state, correct) {
+  ensureStats(state);
+  state.stats.mathPlayed += 1;
+  if (!correct) return 0;
+  state.stats.mathCorrect += 1;
+  state.coins += QUICK_MATH_COINS;
+  return QUICK_MATH_COINS;
+}
+
+// Finishing all QUICK_MATH_ROUNDS rounds pays a bonus and counts as a game won.
+export function awardQuickMathGameWin(state, date = new Date()) {
+  ensureStats(state);
+  state.coins += QUICK_MATH_BONUS_COINS;
+  state.stats.gamesWon += 1;
+  recordWeekly(state, 'games', date);
+  return QUICK_MATH_BONUS_COINS;
 }

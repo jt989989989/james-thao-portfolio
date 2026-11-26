@@ -8,6 +8,9 @@ import {
   COLOUR_ROUNDS,
   COLOUR_WORDS,
   MEMORY_WIN_COINS,
+  QUICK_MATH_BONUS_COINS,
+  QUICK_MATH_COINS,
+  QUICK_MATH_ROUNDS,
   SHOP,
   STAR_TAP_COINS,
   TASK_COINS,
@@ -19,6 +22,8 @@ import {
   awardColourGameWin,
   awardColourPick,
   awardMemoryWin,
+  awardQuickMathGameWin,
+  awardQuickMathPick,
   awardStarTaps,
   awardTimerFinish,
   buyOrEquip,
@@ -26,9 +31,11 @@ import {
   createColourRound,
   createDefaultState,
   createMemoryDeck,
+  createQuickMathRound,
   finishFocusSession,
   isColourPickCorrect,
   isMemoryMatch,
+  isQuickMathPickCorrect,
   migrateState,
   needsDailyReset,
   recordActivity,
@@ -227,7 +234,7 @@ test('v2: migrating a v1 save keeps coins and adds streak + categories', () => {
     stats: { tasksDone: 3, gamesWon: 0, starsTapped: 0, timersFinished: 1 },
   };
   const s = migrateState(v1);
-  assert.equal(s.version, 5);
+  assert.equal(s.version, 6);
   assert.equal(s.coins, 45);
   assert.equal(s.streak.count, 0);
   assert.equal(s.streak.best, 0);
@@ -242,9 +249,9 @@ test('v2: migrating a v1 save keeps coins and adds streak + categories', () => {
   assert.equal(s.tasks[1].done, true);
 });
 
-test('v5: default state is version 5 with weekly record and memory stats at zero', () => {
+test('v6: default state is version 6 with weekly record and memory stats at zero', () => {
   const s = createDefaultState(new Date('2026-11-22T10:00:00'));
-  assert.equal(s.version, 5);
+  assert.equal(s.version, 6);
   assert.equal(s.stats.colourPlayed, 0);
   assert.equal(s.stats.colourCorrect, 0);
   assert.equal(s.stats.memoryWins, 0);
@@ -309,7 +316,7 @@ test('v3: finishing a colour game pays the bonus and counts a game won', () => {
 
 test('v3: shop has the new avatar items at the right prices', () => {
   const byId = Object.fromEntries(SHOP.map((i) => [i.id, i]));
-  assert.equal(SHOP.length, 49); // 27 through v3 + 22 chibi items in v5
+  assert.equal(SHOP.length, 54); // 27 through v3 + 22 chibi items in v5 + 5 in v6
   assert.equal(byId['skin-5'].value, '#e8b06a');
   assert.equal(byId['hair-ponytail'].slot, 'hairStyle');
   assert.equal(byId['hair-ponytail'].price, 25);
@@ -347,7 +354,7 @@ test('v3: migrating a v2 save keeps coins and streak and adds colour stats', () 
     stats: { tasksDone: 4, gamesWon: 1, starsTapped: 12, timersFinished: 2 },
   };
   const s = migrateState(v2);
-  assert.equal(s.version, 5);
+  assert.equal(s.version, 6);
   assert.equal(s.coins, 60);
   assert.equal(s.streak.count, 3);
   assert.equal(s.streak.best, 5);
@@ -434,7 +441,7 @@ test('v4: game wins and focus sessions count toward the weekly record', () => {
 
 test('v4: achievements unlock from what the child already did', () => {
   const s = createDefaultState(new Date('2026-11-22T10:00:00'));
-  assert.equal(ACHIEVEMENTS.length, 10);
+  assert.equal(ACHIEVEMENTS.length, 11);
   assert.deepEqual(unlockedAchievements(s), []);
   toggleTask(s, 't1', new Date('2026-11-22T10:00:00'));
   assert.ok(unlockedAchievements(s).includes('first-quest'));
@@ -462,7 +469,10 @@ test('v4: achievements unlock from what the child already did', () => {
   s.coins = 100;
   buyOrEquip(s, 'hat-crown');
   assert.ok(unlockedAchievements(s).includes('big-spender'));
-  assert.equal(unlockedAchievements(s).length, 10);
+  assert.ok(!unlockedAchievements(s).includes('math-whiz'));
+  s.stats.mathCorrect = 10;
+  assert.ok(unlockedAchievements(s).includes('math-whiz'));
+  assert.equal(unlockedAchievements(s).length, 11);
 });
 
 test('v4: achievement ids are unique', () => {
@@ -486,7 +496,7 @@ test('v4: summary screen numbers match the state', () => {
   assert.equal(summary.weeklyQuests, 1);
   assert.equal(summary.weeklyGames, 1);
   assert.equal(summary.badgesUnlocked, 2); // first-quest + memory-champ
-  assert.equal(summary.badgesTotal, 10);
+  assert.equal(summary.badgesTotal, 11);
 });
 
 test('v4: migrating a v3 save keeps coins and streak and adds the weekly record', () => {
@@ -501,7 +511,7 @@ test('v4: migrating a v3 save keeps coins and streak and adds the weekly record'
     stats: { tasksDone: 6, gamesWon: 2, starsTapped: 20, timersFinished: 1, colourPlayed: 10, colourCorrect: 7 },
   };
   const s = migrateState(v3);
-  assert.equal(s.version, 5);
+  assert.equal(s.version, 6);
   assert.equal(s.coins, 80);
   assert.equal(s.streak.count, 2);
   assert.equal(s.streak.best, 4);
@@ -514,9 +524,9 @@ test('v4: migrating a v3 save keeps coins and streak and adds the weekly record'
   assert.ok(unlockedAchievements(s).includes('first-quest'));
 });
 
-test('v5: default avatar is a chibi with the free everyday outfit', () => {
+test('v6: default avatar is a chibi with the free everyday outfit', () => {
   const s = createDefaultState(new Date('2026-11-24T10:00:00'));
-  assert.equal(s.version, 5);
+  assert.equal(s.version, 6);
   assert.equal(s.avatar.outfit, 'casual');
   assert.equal(s.avatar.pants, 'jeans');
   assert.equal(s.avatar.shoes, 'sneakers');
@@ -612,7 +622,7 @@ test('v5: migrating a v4 save keeps the old avatar and adds the free chibi outfi
     weekly: { weekStart: '2026-11-23', quests: 3, games: 1, focus: 0, claimed: false },
   };
   const s = migrateState(v4);
-  assert.equal(s.version, 5);
+  assert.equal(s.version, 6);
   assert.equal(s.coins, 90);
   // Old avatar choices are untouched.
   assert.equal(s.avatar.skin, '#8d5524');
@@ -640,7 +650,7 @@ test('v5: migrating a v1 save gets the chibi defaults too', () => {
     stats: { tasksDone: 1, gamesWon: 0, starsTapped: 0, timersFinished: 0 },
   };
   const s = migrateState(v1);
-  assert.equal(s.version, 5);
+  assert.equal(s.version, 6);
   assert.equal(s.avatar.hairStyle, 'curly');
   assert.equal(s.avatar.hat, 'cap');
   assert.equal(s.avatar.outfit, 'casual');
@@ -658,4 +668,141 @@ test('v5: migration drops an unknown chibi value back to the free default', () =
   const s = migrateState(weird);
   assert.equal(s.avatar.outfit, 'casual');
   assert.equal(s.avatar.pants, 'jeans');
+});
+
+test('v6: quick math round has a solvable sum and 4 distinct answer options', () => {
+  for (let i = 0; i < 100; i += 1) {
+    const round = createQuickMathRound();
+    assert.equal(round.options.length, 4);
+    assert.equal(new Set(round.options).size, 4, 'options must be distinct numbers');
+    assert.ok(round.options.includes(round.answer), 'options must include the answer');
+    assert.ok(round.answer >= 1, 'the answer is never zero or negative');
+    assert.ok(round.options.every((n) => n >= 0), 'no negative options');
+    // The question really is the sum it claims to be.
+    const [a, op, b] = round.question.split(' ');
+    const expected = op === '+' ? Number(a) + Number(b) : Number(a) - Number(b);
+    assert.equal(round.answer, expected, `${round.question} should be ${expected}`);
+    if (op === '-') assert.ok(Number(a) > Number(b), 'subtraction never goes below zero');
+  }
+});
+
+test('v6: quick math round is deterministic with a seeded random', () => {
+  const seeded = (seed) => {
+    let value = seed;
+    return () => {
+      value = (value * 1103515245 + 12345) % 2147483648;
+      return value / 2147483648;
+    };
+  };
+  const a = createQuickMathRound(seeded(42));
+  const b = createQuickMathRound(seeded(42));
+  assert.equal(a.question, b.question);
+  assert.deepEqual(a.options, b.options);
+  const c = createQuickMathRound(seeded(7));
+  assert.ok(c.question !== a.question || JSON.stringify(c.options) !== JSON.stringify(a.options));
+});
+
+test('v6: quick math picks pay 2 coins when right, 0 when wrong, and count stats', () => {
+  const s = createDefaultState();
+  const round = { question: '3 + 4', answer: 7, options: [7, 6, 8, 9] };
+  assert.equal(isQuickMathPickCorrect(round, 7), true);
+  assert.equal(isQuickMathPickCorrect(round, 6), false);
+  assert.equal(isQuickMathPickCorrect(null, 7), false);
+  assert.equal(awardQuickMathPick(s, true), QUICK_MATH_COINS);
+  assert.equal(s.coins, QUICK_MATH_COINS);
+  assert.equal(s.stats.mathCorrect, 1);
+  assert.equal(s.stats.mathPlayed, 1);
+  assert.equal(awardQuickMathPick(s, false), 0);
+  assert.equal(s.coins, QUICK_MATH_COINS);
+  assert.equal(s.stats.mathCorrect, 1);
+  assert.equal(s.stats.mathPlayed, 2);
+});
+
+test('v6: finishing a quick math game pays the bonus and counts a game won', () => {
+  const s = createDefaultState(new Date('2026-11-26T10:00:00'));
+  assert.equal(QUICK_MATH_ROUNDS, 10);
+  assert.equal(awardQuickMathGameWin(s, new Date('2026-11-26T10:00:00')), QUICK_MATH_BONUS_COINS);
+  assert.equal(s.coins, QUICK_MATH_BONUS_COINS);
+  assert.equal(s.stats.gamesWon, 1);
+  assert.equal(weeklyRewardStatus(s, new Date('2026-11-26T10:00:00')).games, 1);
+});
+
+test('v6: shop has the new avatar items at the right prices', () => {
+  const byId = Object.fromEntries(SHOP.map((i) => [i.id, i]));
+  assert.equal(SHOP.length, 54); // 49 through v5 + 5 in v6
+  assert.equal(byId['skin-rose'].slot, 'skin');
+  assert.equal(byId['skin-rose'].value, '#f2a594');
+  assert.equal(byId['skin-rose'].price, 15);
+  assert.equal(byId['hair-braids'].slot, 'hairStyle');
+  assert.equal(byId['hair-braids'].value, 'braids');
+  assert.equal(byId['hair-braids'].price, 30);
+  assert.equal(byId['hat-sun'].slot, 'hat');
+  assert.equal(byId['hat-sun'].price, 35);
+  assert.equal(byId['outfit-rainbow'].slot, 'outfit');
+  assert.equal(byId['outfit-rainbow'].price, 45);
+  assert.equal(byId['acc-wand'].slot, 'accessory');
+  assert.equal(byId['acc-wand'].price, 40);
+});
+
+test('v6: buying and wearing the new avatar items', () => {
+  const s = createDefaultState();
+  s.coins = 200;
+  const braids = buyOrEquip(s, 'hair-braids');
+  assert.equal(braids.action, 'bought');
+  assert.equal(s.avatar.hairStyle, 'braids');
+  const hoodie = buyOrEquip(s, 'outfit-rainbow');
+  assert.equal(hoodie.action, 'bought');
+  assert.equal(s.avatar.outfit, 'rainbow');
+  const hat = buyOrEquip(s, 'hat-sun');
+  assert.equal(hat.action, 'bought');
+  assert.equal(s.avatar.hat, 'sun');
+  const wand = buyOrEquip(s, 'acc-wand');
+  assert.equal(wand.action, 'bought');
+  assert.equal(s.avatar.accessory, 'wand');
+  const skin = buyOrEquip(s, 'skin-rose');
+  assert.equal(skin.action, 'bought');
+  assert.equal(s.avatar.skin, '#f2a594');
+  assert.equal(s.coins, 200 - 30 - 45 - 35 - 40 - 15);
+  // The new hair choice survives the outfit and hat changes.
+  assert.equal(s.avatar.hairStyle, 'braids');
+});
+
+test('v6: migrating a v5 save keeps coins and avatar and adds the maths stats', () => {
+  const v5 = {
+    version: 5,
+    coins: 120,
+    date: '2026-11-25',
+    tasks: [{ id: 't1', title: 'Brush my teeth', category: 'morning', coins: 10, custom: false, done: true }],
+    avatar: { skin: '#f6c89f', hairStyle: 'twin-tails', hairColor: '#5b3a1e', hat: 'none', accessory: 'cape', outfit: 'star-dress', pants: 'skirt', shoes: 'sneakers', armor: 'none' },
+    owned: ['skin-1', 'hair-twin-tails', 'outfit-star-dress', 'pants-skirt', 'acc-cape'],
+    streak: { count: 2, best: 4, lastActiveDate: '2026-11-25' },
+    stats: { tasksDone: 9, gamesWon: 2, memoryWins: 1, starsTapped: 30, timersFinished: 2, colourPlayed: 10, colourCorrect: 8 },
+    weekly: { weekStart: '2026-11-23', quests: 3, games: 1, focus: 0, claimed: false },
+  };
+  const s = migrateState(v5);
+  assert.equal(s.version, 6);
+  assert.equal(s.coins, 120);
+  assert.equal(s.avatar.hairStyle, 'twin-tails');
+  assert.equal(s.avatar.outfit, 'star-dress');
+  assert.equal(s.avatar.accessory, 'cape');
+  assert.equal(s.stats.mathPlayed, 0);
+  assert.equal(s.stats.mathCorrect, 0);
+  assert.equal(s.stats.colourCorrect, 8);
+  assert.equal(s.streak.count, 2);
+  // The old save already earned badges from what it did — but not Math Whiz yet.
+  assert.ok(unlockedAchievements(s).includes('first-quest'));
+  assert.ok(!unlockedAchievements(s).includes('math-whiz'));
+});
+
+test('v6: math whiz badge unlocks at 10 right answers', () => {
+  const s = createDefaultState();
+  assert.equal(ACHIEVEMENTS.length, 11);
+  assert.ok(!unlockedAchievements(s).includes('math-whiz'));
+  s.stats.mathCorrect = 9;
+  assert.ok(!unlockedAchievements(s).includes('math-whiz'));
+  s.stats.mathCorrect = 10;
+  assert.ok(unlockedAchievements(s).includes('math-whiz'));
+  const summary = weeklySummary(s);
+  assert.equal(summary.mathCorrect, 10);
+  assert.equal(summary.badgesTotal, 11);
 });

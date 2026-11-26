@@ -249,6 +249,39 @@ ion-tab-bar {
   text-align: center;
 }
 
+/* Quick Math */
+.math-question {
+  font-size: 2rem;
+  font-weight: bold;
+  text-align: center;
+  margin: 8px 0;
+  color: #1e88e5;
+}
+
+.math-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 4px 0;
+}
+
+.math-btn {
+  height: 64px;
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+  background: #fff7e6;
+  border: 3px solid #f2c94c;
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #232a33;
+}
+
+.math-status {
+  font-weight: bold;
+  text-align: center;
+}
+
 /* v4: weekly reward + achievements + summary */
 .weekly-line {
   font-weight: bold;

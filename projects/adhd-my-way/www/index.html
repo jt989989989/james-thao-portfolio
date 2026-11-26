@@ -6,8 +6,8 @@
     <meta name="description" content="ADHD My Way — an Ionic app that helps children under 12 focus on daily tasks, earn coins, customise an avatar, and play mini games. Everything stays on the device." />
     <title>ADHD My Way</title>
     <link rel="icon" type="image/svg+xml" href="./logo-star.svg" />
-    <script type="module" crossorigin src="./assets/index-BAOlbU3e.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-CMctpMLc.css">
+    <script type="module" crossorigin src="./assets/index-BZJiTq3h.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-FT_5klKY.css">
   </head>
   <body>
     <ion-app>
@@ -122,6 +122,19 @@
 
             <ion-card>
               <ion-card-header>
+                <ion-card-title>Quick Math</ion-card-title>
+                <ion-card-subtitle>Solve the sum, then tap the right answer. 10 rounds — +2 coins per right answer, +10 bonus for finishing!</ion-card-subtitle>
+              </ion-card-header>
+              <ion-card-content>
+                <p class="math-question" id="math-question">Press Start and solve the sums!</p>
+                <div class="math-options" id="math-options"></div>
+                <p class="math-status" id="math-status">10 rounds · +2 coins for every right answer · finish all 10 for a +10 bonus!</p>
+                <ion-button id="math-start" expand="block" color="success">Start game</ion-button>
+              </ion-card-content>
+            </ion-card>
+
+            <ion-card>
+              <ion-card-header>
                 <ion-card-title>Tap the Star</ion-card-title>
                 <ion-card-subtitle>Tap the star as many times as you can in 30 seconds. Each tap is +2 coins!</ion-card-subtitle>
               </ion-card-header>
@@ -168,7 +181,7 @@
             <ion-card>
               <ion-card-header>
                 <ion-card-title>My badges 🏆</ion-card-title>
-                <ion-card-subtitle id="achievements-line">0 of 10 badges earned — keep going!</ion-card-subtitle>
+                <ion-card-subtitle id="achievements-line">0 of 11 badges earned — keep going!</ion-card-subtitle>
               </ion-card-header>
               <ion-card-content>
                 <div class="badge-grid" id="achievements-grid"></div>

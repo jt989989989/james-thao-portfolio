@@ -13,7 +13,9 @@ coins, a customisable avatar, and mini games to keep it fun.
 > Roadmap: v2 focus timer + task categories + streaks (done) · v3 new mini game
 > (Colour Match) + more avatar items (done, 20 Nov 2026) · v4 weekly rewards /
 > achievements + summary screen (done, 22 Nov 2026) · v5 anime-style chibi
-> avatar (done, 24 Nov 2026) · v5.1 proper anime face (done, 24 Nov 2026).
+> avatar (done, 24 Nov 2026) · v5.1 proper anime face (done, 24 Nov 2026) ·
+> v6 Quick Math mini game + 5 more avatar items + Math Whiz badge (done,
+> 26 Nov 2026).
 >
 > **Update (8 Nov 2026)** — phone-friendly layout (the app now sits in a
 > centred phone-width column on wide screens, with bigger tap targets) and
@@ -67,6 +69,17 @@ coins, a customisable avatar, and mini games to keep it fun.
 > self-intersected and left the middle of the head bald, and fixed the
 > daily-reset date: it used UTC, so quests reset at 7pm local instead of
 > midnight — it now uses the local calendar day.
+>
+> **Update — v6 (26 Nov 2026, Day 7 of the restarted challenge)** — a fourth
+> mini game, **Quick Math**: solve a small sum (adding up to 9 + 9, or a
+> take-away that never goes below zero), then tap the right answer out of 4
+> big number buttons — 10 rounds, **+2 coins** per right answer and a **+10
+> coin** bonus for finishing. A new **Math Whiz** badge joins the wall (get
+> 10 Quick Math answers right), so there are now 11 badges, and the summary
+> screen shows the Quick Math score too. Five more shop items: Braids hair,
+> a Sun Hat, a Rainbow Hoodie, a Star Wand and a Rosy skin — the shop now
+> has 54 items. Saved v1–v5 data carries over — coins, quests, avatar
+> choices and streaks are kept, and the maths stats start at zero.
 
 ## What it does
 
@@ -83,12 +96,13 @@ coins, a customisable avatar, and mini games to keep it fun.
   (+10 coins) and adds a **+5 coin** focus bonus. It also works with no quest picked.
 - **Avatar shop** — coins buy avatar customisations for my anime-style
   chibi: skin colours, hair styles and colours (including Twin Tails, a Bob
-  Cut and Messy Anime hair), hats (cap, beanie, party hat, wizard hat, gold
-  crown), outfits (Hero Suit, Star Dress, Explorer Jacket, Cosy Pajamas),
+  Cut and Messy Anime hair, plus Braids), hats (cap, beanie, party hat, wizard hat, gold
+  crown, a Sun Hat), outfits (Hero Suit, Star Dress, Explorer Jacket, Cosy Pajamas,
+  a Rainbow Hoodie),
   pants (Jeans, Shorts, Twirl Skirt, Star Leggings), shoes (Sneakers,
   Adventure Boots, Sunny Sandals, Hero Boots), armor worn over the outfit
   (Knight, Star and Dragon Armor) and accessories (star badge, heart badge,
-  glasses, sunglasses, headphones, a cute bow and a hero cape). The chibi
+  glasses, sunglasses, headphones, a cute bow, a hero cape and a star wand). The chibi
   is drawn from plain shapes and colours.
 - **Mini games** (all earn coins):
   - **Memory Match** — flip cards, find all 6 shape pairs, win **20 coins**.
@@ -96,14 +110,17 @@ coins, a customisable avatar, and mini games to keep it fun.
     **+2 coins** per tap.
   - **Colour Match** — read the colour word, then tap the button in that colour.
     10 rounds, **+2 coins** per right tap and a **+10 coin** bonus for finishing.
+  - **Quick Math** — solve a small sum, then tap the right answer out of 4.
+    10 rounds, **+2 coins** per right answer and a **+10 coin** bonus for finishing.
 - **Weekly star reward** — finish 10 quests in one week (Monday to Sunday)
   and claim **50 bonus coins** from the My Stars tab. The reward can only be
   claimed once per week, and a new week starts fresh.
-- **Achievements** — 10 badges to earn by playing: finishing quests, keeping
-  streaks, winning games, tapping stars, focusing, and buying a shop item.
+- **Achievements** — 11 badges to earn by playing: finishing quests, keeping
+  streaks, winning games, tapping stars, focusing, solving sums, and buying a shop item.
   A toast celebrates each new badge the moment it is earned.
 - **Summary screen** — the My Stars tab shows everything done so far: quests
-  finished, games won, stars tapped, focus sessions, Colour Match score, best
+  finished, games won, stars tapped, focus sessions, Colour Match score, Quick Math
+  score, best
   streak, and this week's totals.
 - **Everything persists on the device** via `localStorage` — coins, quests,
   avatar and shop purchases survive closing the app.
@@ -148,11 +165,12 @@ open www/index.html
 
 ```bash
 npm test
-# 38 tests: task coins, daily reset, shop purchases, memory deck, rewards,
-# quest categories, daily streaks, per-quest focus sessions, v1/v2/v3/v4 save
+# 46 tests: task coins, daily reset, shop purchases, memory deck, rewards,
+# quest categories, daily streaks, per-quest focus sessions, v1/v2/v3/v4/v5 save
 # migration, colour-match rounds and rewards, v3 shop items, weekly reward
 # (goal, claim-once, week rollover), achievements, summary screen, v5 chibi
-# avatar (new slots, shop catalogue, buy/equip, v4/v1 migration)
+# avatar (new slots, shop catalogue, buy/equip, v4/v1 migration), v6 quick
+# math rounds and rewards, v6 shop items, v5 save migration, math whiz badge
 ```
 
 ## Project structure
@@ -170,7 +188,7 @@ adhd-my-way/
 │   ├── logic.js          # pure rules (coins, tasks, shop, decks) — tested
 │   └── style.css         # bright, simple, kid-friendly styling
 ├── tests/
-│   └── logic.test.js     # 38 Node tests for src/logic.js
+│   └── logic.test.js     # 46 Node tests for src/logic.js
 └── www/                  # production build output (built by running npm run build)
 ```
 

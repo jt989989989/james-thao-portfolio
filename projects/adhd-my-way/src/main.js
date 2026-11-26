@@ -9,6 +9,8 @@ import {
   COLOUR_GAME_BONUS_COINS,
   COLOUR_ROUNDS,
   MEMORY_WIN_COINS,
+  QUICK_MATH_BONUS_COINS,
+  QUICK_MATH_ROUNDS,
   SHOP,
   STAR_TAP_COINS,
   STORAGE_KEY,
@@ -19,15 +21,19 @@ import {
   awardColourGameWin,
   awardColourPick,
   awardMemoryWin,
+  awardQuickMathGameWin,
+  awardQuickMathPick,
   buyOrEquip,
   categoryById,
   claimWeeklyReward,
   createColourRound,
   createDefaultState,
   createMemoryDeck,
+  createQuickMathRound,
   finishFocusSession,
   isColourPickCorrect,
   isMemoryMatch,
+  isQuickMathPickCorrect,
   migrateState,
   needsDailyReset,
   removeTask,
@@ -47,12 +53,12 @@ function loadState() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return createDefaultState();
     const parsed = JSON.parse(raw);
-    if (!parsed || (parsed.version !== 1 && parsed.version !== 2 && parsed.version !== 3 && parsed.version !== 4 && parsed.version !== 5) || !Array.isArray(parsed.tasks)) {
+    if (!parsed || (parsed.version !== 1 && parsed.version !== 2 && parsed.version !== 3 && parsed.version !== 4 && parsed.version !== 5 && parsed.version !== 6) || !Array.isArray(parsed.tasks)) {
       return createDefaultState();
     }
     // v1/v2/v3 saves keep working: newer fields (streak, categories,
-    // colour stats, weekly record, memory wins) are filled in by
-    // migrateState.
+    // colour stats, weekly record, memory wins, maths stats) are filled
+    // in by migrateState.
     const state = migrateState(parsed);
     if (needsDailyReset(state)) applyDailyReset(state);
     return state;
@@ -133,6 +139,10 @@ function hairSvg(style, color) {
       // the cowlick flick on top.
       base = `<path d="M46 90 Q42 22 100 20 Q158 22 154 90 Q142 50 100 48 Q58 50 46 90 Z" fill="${color}"/><path d="M54 38 L62 14 L74 38 Z M76 36 L86 10 L98 36 Z M96 34 L108 6 L120 34 Z M118 36 L130 12 L142 36 Z M138 38 L148 16 L158 38 Z" fill="${color}"/><path d="M100 30 Q96 12 110 6" fill="none" stroke="${color}" stroke-width="4" stroke-linecap="round"/>`;
       break;
+    case 'braids':
+      // v6: the same cap, with two thin braided tails tied with bands.
+      base = `<path d="M46 90 Q42 22 100 20 Q158 22 154 90 Q142 50 100 48 Q58 50 46 90 Z" fill="${color}"/><ellipse cx="40" cy="140" rx="9" ry="34" fill="${color}"/><ellipse cx="160" cy="140" rx="9" ry="34" fill="${color}"/><rect x="31" y="96" width="18" height="8" rx="4" fill="#ff6b9d"/><rect x="151" y="96" width="18" height="8" rx="4" fill="#ff6b9d"/><rect x="31" y="128" width="18" height="8" rx="4" fill="#ff6b9d"/><rect x="151" y="128" width="18" height="8" rx="4" fill="#ff6b9d"/>`;
+      break;
     default: // short
       base = `<path d="M46 90 Q42 22 100 20 Q158 22 154 90 Q142 50 100 48 Q58 50 46 90 Z" fill="${color}"/>`;
   }
@@ -151,6 +161,9 @@ function hatSvg(hat) {
       return `<path d="M62 42 L100 2 L138 42 Z" fill="#9775fa"/><rect x="52" y="38" width="96" height="10" rx="5" fill="#6a3fb5"/><circle cx="100" cy="24" r="5" fill="#f2c94c"/>`;
     case 'crown':
       return `<path d="M58 50 L58 20 L80 36 L100 16 L120 36 L142 20 L142 50 Z" fill="#f2c94c" stroke="#b8860b" stroke-width="2"/>`;
+    case 'sun':
+      // v6: a wide-brimmed sun hat — a dome plus a brim that shades the face.
+      return `<path d="M58 44 Q60 12 100 10 Q140 12 142 44 Z" fill="#f2c94c"/><ellipse cx="100" cy="46" rx="58" ry="10" fill="#e8b93a"/><rect x="58" y="36" width="84" height="8" rx="4" fill="#ff6b6b"/>`;
     default:
       return '';
   }
@@ -170,6 +183,9 @@ function accessorySvg(acc) {
       return `<path d="M50 84 Q50 12 100 12 Q150 12 150 84" fill="none" stroke="#1e88e5" stroke-width="10"/><rect x="40" y="74" width="18" height="30" rx="8" fill="#1e88e5"/><rect x="142" y="74" width="18" height="30" rx="8" fill="#1e88e5"/>`;
     case 'bow':
       return `<path d="M146 44 L128 30 L128 58 Z" fill="#ff6b9d"/><path d="M146 44 L164 30 L164 58 Z" fill="#ff6b9d"/><circle cx="146" cy="44" r="6" fill="#e63946"/>`;
+    case 'wand':
+      // v6: a star wand held out to the side — a stick with a golden star.
+      return `<line x1="152" y1="196" x2="172" y2="158" stroke="#8d5524" stroke-width="5" stroke-linecap="round"/><path d="M172 138 l4.5 9 10 1.5 -7.5 7 2 10 -9 -5 -9 5 2 -10 -7.5 -7 10 -1.5 Z" fill="#f2c94c" stroke="#b8860b" stroke-width="1"/>`;
     default: // 'cape' is drawn behind the body, not here; 'none' draws nothing
       return '';
   }
@@ -190,6 +206,9 @@ function outfitSvg(outfit) {
       return `<rect x="68" y="130" width="64" height="66" rx="18" fill="#b08968"/><line x1="100" y1="134" x2="100" y2="196" stroke="#8d6e4a" stroke-width="3"/><rect x="76" y="160" width="16" height="14" rx="3" fill="#8d6e4a"/><rect x="108" y="160" width="16" height="14" rx="3" fill="#8d6e4a"/>`;
     case 'pajamas':
       return `<rect x="68" y="130" width="64" height="66" rx="18" fill="#9775fa"/><line x1="72" y1="146" x2="128" y2="146" stroke="#ffffff" stroke-width="4" opacity="0.6"/><line x1="72" y1="162" x2="128" y2="162" stroke="#ffffff" stroke-width="4" opacity="0.6"/><line x1="72" y1="178" x2="128" y2="178" stroke="#ffffff" stroke-width="4" opacity="0.6"/><line x1="72" y1="192" x2="128" y2="192" stroke="#ffffff" stroke-width="4" opacity="0.6"/>`;
+    case 'rainbow':
+      // v6: a rainbow hoodie — a cosy hoodie with rainbow stripes.
+      return `<rect x="68" y="130" width="64" height="66" rx="18" fill="#ff6b6b"/><line x1="68" y1="146" x2="132" y2="146" stroke="#fb8c00" stroke-width="6"/><line x1="68" y1="158" x2="132" y2="158" stroke="#f2c94c" stroke-width="6"/><line x1="68" y1="170" x2="132" y2="170" stroke="#51cf66" stroke-width="6"/><line x1="68" y1="182" x2="132" y2="182" stroke="#4dabff" stroke-width="6"/><path d="M86 130 Q100 118 114 130" fill="none" stroke="#e63946" stroke-width="4"/>`;
     default: // casual — an everyday tee
       return `<rect x="68" y="130" width="64" height="66" rx="18" fill="#4dabff"/><path d="M88 130 Q100 140 112 130" fill="none" stroke="#2f6fb2" stroke-width="3"/>`;
   }
@@ -459,7 +478,7 @@ function renderProgress() {
       ? `🔥 ${streak.count}-day streak!${streak.best > streak.count ? ` Best: ${streak.best} days.` : ' Keep it going tomorrow!'}`
       : 'Finish a quest today to start your streak! 🔥';
   $('#stats-line').textContent =
-    `Quests finished: ${state.stats.tasksDone} · Games won: ${state.stats.gamesWon} · Stars tapped: ${state.stats.starsTapped} · Focus sessions: ${state.stats.timersFinished} · Colour Match right: ${state.stats.colourCorrect || 0} of ${state.stats.colourPlayed || 0}`;
+    `Quests finished: ${state.stats.tasksDone} · Games won: ${state.stats.gamesWon} · Stars tapped: ${state.stats.starsTapped} · Focus sessions: ${state.stats.timersFinished} · Colour Match right: ${state.stats.colourCorrect || 0} of ${state.stats.colourPlayed || 0} · Quick Math right: ${state.stats.mathCorrect || 0} of ${state.stats.mathPlayed || 0}`;
 }
 
 // ---------- v4: weekly rewards, achievements, summary ----------
@@ -504,7 +523,7 @@ function renderStars() {
   $('#summary-line').innerHTML =
     `Quests finished: <b>${summary.tasksDone}</b> · Games won: <b>${summary.gamesWon}</b> (Memory Match: <b>${summary.memoryWins}</b>)<br>` +
     `Stars tapped: <b>${summary.starsTapped}</b> · Focus sessions: <b>${summary.timersFinished}</b><br>` +
-    `Colour Match right: <b>${summary.colourCorrect}</b> of <b>${summary.colourPlayed}</b> · Best streak: <b>${summary.bestStreak} days</b><br>` +
+    `Colour Match right: <b>${summary.colourCorrect}</b> of <b>${summary.colourPlayed}</b> · Quick Math right: <b>${summary.mathCorrect}</b> of <b>${summary.mathPlayed}</b> · Best streak: <b>${summary.bestStreak} days</b><br>` +
     `This week: <b>${summary.weeklyQuests}</b> quests · <b>${summary.weeklyGames}</b> games won · <b>${summary.weeklyFocus}</b> focus sessions`;
 }
 
@@ -689,6 +708,62 @@ function pickColour(id) {
   renderColour();
 }
 
+// ---------- quick math ----------
+// v6: solve a small sum, tap the right answer. 10 rounds;
+// +2 coins per right answer, +10 bonus for finishing the game.
+const mathGame = { playing: false, round: 0, correct: 0, current: null };
+
+function renderMath() {
+  const question = $('#math-question');
+  const options = $('#math-options');
+  const status = $('#math-status');
+  if (!mathGame.playing) {
+    question.textContent = 'Press Start and solve the sums!';
+    options.innerHTML = '';
+    status.textContent = `${QUICK_MATH_ROUNDS} rounds · +2 coins for every right answer · finish all ${QUICK_MATH_ROUNDS} for a +${QUICK_MATH_BONUS_COINS} bonus!`;
+    $('#math-start').textContent = 'Start game';
+    return;
+  }
+  question.textContent = `What is ${mathGame.current.question}?`;
+  options.innerHTML = '';
+  for (const value of mathGame.current.options) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'math-btn';
+    btn.textContent = String(value);
+    btn.setAttribute('aria-label', `Answer ${value}`);
+    btn.addEventListener('click', () => pickMath(value));
+    options.append(btn);
+  }
+  status.textContent = `Round ${mathGame.round} of ${QUICK_MATH_ROUNDS} · ${mathGame.correct} right so far`;
+  $('#math-start').textContent = 'Playing…';
+}
+
+function pickMath(value) {
+  if (!mathGame.playing || !mathGame.current) return;
+  const right = isQuickMathPickCorrect(mathGame.current, value);
+  awardQuickMathPick(state, right);
+  if (right) mathGame.correct += 1;
+  save();
+  renderCoins();
+  if (mathGame.round >= QUICK_MATH_ROUNDS) {
+    mathGame.playing = false;
+    const before = unlockedAchievements(state);
+    const bonus = awardQuickMathGameWin(state);
+    save();
+    renderCoins();
+    renderProgress();
+    renderStars();
+    announceNewBadges(before);
+    renderMath();
+    toast(`Quick Math done! ${mathGame.correct} of ${QUICK_MATH_ROUNDS} right — +${bonus} bonus coins!`, 'success');
+    return;
+  }
+  mathGame.round += 1;
+  mathGame.current = createQuickMathRound();
+  renderMath();
+}
+
 // ---------- wire up ----------
 function init() {
   renderCoins();
@@ -838,6 +913,17 @@ function init() {
     renderColour();
   });
   renderColour();
+
+  // Quick Math.
+  $('#math-start').addEventListener('click', () => {
+    if (mathGame.playing) return;
+    mathGame.playing = true;
+    mathGame.round = 1;
+    mathGame.correct = 0;
+    mathGame.current = createQuickMathRound();
+    renderMath();
+  });
+  renderMath();
 
   // Reset everything (two taps to confirm, so little fingers can't do it by accident).
   let resetArmed = false;
