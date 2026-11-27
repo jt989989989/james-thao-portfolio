@@ -20,7 +20,7 @@ This repository is my project index for programming and IT roles. Each project i
 | [SOC Log Analyzer](projects/soc-log-analyzer/) | CLI that parses auth logs and flags brute-force attempts, success-after-failure logins, and logins outside normal hours | Python (stdlib only) | SOC / security / IT |
 | [Missed-Call Follow-Up](projects/missed-call-followup/) | CLI that turns a missed-call CSV into a prioritized follow-up queue with message drafts | Python (stdlib only) | Automation / IT |
 | [Scientific Calculator](projects/scientific-calculator/) | Scientific calculator in the browser — full expressions, trig, logs, factorial, history, memory | JavaScript, no dependencies, no `eval()` | Front-end / algorithms |
-| [Lead Generator](projects/lead-generator/) | CLI that finds small-business leads from Google Maps data via the official Places API — scores and dedupes them into a CSV | Python (stdlib only) | Automation / data / sales ops |
+| [Lead Generator](projects/lead-generator/) | CLI that finds small-business leads from Google Maps data via the official Places API — scores and dedupes them into a CSV, filters by rating range and open-now status, and prints a top-10 summary | Python (stdlib only) | Automation / data / sales ops |
 | [Password Strength Checker](projects/password-strength-checker/) | Defensive CLI that scores a password 0–100 and explains why — length, variety, common words, patterns; runs locally, never sends or saves a password | Python (stdlib only) | Security / defensive |
 | [Secret Scanner](projects/secret-scanner/) | Defensive CLI that scans a codebase for leaked secrets — AWS keys, GitHub/Slack tokens, JWTs, private keys, Stripe keys, passwords, high-entropy strings; reports file, line, rule, and severity | Python (stdlib only) | Security / defensive |
 | [Recon Scanner](projects/recon-scanner/) | Passive recon CLI — finds subdomains from Certificate Transparency (crt.sh), checks DNS liveness, and grades security headers + TLS on a domain; public data and one normal request only | Python (stdlib only) | Security / bug bounty |
@@ -92,7 +92,7 @@ python log_analyzer.py sample_auth.log
 cd ../missed-call-followup
 python followup.py sample_calls.csv
 
-# Lead Generator — 7 unit tests; demo yields 7 leads from 9 sample places
+# Lead Generator — 16 unit tests; demo yields 7 leads from 9 sample places (v2: --max-rating / --open-now filters + top-10 summary)
 cd ../lead-generator
 python -m unittest discover -s tests -v
 python lead_generator.py --demo

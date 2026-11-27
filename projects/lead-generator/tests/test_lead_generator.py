@@ -12,10 +12,12 @@ from lead_generator import (  # noqa: E402
     dedupe_leads,
     export_csv,
     filter_leads,
+    main,
     niche_for,
     normalize_place,
     parse_address,
     score_lead,
+    top_leads_summary,
 )
 
 
@@ -80,6 +82,97 @@ class TestDedupeAndFilter(unittest.TestCase):
                 rows = list(csv.DictReader(fh))
             self.assertEqual(rows[0]["business_name"], "Alpena Plumbing Pros")
             self.assertEqual(rows[0]["lead_score"], "70")
+
+
+class TestRatingAndOpenNowFilters(unittest.TestCase):
+    def _lead(self, name, rating, open_now=None):
+        return {"business_name": name, "website": "", "phone": "x",
+                "rating": rating, "review_count": 5, "open_now": open_now}
+
+    def test_max_rating_keeps_low_rated_only(self):
+        leads = [self._lead("Low", 3.2), self._lead("Mid", 4.0), self._lead("High", 4.8)]
+        kept = filter_leads(leads, max_rating=4.0)
+        self.assertEqual([l["business_name"] for l in kept], ["Low", "Mid"])
+
+    def test_rating_range_combines(self):
+        leads = [self._lead("Low", 3.2), self._lead("Mid", 4.0), self._lead("High", 4.8)]
+        kept = filter_leads(leads, min_rating=3.5, max_rating=4.5)
+        self.assertEqual([l["business_name"] for l in kept], ["Mid"])
+
+    def test_unrated_lead_passes_rating_filters(self):
+        leads = [self._lead("NoRating", "")]
+        self.assertEqual(len(filter_leads(leads, min_rating=4.0)), 1)
+        self.assertEqual(len(filter_leads(leads, max_rating=4.0)), 1)
+
+    def test_open_now_keeps_only_open(self):
+        leads = [self._lead("Open", 4.0, True), self._lead("Closed", 4.0, False),
+                 self._lead("Unknown", 4.0, None)]
+        kept = filter_leads(leads, open_now_only=True)
+        self.assertEqual([l["business_name"] for l in kept], ["Open"])
+
+    def test_normalize_captures_open_now(self):
+        base = {
+            "displayName": {"text": "Open Shop"},
+            "formattedAddress": "1 Main St, Alpena, MI 49707, USA",
+            "types": ["cafe"],
+        }
+        open_place = dict(base, currentOpeningHours={"openNow": True})
+        self.assertIs(normalize_place(open_place, "cafes")["open_now"], True)
+        closed_place = dict(base, currentOpeningHours={"openNow": False})
+        self.assertIs(normalize_place(closed_place, "cafes")["open_now"], False)
+        # No hours data at all -> unknown, not closed.
+        self.assertIsNone(normalize_place(base, "cafes")["open_now"])
+
+
+class TestTopLeadsSummary(unittest.TestCase):
+    def _lead(self, name, score, niche="plumbing"):
+        return {"business_name": name, "niche": niche, "phone": "(555) 010-1001",
+                "website": "", "rating": 4.2, "review_count": 4,
+                "lead_score": score, "notes": "no website"}
+
+    def test_summary_ranks_and_limits(self):
+        leads = [self._lead(f"Shop {i}", 100 - i) for i in range(12)]
+        summary = top_leads_summary(leads)
+        self.assertIn("Top 10 leads by score:", summary)
+        self.assertIn(" 1. [100] Shop 0", summary)
+        self.assertIn("10. [ 91] Shop 9", summary)
+        self.assertNotIn("Shop 10", summary)
+        self.assertIn("12 leads total, average score 94, 12 with no website.", summary)
+
+    def test_summary_empty_list(self):
+        summary = top_leads_summary([])
+        self.assertIn("Top 10 leads by score:", summary)
+        self.assertIn("0 leads total, average score 0, 0 with no website.", summary)
+
+
+class TestDemoEndToEnd(unittest.TestCase):
+    def test_demo_yields_seven_leads(self):
+        project = Path(__file__).resolve().parents[1]
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "leads.csv"
+            rc = main(["--demo", "--sample", str(project / "sample_places.json"),
+                       "--output", str(out)])
+            self.assertEqual(rc, 0)
+            with out.open(newline="", encoding="utf-8") as fh:
+                rows = list(csv.DictReader(fh))
+            self.assertEqual(len(rows), 7)
+            self.assertEqual(rows[0]["business_name"], "Alpena Plumbing Pros")
+            self.assertEqual(rows[0]["open_now"], "yes")
+            self.assertEqual(rows[0]["lead_score"], "70")
+
+    def test_demo_open_now_filter(self):
+        project = Path(__file__).resolve().parents[1]
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "leads.csv"
+            rc = main(["--demo", "--sample", str(project / "sample_places.json"),
+                       "--output", str(out), "--open-now"])
+            self.assertEqual(rc, 0)
+            with out.open(newline="", encoding="utf-8") as fh:
+                rows = list(csv.DictReader(fh))
+            names = [r["business_name"] for r in rows]
+            self.assertEqual(len(rows), 5)
+            self.assertNotIn("Sunrise Roofing Co", names)
+            self.assertNotIn("Northwood HVAC & Heating", names)
 
 
 if __name__ == "__main__":

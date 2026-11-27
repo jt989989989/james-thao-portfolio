@@ -13,7 +13,12 @@ What it does:
   3. Scores each lead for outreach value (no website / few reviews =
      more room for a website, booking or follow-up system to help)
   4. Dedupes by Place ID, then by name + phone + address
-  5. Exports a CSV ready for outreach, plus optional JSON
+  5. Filters by rating range, review count, website, phone, and whether
+     the business is open right now (--open-now)
+  6. Exports a CSV ready for outreach, plus optional JSON, and prints a
+     top-10-by-score summary of the best leads first
+
+Version 2.0.0 adds the rating-range and open-now filters and the summary.
 
 Needs a Google Places API key for live searches (see README.md).
 Without a key, run with --demo to see the full flow on fictional
@@ -38,6 +43,7 @@ from pathlib import Path
 PLACES_URL = "https://places.googleapis.com/v1/places:searchText"
 DEFAULT_RADIUS_M = 20000
 DEFAULT_MAX_RESULTS = 25
+VERSION = "2.0.0"
 
 # Google place types -> the niche tag All Stars Automations uses for outreach.
 # Keep this in sync with the outreach niches: plumbing, electrical, hvac,
@@ -88,6 +94,7 @@ CSV_FIELDS = [
     "zip",
     "rating",
     "review_count",
+    "open_now",
     "google_maps_url",
     "lead_score",
     "notes",
@@ -133,6 +140,10 @@ def normalize_place(place: dict, query: str = "") -> dict | None:
     addr = parse_address(place.get("formattedAddress", ""))
     rating = place.get("rating")
     review_count = place.get("userRatingCount") or 0
+    # Places reports this under currentOpeningHours.openNow; it is absent
+    # when Google has no hours data for the business (unknown, not closed).
+    hours = place.get("currentOpeningHours") or {}
+    open_now = hours.get("openNow")
     lead = {
         "business_name": name,
         "niche": niche_for(place.get("types") or [], query),
@@ -144,6 +155,7 @@ def normalize_place(place: dict, query: str = "") -> dict | None:
         "zip": addr["zip"],
         "rating": rating if rating is not None else "",
         "review_count": review_count,
+        "open_now": open_now,
         "google_maps_url": place.get("googleMapsUri", "") or "",
         "place_id": place.get("id", "") or "",
         "lead_score": 0,
@@ -210,22 +222,35 @@ def filter_leads(
     leads: list[dict],
     *,
     min_rating: float | None = None,
+    max_rating: float | None = None,
     max_reviews: int | None = None,
     only_no_website: bool = False,
     require_phone: bool = False,
+    open_now_only: bool = False,
 ) -> list[dict]:
-    """Apply the outreach filters. Each filter only removes, never adds."""
+    """Apply the outreach filters. Each filter only removes, never adds.
+
+    A lead with no rating on file passes the rating filters — I cannot
+    judge a business Google has no rating for. A lead with no opening-hours
+    data fails --open-now: I only keep businesses Google says are open
+    right now, so a call lands while someone is there to pick up.
+    """
     out = []
     for lead in leads:
         rating = lead.get("rating")
         if min_rating is not None and isinstance(rating, (int, float)):
             if rating < min_rating:
                 continue
+        if max_rating is not None and isinstance(rating, (int, float)):
+            if rating > max_rating:
+                continue
         if max_reviews is not None and (lead.get("review_count") or 0) > max_reviews:
             continue
         if only_no_website and lead.get("website"):
             continue
         if require_phone and not lead.get("phone"):
+            continue
+        if open_now_only and lead.get("open_now") is not True:
             continue
         out.append(lead)
     return out
@@ -256,7 +281,7 @@ def search_places(
                 "places.id,places.displayName,places.formattedAddress,"
                 "places.nationalPhoneNumber,places.websiteUri,places.rating,"
                 "places.userRatingCount,places.businessStatus,places.types,"
-                "places.googleMapsUri"
+                "places.googleMapsUri,places.currentOpeningHours.openNow"
             ),
         }
         # Geography comes from the location string in textQuery
@@ -302,12 +327,45 @@ def export_csv(leads: list[dict], path: Path) -> None:
         writer = csv.DictWriter(fh, fieldnames=CSV_FIELDS)
         writer.writeheader()
         for lead in leads:
-            writer.writerow({k: lead.get(k, "") for k in CSV_FIELDS})
+            row = {k: lead.get(k, "") for k in CSV_FIELDS}
+            open_now = lead.get("open_now")
+            row["open_now"] = "yes" if open_now is True else ("no" if open_now is False else "")
+            writer.writerow(row)
 
 
 def export_json(leads: list[dict], path: Path) -> None:
     public = [{k: v for k, v in lead.items() if k != "place_id"} for lead in leads]
     path.write_text(json.dumps(public, indent=2), encoding="utf-8")
+
+
+def top_leads_summary(leads: list[dict], n: int = 10) -> str:
+    """A short ranked summary of the best leads — the part I read first.
+
+    `leads` should already be sorted by score, highest first. Returns a
+    plain-text block: one line per lead (rank, score, name, niche, rating,
+    review count, phone, website status, why it scored) plus a one-line
+    tally of the whole list.
+    """
+    lines = [f"Top {n} leads by score:"]
+    for rank, lead in enumerate(leads[:n], start=1):
+        rating = lead.get("rating")
+        rating_text = f"{rating}★" if isinstance(rating, (int, float)) else "no rating"
+        reviews = lead.get("review_count") or 0
+        contact = lead.get("phone") or "no phone"
+        website = "has website" if lead.get("website") else "no website"
+        notes = lead.get("notes") or "—"
+        lines.append(
+            f"  {rank:>2}. [{lead['lead_score']:>3}] {lead['business_name']} "
+            f"({lead['niche']}) — {rating_text}, {reviews} reviews — "
+            f"{contact} — {website} — {notes}"
+        )
+    total = len(leads)
+    no_website = sum(1 for lead in leads if not lead.get("website"))
+    avg = sum(lead["lead_score"] for lead in leads) / total if total else 0
+    lines.append(
+        f"{total} leads total, average score {avg:.0f}, {no_website} with no website."
+    )
+    return "\n".join(lines)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -323,10 +381,15 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--sample", default="sample_places.json",
                         help="Sample file for --demo")
     parser.add_argument("--max-results", type=int, default=DEFAULT_MAX_RESULTS)
-    parser.add_argument("--min-rating", type=float, default=None)
+    parser.add_argument("--min-rating", type=float, default=None,
+                        help="Keep only businesses rated at least this (e.g. 4.0)")
+    parser.add_argument("--max-rating", type=float, default=None,
+                        help="Keep only businesses rated at most this (e.g. 4.0 — room to improve)")
     parser.add_argument("--max-reviews", type=int, default=None)
     parser.add_argument("--only-no-website", action="store_true")
     parser.add_argument("--require-phone", action="store_true")
+    parser.add_argument("--open-now", action="store_true",
+                        help="Keep only businesses Google reports as open right now")
     parser.add_argument("--output", default="leads.csv")
     parser.add_argument("--json-output", default="")
     return parser
@@ -359,9 +422,11 @@ def main(argv: list[str] | None = None) -> int:
     leads = filter_leads(
         leads,
         min_rating=args.min_rating,
+        max_rating=args.max_rating,
         max_reviews=args.max_reviews,
         only_no_website=args.only_no_website,
         require_phone=args.require_phone,
+        open_now_only=args.open_now,
     )
     leads.sort(key=lambda lead: lead["lead_score"], reverse=True)
 
@@ -370,9 +435,7 @@ def main(argv: list[str] | None = None) -> int:
         export_json(leads, Path(args.json_output))
 
     print(f"{len(leads)} leads -> {args.output} (sorted by lead score, highest first)")
-    for lead in leads[:10]:
-        print(f"  {lead['lead_score']:>3}  {lead['business_name']} — {lead['niche']} — "
-              f"{lead['phone'] or 'no phone'} — {lead['website'] or 'no website'}")
+    print(top_leads_summary(leads))
     return 0
 
 
